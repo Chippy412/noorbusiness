@@ -214,7 +214,15 @@ say ""
 say "You'll see two values we need. Both are safe to use in client-side code"
 say "-- the 'anon' key is designed by Supabase to be public, unlike the"
 say "'service_role' key, which you should never use here."
+note "The Project URL looks like https://xxxxxxxx.supabase.co -- it is NOT"
+note "the dashboard page address in your browser's address bar."
 ask SUPABASE_URL "Paste the 'Project URL':"
+while [[ "$SUPABASE_URL" != https://*.supabase.co ]]; do
+  warn "That doesn't look like a Project URL (expected https://xxxxxxxx.supabase.co)."
+  warn "Make sure you're copying the 'Project URL' field on the API settings page,"
+  warn "not the browser address bar."
+  ask SUPABASE_URL "Paste the 'Project URL':"
+done
 ask SUPABASE_ANON_KEY "Paste the 'anon' / 'public' key:"
 write_env SUPABASE_URL "$SUPABASE_URL"
 write_env SUPABASE_ANON_KEY "$SUPABASE_ANON_KEY"
@@ -233,6 +241,7 @@ confirm "Have you turned off 'Confirm email' and saved?" || \
 # ── Stage 4: write the values into the site's code ─────────────────────────
 stage "Write js/supabase-client.js"
 say "Writing the values you pasted into the file the site actually loads."
+mkdir -p "$(dirname "$CLIENT_FILE")"
 cat > "$CLIENT_FILE" <<JS
 // js/supabase-client.js
 // Loaded after the Supabase CDN script (see noor-business.html), which
