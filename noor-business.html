@@ -1522,6 +1522,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase-client.js"></script>
+<script src="js/businesses-data.js"></script>
 <script>
 (function () {
   "use strict";
@@ -1531,46 +1532,7 @@
   var SAVE_KEY = "nicc-saved-listings";
 
   /* ============ Sample directory data (replace with real listings) ============ */
-  var LISTINGS = [
-    { id: "meatmoot", name: "Meat Moot", cat: "Restaurants", hood: "Hilliard", icon: "i-heart", tone: 1,
-      badges: [], featured: true, rating: null,
-      desc: "Zabihah-listed Mediterranean smoked meats on Fishinger Boulevard.",
-      long: "A Mediterranean smoked meat restaurant on Fishinger Boulevard in Hilliard, listed as halal on Zabihah. New to this directory, this listing has not yet been confirmed directly with the owner.",
-      address: "3708 Fishinger Blvd, Hilliard, OH 43026",
-      verify: null, hours: [], reviews: [] },
-    { id: "supremefresh", name: "Supreme Fresh Halal Meat &amp; Grocery", cat: "Grocery &amp; Halal Meat", hood: "Northland", icon: "i-basket", tone: 2,
-      badges: [], featured: true, rating: null,
-      desc: "Fresh halal meat and Indian grocery staples near Polaris.",
-      long: "A halal meat and grocery shop on Sancus Boulevard carrying goat, chicken, and fish alongside a curated selection of Indian pantry staples and spices.",
-      address: "8635 Sancus Blvd, Columbus, OH 43240",
-      verify: null, hours: [], reviews: [] },
-    { id: "wegotmeat", name: "We-Got-Meat", cat: "Grocery &amp; Halal Meat", hood: "Dublin", icon: "i-basket", tone: 3,
-      badges: [], featured: false, rating: null,
-      desc: "Halal meat market and delivery service on Sawmill Road.",
-      long: "Part of a regional halal meat delivery service, with a Dublin location on Sawmill Road for in-person shopping alongside online ordering.",
-      address: "5833 Sawmill Rd, Dublin, OH 43017",
-      verify: null, hours: [], reviews: [] },
-    { id: "naska", name: "Naska Beauty", cat: "Modest Wear", hood: "Citywide (online)", icon: "i-shirt", tone: 4,
-      badges: ["women"], featured: false, rating: null,
-      desc: "Mother and daughter modest wear brand, hijabs and abayas shipped worldwide.",
-      long: "An online modest wear brand run by a mother and daughter, designing hijabs, abayas, and prayer wear in house and shipping worldwide from Columbus. No walk-in storefront yet.",
-      address: null,
-      verify: null, hours: [], reviews: [] },
-    { id: "altahoor", name: "Al-Tahoor Quran Institute", cat: "Education", hood: "Citywide (online)", icon: "i-book", tone: 1,
-      badges: [], featured: false, rating: null,
-      desc: "Live one-on-one Quran classes for families across central Ohio.",
-      long: "Live, one-on-one Quran instruction from Ijazah-certified teachers, serving families across Columbus, Dublin, and Hilliard through online sessions.",
-      address: null,
-      verify: null, hours: [], reviews: [] },
-    { id: "noorclinic", name: "Noor Free Clinic", cat: "Health &amp; Wellness", hood: "Short North", icon: "i-heart", tone: 2,
-      badges: ["community"], featured: true, rating: null,
-      desc: "NICC's own free clinic, run by volunteer Muslim physicians since 2010.",
-      long: "Run by Noor Islamic Cultural Center in partnership with OSU Wexner Medical Center, this free clinic serves uninsured and underserved patients of any faith background. Call ahead to schedule.",
-      address: "2231 North High St, Columbus, OH 43201 &middot; (614) 516-3075",
-      verify: null,
-      hours: [["Clinic hours", "Wednesdays, 17:00 - 21:00"], ["To schedule", "Call Mon 10:00-15:00 or Tue 10:00-12:00"]],
-      reviews: [] }
-  ];
+  var LISTINGS = [];
 
   var BADGE_INFO = {
     halal:     { icon: "i-shield",  label: "Halal verified",   neutral: false },
@@ -1650,11 +1612,28 @@
 
   var results = document.getElementById("results");
   var featuredGrid = document.getElementById("featuredGrid");
-  if (featuredGrid) {
-    featuredGrid.innerHTML = LISTINGS.filter(function (l) { return l.featured; }).map(cardHtml).join("");
+
+  function renderListingCollections() {
+    if (featuredGrid) {
+      featuredGrid.innerHTML = LISTINGS.filter(function (l) { return l.featured; }).map(cardHtml).join("");
+    }
+    if (results) {
+      results.innerHTML = LISTINGS.map(cardHtml).join("");
+      sortResults();
+      applyFilters();
+    }
   }
-  if (results) {
-    results.innerHTML = LISTINGS.map(cardHtml).join("");
+
+  async function bootBusinessData() {
+    if (featuredGrid) featuredGrid.innerHTML = '<p style="color:var(--muted)">Loading listings...</p>';
+    if (results) results.innerHTML = '<p style="color:var(--muted)">Loading listings...</p>';
+    try {
+      LISTINGS = await window.NiccData.loadBusinesses();
+    } catch (e) {
+      console.error("Failed to load businesses from Supabase", e);
+      LISTINGS = [];
+    }
+    renderListingCollections();
   }
 
   /* ============ Listing dialog ============ */
@@ -2085,5 +2064,6 @@
   updateSavedCount();
   newChallenge();
   render(currentRoute());
+  bootBusinessData();
 })();
 </script>
