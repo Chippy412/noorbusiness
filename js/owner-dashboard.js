@@ -1,0 +1,38 @@
+// js/owner-dashboard.js
+(function () {
+  "use strict";
+
+  async function loadMyBusinesses() {
+    var user = await window.NiccAuth.getCurrentUser();
+    if (!user) return [];
+    var result = await window.NiccSupabase
+      .from("businesses")
+      .select("*")
+      .eq("owner_id", user.id)
+      .order("created_at", { ascending: false });
+    if (result.error) throw result.error;
+    return result.data;
+  }
+
+  async function createBusiness(fields) {
+    var user = await window.NiccAuth.getCurrentUser();
+    if (!user) throw new Error("You must be logged in to add a business.");
+    var result = await window.NiccSupabase.from("businesses").insert({
+      owner_id: user.id,
+      status: "pending",
+      name: fields.name,
+      category: fields.category,
+      neighborhood: fields.neighborhood,
+      description: fields.description,
+      long_description: fields.longDescription,
+      address: fields.address || null
+    }).select().single();
+    if (result.error) throw result.error;
+    return result.data;
+  }
+
+  window.NiccOwner = {
+    loadMyBusinesses: loadMyBusinesses,
+    createBusiness: createBusiness
+  };
+})();
