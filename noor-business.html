@@ -1,6 +1,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NICC Business</title>
+<script>
+  (function () {
+    try {
+      var saved = localStorage.getItem("nicc-theme");
+      if (saved === "light" || saved === "dark") {
+        document.documentElement.setAttribute("data-theme", saved);
+      }
+    } catch (e) { /* private mode */ }
+  })();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:ital,opsz,wght@0,12..96,500;0,12..96,600;0,12..96,700;1,12..96,600&family=Manrope:wght@400;500;600;700;800&family=Amiri:wght@400;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
@@ -215,6 +225,20 @@
   .saved-chip svg { width: 16px; height: 16px; }
   .saved-chip .count { font-weight: 700; }
 
+  .theme-toggle {
+    display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px;
+    border-radius: 999px; border: 1px solid var(--hairline); background: var(--surface);
+    color: var(--ink-2); cursor: pointer; flex-shrink: 0;
+  }
+  .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  .theme-toggle svg { width: 18px; height: 18px; }
+  .theme-toggle-mobile {
+    width: 100%; justify-content: flex-start; gap: 10px; height: auto; padding: 15px 4px;
+    border-radius: 0; border: none; border-bottom: 1px solid var(--hairline); background: none;
+    font-family: "Bricolage Grotesque", sans-serif; font-size: 1.2rem; font-weight: 600; color: var(--ink);
+  }
+  .theme-toggle-mobile svg { width: 20px; height: 20px; }
+
   .nav-toggle { display: none; background: none; border: none; color: var(--ink); padding: 8px; cursor: pointer; }
   .nav-toggle svg { width: 24px; height: 24px; }
   .mobile-panel {
@@ -265,19 +289,21 @@
     margin-top: 34px; background: var(--surface); border: 1px solid var(--hairline);
     border-radius: 18px; padding: 10px;
     box-shadow: 0 24px 48px -24px rgba(var(--shadow-color) / 0.28);
-    display: grid; grid-template-columns: 1.3fr 1fr 1fr auto; gap: 6px;
+    display: grid; grid-template-columns: 1fr 1fr auto; grid-template-areas: "q q q" "c h b"; gap: 6px;
   }
   .search-field { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px; min-width: 0; }
-  .search-field + .search-field { border-left: 1px solid var(--hairline); }
-  .search-field svg { color: var(--muted); width: 18px; height: 18px; }
+  .search-field:nth-of-type(1) { grid-area: q; }
+  .search-field:nth-of-type(2) { grid-area: c; border-top: 1px solid var(--hairline); }
+  .search-field:nth-of-type(3) { grid-area: h; border-top: 1px solid var(--hairline); border-left: 1px solid var(--hairline); }
+  .search-field svg { color: var(--muted); width: 18px; height: 18px; flex-shrink: 0; }
   .search-field input, .search-field select {
     border: none; background: none; font: inherit; color: var(--ink);
-    width: 100%; font-size: 0.92rem; font-family: "Manrope", sans-serif;
+    width: 100%; min-width: 0; font-size: 0.92rem; font-family: "Manrope", sans-serif;
   }
-  .search-field select { appearance: none; cursor: pointer; }
+  .search-field select { appearance: none; cursor: pointer; text-overflow: ellipsis; }
   .search-field input:focus, .search-field select:focus { outline: none; }
   .search-field:focus-within { background: var(--accent-soft); }
-  .search-card .btn { border-radius: 12px; padding: 0 22px; }
+  .search-card .btn { grid-area: b; border-radius: 12px; padding: 0 22px; }
 
   .hero-visual { position: relative; padding: 18px; }
   .hero-visual .pattern-bg { position: absolute; inset: 0; border-radius: 24px; }
@@ -299,8 +325,10 @@
     .hero-grid { grid-template-columns: 1fr; gap: 44px; }
     .hero-photo { aspect-ratio: 16/11; }
     .hero-float { left: 14px; bottom: -20px; max-width: calc(100% - 28px); }
-    .search-card { grid-template-columns: 1fr; }
-    .search-field + .search-field { border-left: none; border-top: 1px solid var(--hairline); }
+  }
+  @media (max-width: 560px) {
+    .search-card { grid-template-columns: 1fr; grid-template-areas: "q" "c" "h" "b"; }
+    .search-field:nth-of-type(2), .search-field:nth-of-type(3) { border-left: none; border-top: 1px solid var(--hairline); }
     .search-card .btn { width: 100%; padding: 14px; margin-top: 4px; }
   }
 
@@ -748,6 +776,8 @@
   <symbol id="i-rows" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="5" rx="1.5"/><rect x="4" y="14" width="16" height="5" rx="1.5"/></symbol>
   <symbol id="i-square" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="12" cy="12" r="3.2"/></symbol>
   <symbol id="i-wave" viewBox="0 0 24 24"><path d="M3 12c2-4 4-4 6 0s4 4 6 0 4-4 6 0"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v3M12 18.5v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2.5 12h3M18.5 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5z"/></symbol>
 </svg>
 
 <a class="skip-link" href="#main">Skip to content</a>
@@ -774,6 +804,9 @@
       <a href="#/account" data-route="account">Log in</a>
     </nav>
     <div class="nav-actions">
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to dark mode">
+        <svg class="icon"><use href="#i-moon"/></svg>
+      </button>
       <button class="saved-chip" id="savedChip" type="button">
         <svg class="icon"><use href="#i-bookmark"/></svg> Saved <span class="count" id="savedCount">0</span>
       </button>
@@ -783,16 +816,19 @@
       </button>
     </div>
   </div>
-  <div class="mobile-panel" id="mobilePanel">
-    <a href="#/home" data-route="home">Home</a>
-    <a href="#/explore" data-route="explore">Explore</a>
-    <a href="#/about" data-route="about">About</a>
-    <a href="#/faq" data-route="faq">FAQ</a>
-    <a href="#/contact" data-route="contact">Contact</a>
-    <a href="#/account" data-route="account">Log in</a>
-    <a href="#/list" data-route="list" class="btn btn-primary">List your business</a>
-  </div>
 </header>
+<div class="mobile-panel" id="mobilePanel">
+  <a href="#/home" data-route="home">Home</a>
+  <a href="#/explore" data-route="explore">Explore</a>
+  <a href="#/about" data-route="about">About</a>
+  <a href="#/faq" data-route="faq">FAQ</a>
+  <a href="#/contact" data-route="contact">Contact</a>
+  <a href="#/account" data-route="account">Log in</a>
+  <button class="theme-toggle theme-toggle-mobile" id="themeToggleMobile" type="button">
+    <svg class="icon"><use href="#i-moon"/></svg> <span id="themeToggleMobileLabel">Switch to dark mode</span>
+  </button>
+  <a href="#/list" data-route="list" class="btn btn-primary">List your business</a>
+</div>
 
 <main id="main">
 
@@ -1959,6 +1995,42 @@
   }
   navToggle.addEventListener("click", function () { setToggleIcon(mobilePanel.classList.toggle("open")); });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeMobile(); });
+
+  /* ============ Theme toggle ============ */
+  var THEME_KEY = "nicc-theme";
+  var themeToggle = document.getElementById("themeToggle");
+  var themeToggleMobile = document.getElementById("themeToggleMobile");
+  var themeToggleMobileLabel = document.getElementById("themeToggleMobileLabel");
+  var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
+
+  function currentTheme() {
+    var explicit = document.documentElement.getAttribute("data-theme");
+    if (explicit === "light" || explicit === "dark") return explicit;
+    return prefersDark && prefersDark.matches ? "dark" : "light";
+  }
+  function applyThemeIcon() {
+    var isDark = currentTheme() === "dark";
+    var icon = isDark ? "i-sun" : "i-moon";
+    var label = isDark ? "Switch to light mode" : "Switch to dark mode";
+    if (themeToggle) {
+      themeToggle.innerHTML = '<svg class="icon"><use href="#' + icon + '"/></svg>';
+      themeToggle.setAttribute("aria-label", label);
+    }
+    if (themeToggleMobile) {
+      var use = themeToggleMobile.querySelector(".icon use");
+      if (use) use.setAttribute("href", "#" + icon);
+      if (themeToggleMobileLabel) themeToggleMobileLabel.textContent = label;
+    }
+  }
+  function toggleTheme() {
+    var next = currentTheme() === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem(THEME_KEY, next); } catch (e) { /* private mode */ }
+    applyThemeIcon();
+  }
+  if (themeToggle) themeToggle.addEventListener("click", toggleTheme);
+  if (themeToggleMobile) themeToggleMobile.addEventListener("click", toggleTheme);
+  applyThemeIcon();
 
   /* ============ Reveal ============ */
   var io = null;
