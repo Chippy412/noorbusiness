@@ -1594,6 +1594,7 @@
   <div class="modal-foot">
     <button class="btn btn-primary" id="modalSave"><svg class="icon"><use href="#i-bookmark"/></svg> Save listing</button>
     <a class="btn btn-ghost" href="#/contact" data-route="contact" id="modalContact">Contact this business</a>
+    <button class="btn btn-ghost" id="modalClaim">Claim this business</button>
   </div>
 </dialog>
 
@@ -1886,6 +1887,27 @@
     modalSave.innerHTML = '<svg class="icon"><use href="#i-bookmark"/></svg> ' + (nowSaved ? "Saved" : "Save listing");
     toast(nowSaved ? "Saved to your list." : "Removed from your list.");
   });
+
+  var modalClaim = document.getElementById("modalClaim");
+  if (modalClaim) {
+    modalClaim.addEventListener("click", async function () {
+      var user = await window.NiccAuth.getCurrentUser();
+      if (!user) {
+        modal.close();
+        location.hash = "#/account";
+        toast("Log in first, then claim this listing from its page.");
+        return;
+      }
+      if (!currentItem) return;
+      try {
+        await window.NiccOwner.claimBusiness(currentItem.id, null);
+        toast("Claim submitted. A volunteer will review it.");
+        modal.close();
+      } catch (err) {
+        toast(err.message || "Could not submit claim.");
+      }
+    });
+  }
 
   /* ============ Router ============ */
   function currentRoute() {
@@ -2217,13 +2239,18 @@
     if (!el) return;
     try {
       var mine = await window.NiccOwner.loadMyBusinesses();
-      if (mine.length === 0) {
-        el.innerHTML = '<p style="color:var(--muted)">You do not have any listings yet.</p>';
-        return;
-      }
-      el.innerHTML = mine.map(function (b) {
+      var claims = await window.NiccOwner.loadMyClaims();
+      var rows = mine.map(function (b) {
         return '<div class="hours-row"><span>' + b.name + '</span><span>' + b.status + '</span></div>';
-      }).join("");
+      });
+      var claimRows = claims.map(function (c) {
+        var name = c.businesses ? c.businesses.name : "Unknown listing";
+        return '<div class="hours-row"><span>Claim: ' + name + '</span><span>' + c.status + '</span></div>';
+      });
+      var all = rows.concat(claimRows);
+      el.innerHTML = all.length
+        ? all.join("")
+        : '<p style="color:var(--muted)">You do not have any listings yet.</p>';
     } catch (err) {
       el.innerHTML = '<p style="color:var(--muted)">Could not load your listings.</p>';
     }

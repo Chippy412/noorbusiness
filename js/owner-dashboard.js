@@ -31,8 +31,33 @@
     return result.data;
   }
 
+  async function claimBusiness(businessId, note) {
+    var user = await window.NiccAuth.getCurrentUser();
+    if (!user) throw new Error("You must be logged in to claim a business.");
+    var result = await window.NiccSupabase.from("claims").insert({
+      business_id: businessId,
+      requester_id: user.id,
+      note: note || null
+    });
+    if (result.error) throw result.error;
+  }
+
+  async function loadMyClaims() {
+    var user = await window.NiccAuth.getCurrentUser();
+    if (!user) return [];
+    var result = await window.NiccSupabase
+      .from("claims")
+      .select("*, businesses(name)")
+      .eq("requester_id", user.id)
+      .order("created_at", { ascending: false });
+    if (result.error) throw result.error;
+    return result.data;
+  }
+
   window.NiccOwner = {
     loadMyBusinesses: loadMyBusinesses,
-    createBusiness: createBusiness
+    createBusiness: createBusiness,
+    claimBusiness: claimBusiness,
+    loadMyClaims: loadMyClaims
   };
 })();
