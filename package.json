@@ -1,0 +1,33 @@
+{
+  "name": "nicc-business",
+  "version": "1.0.0",
+  "description": "A community business directory for Noor Islamic Cultural Center (NICC) in Columbus, Ohio.",
+  "type": "module",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "dev": "npx serve .",
+    "preview": "npx serve .",
+    "test": "echo \"No tests specified\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Chippy412/noorbusiness.git"
+  },
+  "keywords": [
+    "vercel",
+    "analytics",
+    "business-directory",
+    "nicc"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Chippy412/noorbusiness/issues"
+  },
+  "homepage": "https://github.com/Chippy412/noorbusiness#readme",
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1"
+  }
+}
