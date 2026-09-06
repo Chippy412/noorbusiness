@@ -20,9 +20,15 @@
   }
 
   async function getCurrentUser() {
-    var result = await window.NiccSupabase.auth.getUser();
-    if (result.error) return null;
-    return result.data.user;
+    // getSession() reads the session Supabase already restored from
+    // localStorage and reliably awaits the client's internal init.
+    // getUser() hits the network to revalidate and can return "Auth
+    // session missing" if called at page-boot time, before that init
+    // finishes -- which happens on every direct load of a hash route
+    // like #/account, so it must not be used here.
+    var result = await window.NiccSupabase.auth.getSession();
+    if (result.error || !result.data.session) return null;
+    return result.data.session.user;
   }
 
   window.NiccAuth = {

@@ -368,6 +368,7 @@
     background: var(--surface); color: var(--accent); box-shadow: 0 8px 20px -10px rgba(var(--shadow-color) / 0.5);
   }
   .listing-art .art-badge svg { width: 28px; height: 28px; }
+  .listing-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
   .art-tone-1 { background: var(--accent-soft); }
   .art-tone-2 { background: var(--surface-2); }
   .art-tone-3 { background: color-mix(in srgb, var(--sage) 32%, var(--surface)); }
@@ -595,6 +596,8 @@
   .modal-close:hover { border-color: var(--accent); color: var(--accent); }
   .modal-close svg { width: 18px; height: 18px; }
   .modal-body { padding: 24px 28px 28px; display: flex; flex-direction: column; gap: 24px; max-height: 65vh; overflow-y: auto; }
+  .modal-photo { margin: -24px -28px 0; aspect-ratio: 16/9; overflow: hidden; }
+  .modal-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .modal-section h3 { font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-family: "Manrope", sans-serif; font-weight: 700; margin-bottom: 12px; }
   .verify-box { background: var(--accent-soft); border-radius: 14px; padding: 18px; }
   .verify-row { display: flex; justify-content: space-between; gap: 16px; font-size: 0.9rem; padding: 5px 0; }
@@ -1776,7 +1779,9 @@
     return '' +
       '<article class="listing reveal" data-id="' + item.id + '" data-name="' + item.name + '" data-cat="' + item.cat + '" data-hood="' + item.hood + '" data-badges="' + item.badges.join(" ") + '" data-rating="' + item.rating + '">' +
         '<div class="listing-art art-tone-' + item.tone + '">' +
-          '<span class="art-badge"><svg class="icon"><use href="#' + item.icon + '"/></svg></span>' +
+          (item.photo
+            ? '<img src="' + item.photo + '" alt="" loading="lazy">'
+            : '<span class="art-badge"><svg class="icon"><use href="#' + item.icon + '"/></svg></span>') +
           '<button class="save-btn" type="button" data-id="' + item.id + '" aria-pressed="' + (isSaved(item.id) ? "true" : "false") + '" aria-label="Save ' + item.name + '">' +
             '<svg class="icon"><use href="#i-bookmark"/></svg>' +
           '</button>' +
@@ -1845,6 +1850,9 @@
     modalMeta.textContent = item.cat.replace("&amp;", "and") + " in " + item.hood + ", Columbus";
 
     var html = "";
+    if (item.photo) {
+      html += '<div class="modal-photo"><img src="' + item.photo + '" alt=""></div>';
+    }
     var ratingBadge = item.rating != null
       ? '<span class="badge neutral"><svg class="icon filled"><use href="#i-star"/></svg> ' + item.rating.toFixed(1) + '</span>'
       : '<span class="badge neutral">New to the directory</span>';
@@ -2330,6 +2338,13 @@
       var businessBlocks = mine.map(function (b) {
         return '' +
           '<div class="hours-row"><span>' + b.name + '</span><span>' + b.status + '</span></div>' +
+          '<div class="owner-photo-row" style="margin:10px 0 16px;display:flex;align-items:center;gap:14px">' +
+            '<img class="owner-photo-preview" src="' + (b.photo_url || "") + '" alt="" style="width:64px;height:64px;border-radius:12px;object-fit:cover;background:var(--surface-2);' + (b.photo_url ? "" : "display:none;") + '">' +
+            '<label class="btn btn-ghost btn-sm" style="cursor:pointer">Upload photo' +
+              '<input type="file" accept="image/png,image/jpeg,image/webp" class="owner-photo-input" data-business-id="' + b.id + '" style="display:none">' +
+            '</label>' +
+            '<span class="owner-photo-status" style="font-size:0.85rem;color:var(--muted)"></span>' +
+          '</div>' +
           '<form class="owner-edit-form" data-business-id="' + b.id + '" style="margin:10px 0 20px">' +
             '<div class="field"><label>Short description</label><textarea class="edit-desc" required>' + b.description + '</textarea></div>' +
             '<button type="submit" class="btn btn-ghost btn-sm" style="margin-top:8px">Save changes</button>' +
@@ -2346,6 +2361,27 @@
       el.innerHTML = all.length
         ? all.join("")
         : '<p style="color:var(--muted)">You do not have any listings yet.</p>';
+
+      el.querySelectorAll(".owner-photo-input").forEach(function (input) {
+        input.addEventListener("change", async function () {
+          var file = input.files[0];
+          if (!file) return;
+          var businessId = input.getAttribute("data-business-id");
+          var row = input.closest(".owner-photo-row");
+          var preview = row.querySelector(".owner-photo-preview");
+          var status = row.querySelector(".owner-photo-status");
+          status.textContent = "Uploading...";
+          try {
+            var url = await window.NiccOwner.uploadPhoto(businessId, file);
+            preview.src = url;
+            preview.style.display = "";
+            status.textContent = "Photo updated.";
+          } catch (err) {
+            status.textContent = err.message || "Could not upload photo.";
+          }
+          input.value = "";
+        });
+      });
 
       el.querySelectorAll(".owner-edit-form").forEach(function (form) {
         form.addEventListener("submit", async function (e) {

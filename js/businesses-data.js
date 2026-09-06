@@ -34,6 +34,7 @@
       desc: row.description,
       long: row.long_description,
       address: row.address,
+      photo: row.photo_url || null,
       verify: null,
       hours: row.hours || [],
       reviews: []
