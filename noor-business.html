@@ -1769,6 +1769,27 @@
   }
 
   /* ============ Card rendering ============ */
+  function escapeAttr(str) {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+  // photo_url is owner-writable (any authenticated owner can update it
+  // directly via the API, not just through the upload UI), so it must be
+  // both escaped for the HTML attribute and restricted to a real https
+  // URL before ever being interpolated into markup.
+  function safePhotoUrl(url) {
+    if (!url) return null;
+    try {
+      var parsed = new URL(url);
+      if (parsed.protocol !== "https:") return null;
+    } catch (e) {
+      return null;
+    }
+    return escapeAttr(url);
+  }
   function badgeHtml(key) {
     var b = BADGE_INFO[key];
     if (!b) return "";
@@ -1776,11 +1797,12 @@
   }
 
   function cardHtml(item) {
+    var photoUrl = safePhotoUrl(item.photo);
     return '' +
       '<article class="listing reveal" data-id="' + item.id + '" data-name="' + item.name + '" data-cat="' + item.cat + '" data-hood="' + item.hood + '" data-badges="' + item.badges.join(" ") + '" data-rating="' + item.rating + '">' +
         '<div class="listing-art art-tone-' + item.tone + '">' +
-          (item.photo
-            ? '<img src="' + item.photo + '" alt="" loading="lazy">'
+          (photoUrl
+            ? '<img src="' + photoUrl + '" alt="" loading="lazy">'
             : '<span class="art-badge"><svg class="icon"><use href="#' + item.icon + '"/></svg></span>') +
           '<button class="save-btn" type="button" data-id="' + item.id + '" aria-pressed="' + (isSaved(item.id) ? "true" : "false") + '" aria-label="Save ' + item.name + '">' +
             '<svg class="icon"><use href="#i-bookmark"/></svg>' +
@@ -1850,8 +1872,9 @@
     modalMeta.textContent = item.cat.replace("&amp;", "and") + " in " + item.hood + ", Columbus";
 
     var html = "";
-    if (item.photo) {
-      html += '<div class="modal-photo"><img src="' + item.photo + '" alt=""></div>';
+    var modalPhotoUrl = safePhotoUrl(item.photo);
+    if (modalPhotoUrl) {
+      html += '<div class="modal-photo"><img src="' + modalPhotoUrl + '" alt=""></div>';
     }
     var ratingBadge = item.rating != null
       ? '<span class="badge neutral"><svg class="icon filled"><use href="#i-star"/></svg> ' + item.rating.toFixed(1) + '</span>'
@@ -2336,10 +2359,11 @@
       var claims = await window.NiccOwner.loadMyClaims();
 
       var businessBlocks = mine.map(function (b) {
+        var ownerPhotoUrl = safePhotoUrl(b.photo_url);
         return '' +
           '<div class="hours-row"><span>' + b.name + '</span><span>' + b.status + '</span></div>' +
           '<div class="owner-photo-row" style="margin:10px 0 16px;display:flex;align-items:center;gap:14px">' +
-            '<img class="owner-photo-preview" src="' + (b.photo_url || "") + '" alt="" style="width:64px;height:64px;border-radius:12px;object-fit:cover;background:var(--surface-2);' + (b.photo_url ? "" : "display:none;") + '">' +
+            '<img class="owner-photo-preview" src="' + (ownerPhotoUrl || "") + '" alt="" style="width:64px;height:64px;border-radius:12px;object-fit:cover;background:var(--surface-2);' + (ownerPhotoUrl ? "" : "display:none;") + '">' +
             '<label class="btn btn-ghost btn-sm" style="cursor:pointer">Upload photo' +
               '<input type="file" accept="image/png,image/jpeg,image/webp" class="owner-photo-input" data-business-id="' + b.id + '" style="display:none">' +
             '</label>' +
