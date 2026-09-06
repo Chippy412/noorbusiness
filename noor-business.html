@@ -2240,17 +2240,51 @@
     try {
       var mine = await window.NiccOwner.loadMyBusinesses();
       var claims = await window.NiccOwner.loadMyClaims();
-      var rows = mine.map(function (b) {
-        return '<div class="hours-row"><span>' + b.name + '</span><span>' + b.status + '</span></div>';
+
+      var businessBlocks = mine.map(function (b) {
+        return '' +
+          '<div class="hours-row"><span>' + b.name + '</span><span>' + b.status + '</span></div>' +
+          '<form class="owner-edit-form" data-business-id="' + b.id + '" style="margin:10px 0 20px">' +
+            '<div class="field"><label>Short description</label><textarea class="edit-desc" required>' + b.description + '</textarea></div>' +
+            '<button type="submit" class="btn btn-ghost btn-sm" style="margin-top:8px">Save changes</button>' +
+            '<p class="form-status edit-status" role="status"></p>' +
+          '</form>';
       });
+
       var claimRows = claims.map(function (c) {
         var name = c.businesses ? c.businesses.name : "Unknown listing";
         return '<div class="hours-row"><span>Claim: ' + name + '</span><span>' + c.status + '</span></div>';
       });
-      var all = rows.concat(claimRows);
+
+      var all = businessBlocks.concat(claimRows);
       el.innerHTML = all.length
         ? all.join("")
         : '<p style="color:var(--muted)">You do not have any listings yet.</p>';
+
+      el.querySelectorAll(".owner-edit-form").forEach(function (form) {
+        form.addEventListener("submit", async function (e) {
+          e.preventDefault();
+          var status = form.querySelector(".edit-status");
+          var businessId = form.getAttribute("data-business-id");
+          var current = mine.filter(function (b) { return b.id === businessId; })[0];
+          try {
+            await window.NiccOwner.updateBusiness(businessId, {
+              name: current.name,
+              category: current.category,
+              neighborhood: current.neighborhood,
+              description: form.querySelector(".edit-desc").value.trim(),
+              longDescription: current.long_description,
+              address: current.address
+            });
+            status.textContent = "Saved.";
+            status.classList.remove("error");
+            status.classList.add("show");
+          } catch (err) {
+            status.textContent = err.message || "Could not save changes.";
+            status.classList.add("show", "error");
+          }
+        });
+      });
     } catch (err) {
       el.innerHTML = '<p style="color:var(--muted)">Could not load your listings.</p>';
     }

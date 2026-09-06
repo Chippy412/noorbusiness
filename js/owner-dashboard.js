@@ -54,10 +54,23 @@
     return result.data;
   }
 
+  async function updateBusiness(id, fields) {
+    var result = await window.NiccSupabase.from("businesses").update({
+      name: fields.name,
+      category: fields.category,
+      neighborhood: fields.neighborhood,
+      description: fields.description,
+      long_description: fields.longDescription,
+      address: fields.address || null
+    }).eq("id", id);
+    if (result.error) throw result.error;
+  }
+
   window.NiccOwner = {
     loadMyBusinesses: loadMyBusinesses,
     createBusiness: createBusiness,
     claimBusiness: claimBusiness,
-    loadMyClaims: loadMyClaims
+    loadMyClaims: loadMyClaims,
+    updateBusiness: updateBusiness
   };
 })();
