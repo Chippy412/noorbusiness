@@ -1,3 +1,5 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NICC Business</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -423,8 +425,14 @@
 
   /* ---------- Steps ---------- */
   .steps-band { background: var(--surface); border-top: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline); }
-  .steps-row { display: grid; grid-template-columns: repeat(3, 1fr); position: relative; gap: 24px; }
-  .steps-row::before { content: ""; position: absolute; top: 26px; left: 9%; right: 9%; height: 1px; background: var(--hairline); }
+  .steps-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .step { position: relative; padding-top: 4px; }
+  .step:nth-child(2) { margin-top: 34px; }
+  .step:nth-child(3) { margin-top: 68px; }
+  .step-index {
+    display: block; font-family: "Bricolage Grotesque", sans-serif; font-weight: 700;
+    font-size: 0.85rem; color: var(--sage-deep); margin-bottom: 6px;
+  }
   .step-num {
     width: 52px; height: 52px; border-radius: 999px; background: var(--ground);
     border: 1px solid var(--sage); display: flex; align-items: center; justify-content: center;
@@ -433,7 +441,10 @@
   .step-num svg { width: 22px; height: 22px; }
   .step h3 { font-size: 1.12rem; font-weight: 700; }
   .step p { margin-top: 8px; color: var(--muted); font-size: 0.97rem; max-width: 32ch; }
-  @media (max-width: 800px) { .steps-row { grid-template-columns: 1fr; gap: 30px; } .steps-row::before { display: none; } }
+  @media (max-width: 800px) {
+    .steps-row { grid-template-columns: 1fr; gap: 30px; }
+    .step:nth-child(2), .step:nth-child(3) { margin-top: 0; }
+  }
 
   /* ---------- Split ---------- */
   .split { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 56px; align-items: center; }
@@ -910,16 +921,19 @@
         <div class="section-head"><h2>Finding the right place takes three steps.</h2></div>
         <div class="steps-row">
           <div class="step reveal">
+            <span class="step-index">01</span>
             <div class="step-num"><svg class="icon"><use href="#i-search"/></svg></div>
             <h3>Search your neighborhood</h3>
             <p>Filter by category, part of the city, and the things that matter to your family.</p>
           </div>
           <div class="step reveal">
+            <span class="step-index">02</span>
             <div class="step-num"><svg class="icon"><use href="#i-shield"/></svg></div>
             <h3>Check the verification</h3>
             <p>Open a listing to see the supplier, the certifier, and the date it was confirmed.</p>
           </div>
           <div class="step reveal">
+            <span class="step-index">03</span>
             <div class="step-num"><svg class="icon"><use href="#i-arrow-right"/></svg></div>
             <h3>Visit or reach out</h3>
             <p>Hours, area, and contact details sit on every listing.</p>
