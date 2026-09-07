@@ -387,6 +387,23 @@
   }
   .listing-art .art-badge svg { width: 28px; height: 28px; }
   .listing-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+  .skeleton-card { pointer-events: none; }
+  .skeleton-body { padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+  .skeleton-line { height: 12px; border-radius: 6px; }
+  .skeleton-line.w-60 { width: 60%; }
+  .skeleton-line.w-90 { width: 90%; }
+  .skeleton-shimmer {
+    background: linear-gradient(90deg, var(--accent-soft) 25%, var(--surface-2) 50%, var(--accent-soft) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.6s ease-in-out infinite;
+  }
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton-shimmer { animation: none; background: var(--surface-2); }
+  }
   .art-tone-1 { background: var(--accent-soft); }
   .art-tone-2 { background: var(--surface-2); }
   .art-tone-3 { background: color-mix(in srgb, var(--sage) 32%, var(--surface)); }
@@ -1815,6 +1832,18 @@
     return '<span class="badge' + (b.neutral ? " neutral" : "") + '"><svg class="icon"><use href="#' + b.icon + '"/></svg> ' + b.label + "</span>";
   }
 
+  function skeletonCardsHtml(count) {
+    var card = '' +
+      '<div class="listing skeleton-card">' +
+        '<div class="listing-art skeleton-shimmer"></div>' +
+        '<div class="skeleton-body">' +
+          '<div class="skeleton-line skeleton-shimmer w-60"></div>' +
+          '<div class="skeleton-line skeleton-shimmer w-90"></div>' +
+        '</div>' +
+      '</div>';
+    return new Array(count).fill(card).join("");
+  }
+
   function cardHtml(item) {
     var photoUrl = safePhotoUrl(item.photo);
     return '' +
@@ -1858,8 +1887,8 @@
   }
 
   async function bootBusinessData() {
-    if (featuredGrid) featuredGrid.innerHTML = '<p style="color:var(--muted)">Loading listings...</p>';
-    if (results) results.innerHTML = '<p style="color:var(--muted)">Loading listings...</p>';
+    if (featuredGrid) featuredGrid.innerHTML = skeletonCardsHtml(3);
+    if (results) results.innerHTML = skeletonCardsHtml(6);
     try {
       LISTINGS = await window.NiccData.loadBusinesses();
     } catch (e) {
