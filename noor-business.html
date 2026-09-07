@@ -302,7 +302,10 @@
     box-shadow: 0 24px 48px -24px rgba(var(--shadow-color) / 0.28);
     display: grid; grid-template-columns: 1fr 1fr auto; grid-template-areas: "q q q" "c h b"; gap: 6px;
   }
-  .search-field { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px; min-width: 0; }
+  .search-field {
+    display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px; min-width: 0;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  }
   .search-field:nth-of-type(1) { grid-area: q; }
   .search-field:nth-of-type(2) { grid-area: c; border-top: 1px solid var(--hairline); }
   .search-field:nth-of-type(3) { grid-area: h; border-top: 1px solid var(--hairline); border-left: 1px solid var(--hairline); }
@@ -313,7 +316,7 @@
   }
   .search-field select { appearance: none; cursor: pointer; text-overflow: ellipsis; }
   .search-field input:focus, .search-field select:focus { outline: none; }
-  .search-field:focus-within { background: var(--accent-soft); }
+  .search-field:focus-within { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
   .search-card .btn { grid-area: b; border-radius: 12px; padding: 0 22px; }
 
   .hero-visual { position: relative; padding: 18px; }
@@ -394,6 +397,7 @@
   }
   .save-btn svg { width: 17px; height: 17px; }
   .save-btn:hover { transform: scale(1.08); border-color: var(--accent); color: var(--accent); }
+  .save-btn:active { transform: scale(0.92); }
   .save-btn[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
   .save-btn[aria-pressed="true"] svg { fill: currentColor; stroke: currentColor; }
 
