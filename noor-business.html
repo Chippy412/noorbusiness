@@ -325,6 +325,7 @@
 
   .hero-visual { position: relative; padding: 18px; }
   .hero-visual .pattern-bg { position: absolute; inset: 0; border-radius: 24px; }
+  .hero-visual .pattern-bg::before { background-size: 140px 140px; opacity: calc(var(--pattern-opacity) * 1.6); }
   .hero-photo { aspect-ratio: 4/5; }
   .hero-float {
     position: absolute; left: -26px; bottom: 30px; background: var(--surface);
