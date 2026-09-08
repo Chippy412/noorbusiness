@@ -368,7 +368,7 @@
   .listing {
     background: var(--surface); border: 1px solid var(--hairline); border-radius: 18px;
     overflow: hidden; display: flex; flex-direction: column; position: relative;
-    transition: transform 0.35s cubic-bezier(0.16,1,0.3,1), box-shadow 0.35s cubic-bezier(0.16,1,0.3,1), border-color 0.25s ease;
+    transition: transform 0.35s cubic-bezier(0.16,1,0.3,1), box-shadow 0.35s cubic-bezier(0.16,1,0.3,1), border-color 0.25s ease, opacity 0.7s cubic-bezier(0.16,1,0.3,1);
   }
   .listing:hover { transform: translateY(-4px); border-color: var(--sage); box-shadow: 0 22px 44px -26px rgba(var(--shadow-color) / 0.45); }
   .listing:hover .listing-art img { transform: scale(1.05); }
@@ -423,6 +423,9 @@
   .save-btn:active { transform: scale(0.92); }
   .save-btn[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
   .save-btn[aria-pressed="true"] svg { fill: currentColor; stroke: currentColor; }
+  @media (prefers-reduced-motion: reduce) {
+    .nav-links a::after, .listing-art img, .save-btn, .search-field { transition: none; }
+  }
 
   .listing-body { padding: 20px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
   .listing-body h3 { font-size: 1.1rem; font-weight: 700; }
@@ -1846,7 +1849,7 @@
 
   function skeletonCardsHtml(count) {
     var card = '' +
-      '<div class="listing skeleton-card">' +
+      '<div class="listing skeleton-card" aria-hidden="true">' +
         '<div class="listing-art skeleton-shimmer"></div>' +
         '<div class="skeleton-body">' +
           '<div class="skeleton-line skeleton-shimmer w-60"></div>' +
@@ -1899,8 +1902,8 @@
   }
 
   async function bootBusinessData() {
-    if (featuredGrid) featuredGrid.innerHTML = skeletonCardsHtml(3);
-    if (results) results.innerHTML = skeletonCardsHtml(6);
+    if (featuredGrid) { featuredGrid.setAttribute("aria-busy", "true"); featuredGrid.innerHTML = skeletonCardsHtml(3); }
+    if (results) { results.setAttribute("aria-busy", "true"); results.innerHTML = skeletonCardsHtml(6); }
     try {
       LISTINGS = await window.NiccData.loadBusinesses();
     } catch (e) {
@@ -1908,6 +1911,8 @@
       LISTINGS = [];
     }
     renderListingCollections();
+    if (featuredGrid) featuredGrid.setAttribute("aria-busy", "false");
+    if (results) results.setAttribute("aria-busy", "false");
   }
 
   /* ============ Listing dialog ============ */
