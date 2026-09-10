@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "static",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["-y", "serve", "-l", "8790", "/Users/faraz/Documents/GitHub/nicc-business/.claude/worktrees/business-handoff-checklist-071371"],
+      "port": 8790,
+      "url": "http://localhost:8790"
+    }
+  ]
+}
