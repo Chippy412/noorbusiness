@@ -162,6 +162,7 @@
   .icon.filled { fill: currentColor; stroke: none; }
 
   :focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; border-radius: 4px; }
+  .page > .page-head h1:focus, .page > section h1:focus { outline: none; }
 
   .skip-link {
     position: absolute; left: -9999px; top: 8px; z-index: 80;
@@ -2243,10 +2244,15 @@
     if (io) io.disconnect();
     io = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
-        if (entry.isIntersecting) { entry.target.classList.remove("pre"); io.unobserve(entry.target); }
+        if (entry.isIntersecting) {
+          entry.target.classList.remove("pre");
+          entry.target.dataset.revealed = "1";
+          io.unobserve(entry.target);
+        }
       });
     }, { threshold: 0.12, rootMargin: "0px 0px -40px 0px" });
     document.querySelectorAll(".page:not([hidden]) .reveal").forEach(function (el, i) {
+      if (el.dataset.revealed === "1") return;
       if (el.getBoundingClientRect().top > window.innerHeight * 0.9) {
         el.classList.add("pre");
         el.style.transitionDelay = Math.min(i % 6, 5) * 60 + "ms";
