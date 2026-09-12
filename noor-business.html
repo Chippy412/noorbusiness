@@ -479,8 +479,8 @@
   .cat-icon svg { width: 21px; height: 21px; }
 
   .category-photo {
-    position: relative; overflow: hidden; border-radius: 18px; border: none; cursor: pointer;
-    color: #fff; text-align: left; width: 100%; min-height: 340px;
+    position: relative; isolation: isolate; overflow: hidden; border-radius: 18px; border: none; cursor: pointer;
+    background: none; color: #fff; text-align: left; width: 100%; min-height: 340px;
     display: flex; flex-direction: column; justify-content: flex-end; padding: 26px; gap: 8px;
     transition: transform 0.35s cubic-bezier(0.16,1,0.3,1);
   }
