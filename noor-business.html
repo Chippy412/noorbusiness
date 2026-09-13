@@ -2433,7 +2433,11 @@
     if (!turnstileScriptPromise) {
       turnstileScriptPromise = new Promise(function (resolve, reject) {
         var s = document.createElement("script");
-        s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+        // render=explicit: without it, Turnstile auto-renders into any
+        // .cf-turnstile element on load, racing with the render() call
+        // below and silently skipping it -- leaving us with no widgetId
+        // to read a response token from, so verification would no-op.
+        s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
         s.async = true;
         s.defer = true;
         s.onload = resolve;
