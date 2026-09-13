@@ -2503,7 +2503,7 @@
       input.addEventListener("input", function () { if (fieldOf(input).classList.contains("invalid")) validate(input); });
     });
 
-    form.addEventListener("submit", function (e) {
+    form.addEventListener("submit", async function (e) {
       e.preventDefault();
 
       // Layer 1: honeypot. People never see this field, naive bots fill it.
@@ -2541,6 +2541,24 @@
         return;
       }
 
+      // Layer 4: whatever this specific form actually needs to do (an
+      // insert, a redirect). Runs after every anti-bot/validation layer
+      // passes. Returning false means it already handled its own status
+      // message/navigation and the generic success below should not fire.
+      if (opts.onValid) {
+        var submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
+        try {
+          var result = await opts.onValid(form);
+          if (result === false) return;
+        } catch (err) {
+          setStatus(status, err.message || "Something went wrong. Please try again.", true);
+          return;
+        } finally {
+          if (submitBtn) submitBtn.disabled = false;
+        }
+      }
+
       setStatus(status, opts.success, false);
       form.reset();
       if (opts.challenge) newChallenge();
@@ -2550,12 +2568,36 @@
 
   wireForm("contactForm", "contactStatus", {
     success: "Thank you. Your message has been received and we will reply within two business days.",
-    toast: "Message sent."
+    toast: "Message sent.",
+    onValid: async function () {
+      var result = await window.NiccSupabase.from("contact_messages").insert({
+        name: document.getElementById("cName").value.trim(),
+        email: document.getElementById("cEmail").value.trim(),
+        subject: document.getElementById("cSubject").value,
+        message: document.getElementById("cMessage").value.trim()
+      });
+      if (result.error) throw new Error("Could not send your message. Please try again.");
+    }
   });
   wireForm("listForm", "listStatus", {
     timed: true, challenge: true,
-    success: "Thank you. Your listing has been submitted and a volunteer will review it within two business days.",
-    toast: "Listing submitted."
+    onValid: async function (form) {
+      var status = document.getElementById("listStatus");
+      var draft = {
+        name: document.getElementById("bName").value.trim(),
+        category: document.getElementById("bCategory").value,
+        neighborhood: document.getElementById("bHood").value,
+        description: document.getElementById("bDesc").value.trim()
+      };
+      try {
+        sessionStorage.setItem("nicc-list-draft", JSON.stringify(draft));
+      } catch (e) { /* private mode: draft won't carry over, still fine */ }
+      setStatus(status, "Almost there — sign up or log in to finish submitting “" + escapeAttr(draft.name) + "”. We've saved what you entered.", false);
+      toast("Continue in your account to finish.");
+      form.reset();
+      setTimeout(function () { location.hash = "#/account"; }, 1400);
+      return false;
+    }
   });
 
   var subForm = document.getElementById("subForm");
@@ -2574,6 +2616,29 @@
   }
 
   /* ============ Account: login, signup, logout ============ */
+  // Picks up the draft the public "List your business" page saves when
+  // someone submits it while logged out (see wireForm("listForm", ...)),
+  // and carries it into the real submission form once they're signed in.
+  function prefillListDraft() {
+    var raw;
+    try { raw = sessionStorage.getItem("nicc-list-draft"); } catch (e) { return; }
+    if (!raw) return;
+    var draft;
+    try { draft = JSON.parse(raw); } catch (e) { return; }
+    var form = document.getElementById("ownerAddForm");
+    if (!form) return;
+    if (draft.name) document.getElementById("ownAddName").value = draft.name;
+    if (draft.category) document.getElementById("ownAddCategory").value = draft.category;
+    if (draft.neighborhood) document.getElementById("ownAddHood").value = draft.neighborhood;
+    if (draft.description) document.getElementById("ownAddDesc").value = draft.description;
+    try { sessionStorage.removeItem("nicc-list-draft"); } catch (e) { /* private mode */ }
+    var status = document.getElementById("ownerAddStatus");
+    if (status) {
+      setStatus(status, "We've filled in what you entered earlier — add a fuller description below to finish.", false);
+    }
+    form.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+  }
+
   async function refreshAccountView() {
     var loggedOut = document.getElementById("accountLoggedOut");
     var loggedIn = document.getElementById("accountLoggedIn");
@@ -2584,6 +2649,7 @@
       loggedIn.hidden = false;
       document.getElementById("accountEmailDisplay").textContent = "Logged in as " + user.email;
       renderMyListings();
+      prefillListDraft();
     } else {
       loggedOut.hidden = false;
       loggedIn.hidden = true;
