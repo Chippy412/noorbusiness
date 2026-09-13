@@ -1962,20 +1962,21 @@
 
   function cardHtml(item) {
     var photoUrl = safePhotoUrl(item.photo);
+    var name = escapeAttr(item.name), cat = escapeAttr(item.cat), hood = escapeAttr(item.hood), desc = escapeAttr(item.desc);
     return '' +
-      '<article class="listing reveal" data-id="' + item.id + '" data-name="' + item.name + '" data-cat="' + item.cat + '" data-hood="' + item.hood + '" data-badges="' + item.badges.join(" ") + '" data-rating="' + item.rating + '">' +
+      '<article class="listing reveal" data-id="' + item.id + '" data-name="' + name + '" data-cat="' + cat + '" data-hood="' + hood + '" data-badges="' + item.badges.join(" ") + '" data-rating="' + item.rating + '">' +
         '<div class="listing-art art-tone-' + item.tone + '">' +
           (photoUrl
-            ? '<img src="' + photoUrl + '" alt="' + item.name + '" loading="lazy">'
+            ? '<img src="' + photoUrl + '" alt="' + name + '" loading="lazy">'
             : '<span class="art-badge"><svg class="icon"><use href="#' + item.icon + '"/></svg></span>') +
-          '<button class="save-btn" type="button" data-id="' + item.id + '" aria-pressed="' + (isSaved(item.id) ? "true" : "false") + '" aria-label="Save ' + item.name + '">' +
+          '<button class="save-btn" type="button" data-id="' + item.id + '" aria-pressed="' + (isSaved(item.id) ? "true" : "false") + '" aria-label="Save ' + name + '">' +
             '<svg class="icon"><use href="#i-bookmark"/></svg>' +
           '</button>' +
         '</div>' +
         '<div class="listing-body">' +
-          '<h3>' + item.name + '</h3>' +
-          '<p class="listing-meta">' + item.cat + ' in ' + item.hood + '</p>' +
-          '<p class="listing-desc">' + item.desc + '</p>' +
+          '<h3>' + name + '</h3>' +
+          '<p class="listing-meta">' + cat + ' in ' + hood + '</p>' +
+          '<p class="listing-desc">' + desc + '</p>' +
           '<div class="badges">' + item.badges.map(badgeHtml).join("") + '</div>' +
           '<div class="listing-foot">' +
             (item.rating != null
@@ -2041,25 +2042,25 @@
     var html = "";
     var modalPhotoUrl = safePhotoUrl(item.photo);
     if (modalPhotoUrl) {
-      html += '<div class="modal-photo"><img src="' + modalPhotoUrl + '" alt="' + item.name + '"></div>';
+      html += '<div class="modal-photo"><img src="' + modalPhotoUrl + '" alt="' + escapeAttr(item.name) + '"></div>';
     }
     var ratingBadge = item.rating != null
       ? '<span class="badge neutral"><svg class="icon filled"><use href="#i-star"/></svg> ' + item.rating.toFixed(1) + '</span>'
       : '<span class="badge neutral">New to the directory</span>';
     html += '<div class="modal-section"><div class="badges">' + item.badges.map(badgeHtml).join("") + ratingBadge + '</div></div>';
-    html += '<div class="modal-section"><p style="color:var(--ink-2)">' + item.long + '</p></div>';
+    html += '<div class="modal-section"><p style="color:var(--ink-2)">' + escapeAttr(item.long) + '</p></div>';
 
     if (item.verify) {
       html += '<div class="modal-section"><h3>Halal verification record</h3><div class="verify-box">' +
-              '<div class="verify-row"><span>Supplier</span><span>' + item.verify.supplier + '</span></div>' +
-              '<div class="verify-row"><span>Certifying body</span><span>' + item.verify.certifier + '</span></div>' +
-              '<div class="verify-row"><span>Confirmed by owner</span><span>' + item.verify.confirmed + '</span></div>' +
+              '<div class="verify-row"><span>Supplier</span><span>' + escapeAttr(item.verify.supplier) + '</span></div>' +
+              '<div class="verify-row"><span>Certifying body</span><span>' + escapeAttr(item.verify.certifier) + '</span></div>' +
+              '<div class="verify-row"><span>Confirmed by owner</span><span>' + escapeAttr(item.verify.confirmed) + '</span></div>' +
               '</div><p style="color:var(--muted);font-size:0.84rem;margin-top:10px">This directory records what the owner reported. It is not a certifying authority.</p></div>';
     }
 
     if (item.address) {
       html += '<div class="modal-section"><h3>Location</h3><p style="color:var(--ink-2);display:flex;align-items:center;gap:8px">' +
-              '<svg class="icon" style="color:var(--accent);flex-shrink:0"><use href="#i-pin"/></svg>' + item.address + '</p></div>';
+              '<svg class="icon" style="color:var(--accent);flex-shrink:0"><use href="#i-pin"/></svg>' + escapeAttr(item.address) + '</p></div>';
     }
 
     if (item.hours && item.hours.length) {
@@ -2540,7 +2541,7 @@
       var businessBlocks = mine.map(function (b) {
         var ownerPhotoUrl = safePhotoUrl(b.photo_url);
         return '' +
-          '<div class="hours-row"><span>' + b.name + '</span><span>' + b.status + '</span></div>' +
+          '<div class="hours-row"><span>' + escapeAttr(b.name) + '</span><span>' + escapeAttr(b.status) + '</span></div>' +
           '<div class="owner-photo-row" style="margin:10px 0 16px;display:flex;align-items:center;gap:14px">' +
             '<img class="owner-photo-preview" src="' + (ownerPhotoUrl || "") + '" alt="" style="width:64px;height:64px;border-radius:12px;object-fit:cover;background:var(--surface-2);' + (ownerPhotoUrl ? "" : "display:none;") + '">' +
             '<label class="btn btn-ghost btn-sm" style="cursor:pointer">Upload photo' +
@@ -2549,7 +2550,7 @@
             '<span class="owner-photo-status" style="font-size:0.85rem;color:var(--muted)"></span>' +
           '</div>' +
           '<form class="owner-edit-form" data-business-id="' + b.id + '" style="margin:10px 0 20px">' +
-            '<div class="field"><label>Short description</label><textarea class="edit-desc" required>' + b.description + '</textarea></div>' +
+            '<div class="field"><label>Short description</label><textarea class="edit-desc" required>' + escapeAttr(b.description) + '</textarea></div>' +
             '<button type="submit" class="btn btn-ghost btn-sm" style="margin-top:8px">Save changes</button>' +
             '<p class="form-status edit-status" role="status"></p>' +
           '</form>';
@@ -2557,7 +2558,7 @@
 
       var claimRows = claims.map(function (c) {
         var name = c.businesses ? c.businesses.name : "Unknown listing";
-        return '<div class="hours-row"><span>Claim: ' + name + '</span><span>' + c.status + '</span></div>';
+        return '<div class="hours-row"><span>Claim: ' + escapeAttr(name) + '</span><span>' + escapeAttr(c.status) + '</span></div>';
       });
 
       var all = businessBlocks.concat(claimRows);
