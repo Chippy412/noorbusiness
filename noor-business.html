@@ -1618,6 +1618,7 @@
                   <span class="error">Password must be at least 6 characters.</span>
                 </div>
               </div>
+              <div class="cf-turnstile" id="signupTurnstile" style="margin:16px 0"></div>
               <div style="margin-top:22px">
                 <button type="submit" class="btn btn-primary">Sign up</button>
               </div>
@@ -2413,6 +2414,64 @@
 
   var formLoadTime = Date.now();
 
+  /* ============ Turnstile (progressive) ============
+     Reads the site key from /api/turnstile-config at runtime instead of
+     baking it into this static file. If TURNSTILE_SITE_KEY isn't set on
+     the server yet, mount() resolves to null and the caller's form works
+     exactly as it did before -- no widget, no server check. */
+  var turnstileConfigPromise = null;
+  function turnstileConfig() {
+    if (!turnstileConfigPromise) {
+      turnstileConfigPromise = fetch("/api/turnstile-config")
+        .then(function (r) { return r.ok ? r.json() : { siteKey: null }; })
+        .catch(function () { return { siteKey: null }; });
+    }
+    return turnstileConfigPromise;
+  }
+  var turnstileScriptPromise = null;
+  function loadTurnstileScript() {
+    if (!turnstileScriptPromise) {
+      turnstileScriptPromise = new Promise(function (resolve, reject) {
+        var s = document.createElement("script");
+        s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+        s.async = true;
+        s.defer = true;
+        s.onload = resolve;
+        s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+    return turnstileScriptPromise;
+  }
+  // Mounts a widget into containerId if a site key is configured. Resolves
+  // to a widgetId (use with turnstile.getResponse/reset), or null if
+  // Turnstile isn't configured on the server yet.
+  function turnstileMount(containerId) {
+    return turnstileConfig().then(function (cfg) {
+      if (!cfg.siteKey) return null;
+      var el = document.getElementById(containerId);
+      if (!el) return null;
+      return loadTurnstileScript().then(function () {
+        return window.turnstile.render(el, { sitekey: cfg.siteKey });
+      });
+    });
+  }
+  // Verifies a widget's current token with the server. Returns true if
+  // Turnstile isn't configured (nothing to check) so callers stay working
+  // before the wizard has been run.
+  function turnstileVerify(widgetId) {
+    if (!widgetId) return Promise.resolve(true);
+    var token = window.turnstile ? window.turnstile.getResponse(widgetId) : null;
+    if (!token) return Promise.resolve(false);
+    return fetch("/api/verify-turnstile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: token })
+    }).then(function (r) { return r.ok ? r.json() : { success: false }; })
+      .then(function (data) { return !!data.success; })
+      .catch(function () { return false; });
+  }
+
   /* ============ Forms ============ */
   function fieldOf(input) { return input.closest(".field"); }
   function validate(input) {
@@ -2674,10 +2733,19 @@
   }
 
   var signupForm = document.getElementById("signupForm");
+  var signupTurnstileId = null;
   if (signupForm) {
+    turnstileMount("signupTurnstile").then(function (id) { signupTurnstileId = id; });
     signupForm.addEventListener("submit", async function (e) {
       e.preventDefault();
       var status = document.getElementById("signupStatus");
+      var verified = await turnstileVerify(signupTurnstileId);
+      if (!verified) {
+        status.textContent = "Please complete the verification challenge.";
+        status.classList.add("show", "error");
+        if (signupTurnstileId && window.turnstile) window.turnstile.reset(signupTurnstileId);
+        return;
+      }
       try {
         await window.NiccAuth.signUp(
           document.getElementById("signupEmail").value.trim(),
@@ -2687,10 +2755,12 @@
         status.classList.remove("error");
         status.classList.add("show");
         signupForm.reset();
+        if (signupTurnstileId && window.turnstile) window.turnstile.reset(signupTurnstileId);
         refreshAccountView();
       } catch (err) {
         status.textContent = err.message || "Could not create account.";
         status.classList.add("show", "error");
+        if (signupTurnstileId && window.turnstile) window.turnstile.reset(signupTurnstileId);
       }
     });
   }
