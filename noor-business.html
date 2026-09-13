@@ -386,6 +386,7 @@
     overflow: hidden; display: flex; flex-direction: column; position: relative;
     transition: transform 0.35s cubic-bezier(0.16,1,0.3,1), box-shadow 0.35s cubic-bezier(0.16,1,0.3,1), border-color 0.25s ease, opacity 0.7s cubic-bezier(0.16,1,0.3,1);
   }
+  .listing[hidden] { display: none; }
   .listing:hover { transform: translateY(-4px); border-color: var(--sage); box-shadow: 0 22px 44px -26px rgba(var(--shadow-color) / 0.45); }
   .listing:hover .listing-art img { transform: scale(1.05); }
 
@@ -2278,6 +2279,15 @@
   /* ============ Hero search hands off to Explore ============ */
   var heroSearch = document.getElementById("heroSearch");
   if (heroSearch) {
+    var heroQueryInput = document.getElementById("heroQuery");
+    if (heroQueryInput) {
+      heroQueryInput.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          heroSearch.requestSubmit ? heroSearch.requestSubmit() : heroSearch.dispatchEvent(new Event("submit", { cancelable: true }));
+        }
+      });
+    }
     heroSearch.addEventListener("submit", function (e) {
       e.preventDefault();
       document.getElementById("fQuery").value = document.getElementById("heroQuery").value;
@@ -2657,6 +2667,7 @@
     } else {
       loggedOut.hidden = false;
       loggedIn.hidden = true;
+      ensureSignupTurnstile();
     }
   }
 
@@ -2804,8 +2815,19 @@
 
   var signupForm = document.getElementById("signupForm");
   var signupTurnstileId = null;
+  var signupTurnstileMountPromise = null;
+  // Turnstile can't size itself inside a hidden (display:none) container, so
+  // mounting it at script-load time -- while #page-account still carries the
+  // router's `hidden` attribute -- left the widget permanently stuck with no
+  // iframe ever rendered. Mount lazily, the first time the account page is
+  // actually visible (see refreshAccountView()).
+  function ensureSignupTurnstile() {
+    if (!signupTurnstileMountPromise) {
+      signupTurnstileMountPromise = turnstileMount("signupTurnstile").then(function (id) { signupTurnstileId = id; });
+    }
+    return signupTurnstileMountPromise;
+  }
   if (signupForm) {
-    turnstileMount("signupTurnstile").then(function (id) { signupTurnstileId = id; });
     signupForm.addEventListener("submit", async function (e) {
       e.preventDefault();
       var status = document.getElementById("signupStatus");
