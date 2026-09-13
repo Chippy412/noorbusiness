@@ -199,6 +199,11 @@
   .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -8px rgba(var(--shadow-color) / 0.4); }
   .btn-ghost { background: transparent; color: var(--ink); border-color: var(--hairline); }
   .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-link {
+    background: none; border: none; padding: 0; margin: 0; font: inherit; cursor: pointer;
+    color: var(--accent); text-decoration: underline; text-underline-offset: 2px;
+  }
+  .btn-link:disabled { opacity: 0.6; cursor: default; text-decoration: none; }
   .btn-on-accent { background: var(--surface); color: var(--accent); }
   .btn-on-accent:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -8px rgba(0 0 0 / 0.3); }
   .btn-outline-light { background: transparent; color: var(--accent-ink); border-color: var(--on-accent-border); }
@@ -1376,6 +1381,7 @@
                 <span class="error">Please add a short message.</span>
               </div>
             </div>
+            <div id="contactTurnstile" style="margin:16px 0"></div>
             <div style="margin-top:22px">
               <button type="submit" class="btn btn-primary"><svg class="icon"><use href="#i-send"/></svg> Send message</button>
             </div>
@@ -1540,6 +1546,8 @@
               </div>
             </div>
 
+            <div id="listTurnstile" style="margin:16px 0"></div>
+
             <div style="margin-top:22px">
               <button type="submit" class="btn btn-primary"><svg class="icon"><use href="#i-plus"/></svg> Submit listing</button>
             </div>
@@ -1597,14 +1605,44 @@
                   <span class="error">Please enter your password.</span>
                 </div>
               </div>
-              <div style="margin-top:22px">
+              <div style="margin-top:14px">
+                <button type="button" class="btn-link" id="forgotPasswordBtn">Forgot password?</button>
+              </div>
+              <div style="margin-top:14px">
                 <button type="submit" class="btn btn-primary">Log in</button>
               </div>
               <p class="form-status" id="loginStatus" role="status"></p>
             </form>
+
+            <form id="forgotPasswordForm" novalidate hidden style="margin-top:18px;padding-top:18px;border-top:1px solid var(--hairline)">
+              <div class="field full">
+                <label for="forgotEmail">Email address</label>
+                <input type="email" id="forgotEmail" required>
+                <span class="error">Please enter a valid email address.</span>
+                <span class="help">We'll email you a link to set a new password.</span>
+              </div>
+              <div style="margin-top:14px;display:flex;gap:10px">
+                <button type="submit" class="btn btn-ghost btn-sm">Send reset link</button>
+                <button type="button" class="btn-link" id="cancelForgotPasswordBtn">Cancel</button>
+              </div>
+              <p class="form-status" id="forgotPasswordStatus" role="status"></p>
+            </form>
+
+            <form id="mfaChallengeForm" novalidate hidden style="margin-top:18px;padding-top:18px;border-top:1px solid var(--hairline)">
+              <div class="field full">
+                <label for="mfaChallengeCode">Authentication code</label>
+                <input type="text" id="mfaChallengeCode" inputmode="numeric" autocomplete="one-time-code" required placeholder="6-digit code">
+                <span class="error">Please enter the 6-digit code from your authenticator app.</span>
+                <span class="help">This account has two-factor authentication turned on.</span>
+              </div>
+              <div style="margin-top:14px">
+                <button type="submit" class="btn btn-primary">Verify and log in</button>
+              </div>
+              <p class="form-status" id="mfaChallengeStatus" role="status"></p>
+            </form>
           </div>
 
-          <div class="form-card" style="margin-top:24px">
+          <div class="form-card" id="signupCard" style="margin-top:24px">
             <h2 style="font-size:1.3rem;margin-bottom:20px">Sign up</h2>
             <form id="signupForm" novalidate>
               <div class="form-grid">
@@ -1637,8 +1675,18 @@
           </div>
 
           <div class="form-card" style="margin-top:24px">
+            <h2 style="font-size:1.3rem;margin-bottom:12px">Two-factor authentication</h2>
+            <div id="mfaPanel"><p style="color:var(--muted)">Loading...</p></div>
+          </div>
+
+          <div class="form-card" style="margin-top:24px">
             <h2 style="font-size:1.3rem;margin-bottom:12px">Your listings</h2>
             <div id="myListings"><p style="color:var(--muted)">Loading...</p></div>
+          </div>
+
+          <div class="form-card" style="margin-top:24px">
+            <h2 style="font-size:1.3rem;margin-bottom:12px">Reviews on your listings</h2>
+            <div id="myReviews"><p style="color:var(--muted)">Loading...</p></div>
           </div>
 
           <div class="form-card" style="margin-top:24px">
@@ -1695,6 +1743,24 @@
                 <button type="submit" class="btn btn-primary">Submit for review</button>
               </div>
               <p class="form-status" id="ownerAddStatus" role="status"></p>
+            </form>
+          </div>
+        </div>
+
+        <div id="accountRecovery" hidden>
+          <div class="form-card">
+            <h2 style="font-size:1.3rem;margin-bottom:12px">Set a new password</h2>
+            <p style="color:var(--muted);margin-bottom:16px">You followed a password reset link. Choose a new password to finish.</p>
+            <form id="recoveryForm" novalidate>
+              <div class="field full">
+                <label for="recoveryPassword">New password</label>
+                <input type="password" id="recoveryPassword" required minlength="6">
+                <span class="error">Password must be at least 6 characters.</span>
+              </div>
+              <div style="margin-top:22px">
+                <button type="submit" class="btn btn-primary">Update password</button>
+              </div>
+              <p class="form-status" id="recoveryStatus" role="status"></p>
             </form>
           </div>
         </div>
@@ -2073,20 +2139,86 @@
       html += '<div class="modal-section"><h3>Hours</h3><p style="color:var(--muted)">Not yet listed. Contact the business to confirm before visiting.</p></div>';
     }
 
-    if (item.reviews.length) {
-      html += '<div class="modal-section"><h3>Community reviews</h3>' +
-              item.reviews.map(function (r) {
-                var block = '<div class="review"><div class="review-head"><span class="name">' + r.name + '</span><span class="stars">' + starsHtml(r.stars) + '</span></div><p>' + r.text + '</p>';
-                if (r.reply) block += '<div class="owner-reply"><strong>Owner reply</strong><p>' + r.reply + '</p></div>';
-                return block + '</div>';
-              }).join("") + '</div>';
-    } else {
-      html += '<div class="modal-section"><h3>Community reviews</h3><p style="color:var(--muted)">No reviews yet. Be the first to visit and share what you thought.</p></div>';
-    }
+    html += '<div class="modal-section" id="modalReviewsSection"><h3>Community reviews</h3><p style="color:var(--muted)">Loading reviews...</p></div>';
 
     modalBody.innerHTML = html;
     modalSave.innerHTML = '<svg class="icon"><use href="#i-bookmark"/></svg> ' + (isSaved(item.id) ? "Saved" : "Save listing");
     modal.showModal();
+    renderReviewsSection(item);
+  }
+
+  // Reviews come from the database (real, moderated user submissions --
+  // see supabase/migrations/2026-09-13-reviews.sql), so name/body/reply
+  // text MUST go through escapeAttr before hitting innerHTML, same as
+  // every other owner/user-supplied field on this page.
+  async function renderReviewsSection(item) {
+    var reviews = [];
+    try { reviews = await window.NiccData.loadReviews(item.id); } catch (e) { /* show what we can below */ }
+    if (currentItem !== item) return; // modal moved on to a different listing
+    var section = document.getElementById("modalReviewsSection");
+    if (!section) return; // modal was closed
+
+    var html = "<h3>Community reviews</h3>";
+    if (reviews.length) {
+      html += reviews.map(function (r) {
+        var block = '<div class="review"><div class="review-head"><span class="name">' + escapeAttr(r.name) +
+          '</span><span class="stars">' + starsHtml(r.stars) + '</span></div><p>' + escapeAttr(r.text) + '</p>';
+        if (r.reply) block += '<div class="owner-reply"><strong>Owner reply</strong><p>' + escapeAttr(r.reply) + '</p></div>';
+        return block + '</div>';
+      }).join("");
+    } else {
+      html += '<p style="color:var(--muted)">No reviews yet. Be the first to visit and share what you thought.</p>';
+    }
+
+    var user = await window.NiccAuth.getCurrentUser();
+    if (currentItem !== item) return;
+    if (user) {
+      html += '<form id="reviewForm" style="margin-top:20px;padding-top:20px;border-top:1px solid var(--hairline)">' +
+        '<h4 style="margin-bottom:12px">Leave a review</h4>' +
+        '<div class="field full"><label for="reviewName">Your name</label><input type="text" id="reviewName" required placeholder="How this appears publicly"></div>' +
+        '<div class="field full" style="margin-top:10px"><label for="reviewRating">Rating</label>' +
+        '<select id="reviewRating" required><option value="">Choose a rating</option>' +
+        '<option value="5">5 - Excellent</option><option value="4">4 - Good</option><option value="3">3 - Okay</option>' +
+        '<option value="2">2 - Poor</option><option value="1">1 - Very poor</option></select></div>' +
+        '<div class="field full" style="margin-top:10px"><label for="reviewBody">Your review</label><textarea id="reviewBody" required placeholder="Share your experience..."></textarea></div>' +
+        '<button type="submit" class="btn btn-primary btn-sm" style="margin-top:14px">Submit for review</button>' +
+        '<p class="form-status" id="reviewStatus" role="status"></p>' +
+        '</form>';
+    } else {
+      html += '<p style="margin-top:16px"><a href="#/account">Log in</a> to leave a review.</p>';
+    }
+
+    section.innerHTML = html;
+
+    var reviewForm = document.getElementById("reviewForm");
+    if (reviewForm) {
+      reviewForm.addEventListener("submit", async function (e) {
+        e.preventDefault();
+        var status = document.getElementById("reviewStatus");
+        var name = document.getElementById("reviewName").value.trim();
+        var rating = document.getElementById("reviewRating").value;
+        var body = document.getElementById("reviewBody").value.trim();
+        if (!name || !rating || !body) {
+          status.textContent = "Please fill in your name, a rating, and a short review.";
+          status.classList.add("show", "error");
+          return;
+        }
+        var submitBtn = reviewForm.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        try {
+          await window.NiccOwner.submitReview(item.id, name, Number(rating), body);
+          status.textContent = "Thank you. Your review will appear after a quick check by a volunteer.";
+          status.classList.remove("error");
+          status.classList.add("show");
+          reviewForm.reset();
+        } catch (err) {
+          status.textContent = err.message || "Could not submit your review. Please try again.";
+          status.classList.add("show", "error");
+        } finally {
+          submitBtn.disabled = false;
+        }
+      });
+    }
   }
 
   document.addEventListener("click", function (e) {
@@ -2182,6 +2314,8 @@
     if (h1) { h1.setAttribute("tabindex", "-1"); h1.focus({ preventScroll: true }); }
     window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
     if (route === "account") refreshAccountView();
+    if (route === "contact") ensureTurnstile("contactTurnstile");
+    if (route === "list") ensureTurnstile("listTurnstile");
   }
   window.addEventListener("hashchange", function () { render(currentRoute()); });
 
@@ -2485,6 +2619,28 @@
       .then(function (data) { return !!data.success; })
       .catch(function () { return false; });
   }
+  // Tracks one widget per container so every form (signup, contact,
+  // list-your-business) shares the same mount/verify/reset plumbing.
+  // Turnstile can't size itself inside a hidden (display:none) container,
+  // so mounting must be deferred until the container's page is actually
+  // visible -- callers trigger this from the router (see render()), not
+  // at script-load time.
+  var turnstileWidgets = {};
+  function ensureTurnstile(containerId) {
+    var w = turnstileWidgets[containerId] || (turnstileWidgets[containerId] = {});
+    if (!w.mountPromise) {
+      w.mountPromise = turnstileMount(containerId).then(function (id) { w.id = id; return id; });
+    }
+    return w.mountPromise;
+  }
+  function getTurnstileId(containerId) {
+    var w = turnstileWidgets[containerId];
+    return w ? w.id : null;
+  }
+  function resetTurnstile(containerId) {
+    var w = turnstileWidgets[containerId];
+    if (w && w.id && window.turnstile) window.turnstile.reset(w.id);
+  }
 
   /* ============ Forms ============ */
   function fieldOf(input) { return input.closest(".field"); }
@@ -2555,6 +2711,16 @@
         return;
       }
 
+      // Layer 3.5: Cloudflare Turnstile, for forms that mount one.
+      if (opts.turnstile) {
+        var turnstileOk = await turnstileVerify(getTurnstileId(opts.turnstile));
+        if (!turnstileOk) {
+          setStatus(status, "Please complete the verification challenge.", true);
+          resetTurnstile(opts.turnstile);
+          return;
+        }
+      }
+
       // Layer 4: whatever this specific form actually needs to do (an
       // insert, a redirect). Runs after every anti-bot/validation layer
       // passes. Returning false means it already handled its own status
@@ -2567,6 +2733,7 @@
           if (result === false) return;
         } catch (err) {
           setStatus(status, err.message || "Something went wrong. Please try again.", true);
+          if (opts.turnstile) resetTurnstile(opts.turnstile);
           return;
         } finally {
           if (submitBtn) submitBtn.disabled = false;
@@ -2576,11 +2743,13 @@
       setStatus(status, opts.success, false);
       form.reset();
       if (opts.challenge) newChallenge();
+      if (opts.turnstile) resetTurnstile(opts.turnstile);
       toast(opts.toast);
     });
   }
 
   wireForm("contactForm", "contactStatus", {
+    turnstile: "contactTurnstile",
     success: "Thank you. Your message has been received and we will reply within two business days.",
     toast: "Message sent.",
     onValid: async function () {
@@ -2594,7 +2763,7 @@
     }
   });
   wireForm("listForm", "listStatus", {
-    timed: true, challenge: true,
+    timed: true, challenge: true, turnstile: "listTurnstile",
     onValid: async function (form) {
       var status = document.getElementById("listStatus");
       var draft = {
@@ -2653,21 +2822,44 @@
     form.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
   }
 
+  // Set true when Supabase reports we're mid password-recovery (the user
+  // followed a reset-password email link). Cleared once they set a new
+  // password. Checked by refreshAccountView() so the recovery panel wins
+  // over the normal logged-out/logged-in views while it's active.
+  var inPasswordRecovery = false;
+  window.NiccAuth.onAuthEvent(function (event) {
+    if (event === "PASSWORD_RECOVERY") {
+      inPasswordRecovery = true;
+      if (currentRoute() !== "account") location.hash = "#/account";
+      else refreshAccountView();
+    }
+  });
+
   async function refreshAccountView() {
     var loggedOut = document.getElementById("accountLoggedOut");
     var loggedIn = document.getElementById("accountLoggedIn");
+    var recovery = document.getElementById("accountRecovery");
     if (!loggedOut || !loggedIn) return;
+    if (inPasswordRecovery) {
+      loggedOut.hidden = true;
+      loggedIn.hidden = true;
+      if (recovery) recovery.hidden = false;
+      return;
+    }
+    if (recovery) recovery.hidden = true;
     var user = await window.NiccAuth.getCurrentUser();
     if (user) {
       loggedOut.hidden = true;
       loggedIn.hidden = false;
       document.getElementById("accountEmailDisplay").textContent = "Logged in as " + user.email;
       renderMyListings();
+      renderMfaPanel();
+      renderMyReviews();
       prefillListDraft();
     } else {
       loggedOut.hidden = false;
       loggedIn.hidden = true;
-      ensureSignupTurnstile();
+      ensureTurnstile("signupTurnstile");
     }
   }
 
@@ -2756,6 +2948,116 @@
     }
   }
 
+  async function renderMfaPanel() {
+    var el = document.getElementById("mfaPanel");
+    if (!el) return;
+    try {
+      var factors = await window.NiccAuth.mfaListFactors();
+      var verified = factors.filter(function (f) { return f.status === "verified"; })[0];
+      if (verified) {
+        el.innerHTML =
+          '<p style="color:var(--muted)">Two-factor authentication is turned on for this account.</p>' +
+          '<button type="button" class="btn btn-ghost btn-sm" id="mfaDisableBtn" style="margin-top:10px">Turn off</button>' +
+          '<p class="form-status" id="mfaPanelStatus" role="status"></p>';
+        document.getElementById("mfaDisableBtn").addEventListener("click", async function () {
+          var status = document.getElementById("mfaPanelStatus");
+          try {
+            await window.NiccAuth.mfaUnenroll(verified.id);
+            renderMfaPanel();
+          } catch (err) {
+            status.textContent = err.message || "Could not turn off two-factor authentication.";
+            status.classList.add("show", "error");
+          }
+        });
+      } else {
+        el.innerHTML =
+          '<p style="color:var(--muted)">Add an authenticator app (Google Authenticator, Authy, 1Password) for an extra step at login.</p>' +
+          '<button type="button" class="btn btn-ghost btn-sm" id="mfaEnrollBtn" style="margin-top:10px">Set up two-factor authentication</button>' +
+          '<div id="mfaEnrollPanel" hidden style="margin-top:16px"></div>';
+        document.getElementById("mfaEnrollBtn").addEventListener("click", async function () {
+          var panel = document.getElementById("mfaEnrollPanel");
+          panel.hidden = false;
+          panel.innerHTML = '<p style="color:var(--muted)">Setting up...</p>';
+          try {
+            var enrolled = await window.NiccAuth.mfaEnroll();
+            panel.innerHTML =
+              '<p>Scan this with your authenticator app:</p>' +
+              '<img src="' + enrolled.totp.qr_code + '" alt="Scan this QR code with your authenticator app" style="margin:12px 0;width:180px;height:180px;border-radius:8px">' +
+              '<p style="font-size:0.85rem;color:var(--muted)">Or enter this key manually: <code>' + escapeAttr(enrolled.totp.secret) + '</code></p>' +
+              '<div class="field full" style="margin-top:14px"><label for="mfaEnrollCode">Enter the 6-digit code from the app</label>' +
+              '<input type="text" id="mfaEnrollCode" inputmode="numeric" autocomplete="one-time-code"></div>' +
+              '<button type="button" class="btn btn-primary btn-sm" id="mfaConfirmBtn" style="margin-top:12px">Confirm</button>' +
+              '<p class="form-status" id="mfaEnrollStatus" role="status"></p>';
+            document.getElementById("mfaConfirmBtn").addEventListener("click", async function () {
+              var code = document.getElementById("mfaEnrollCode").value.trim();
+              var status = document.getElementById("mfaEnrollStatus");
+              if (!code) return;
+              try {
+                await window.NiccAuth.mfaVerifyEnrollment(enrolled.id, code);
+                renderMfaPanel();
+              } catch (err) {
+                status.textContent = err.message || "That code did not match. Please try again.";
+                status.classList.add("show", "error");
+              }
+            });
+          } catch (err) {
+            panel.innerHTML = '<p style="color:var(--muted)">Could not start setup. Please try again.</p>';
+          }
+        });
+      }
+    } catch (err) {
+      el.innerHTML = '<p style="color:var(--muted)">Could not load two-factor authentication settings.</p>';
+    }
+  }
+
+  async function renderMyReviews() {
+    var el = document.getElementById("myReviews");
+    if (!el) return;
+    try {
+      var reviews = await window.NiccOwner.loadReviewsForMyBusinesses();
+      if (!reviews.length) {
+        el.innerHTML = '<p style="color:var(--muted)">No reviews yet.</p>';
+        return;
+      }
+      el.innerHTML = reviews.map(function (r) {
+        var block = '<div class="review">' +
+          '<div class="review-head"><span class="name">' + escapeAttr(r.author_name) + '</span><span class="stars">' + starsHtml(r.rating) + '</span>' +
+          (r.status !== "approved" ? ' <span class="badge neutral" style="margin-left:8px">' + escapeAttr(r.status) + '</span>' : '') +
+          '</div><p>' + escapeAttr(r.body) + '</p>';
+        if (r.owner_reply) {
+          block += '<div class="owner-reply"><strong>Your reply</strong><p>' + escapeAttr(r.owner_reply) + '</p></div>';
+        } else {
+          block += '<form class="owner-reply-form" data-review-id="' + escapeAttr(r.id) + '" style="margin-top:10px">' +
+            '<div class="field full"><label>Reply publicly</label><textarea class="reply-text" required></textarea></div>' +
+            '<button type="submit" class="btn btn-ghost btn-sm" style="margin-top:8px">Post reply</button>' +
+            '<p class="form-status reply-status" role="status"></p>' +
+            '</form>';
+        }
+        block += '</div>';
+        return block;
+      }).join("");
+
+      el.querySelectorAll(".owner-reply-form").forEach(function (form) {
+        form.addEventListener("submit", async function (e) {
+          e.preventDefault();
+          var reviewId = form.getAttribute("data-review-id");
+          var text = form.querySelector(".reply-text").value.trim();
+          var status = form.querySelector(".reply-status");
+          if (!text) return;
+          try {
+            await window.NiccOwner.replyToReview(reviewId, text);
+            renderMyReviews();
+          } catch (err) {
+            status.textContent = err.message || "Could not post your reply.";
+            status.classList.add("show", "error");
+          }
+        });
+      });
+    } catch (err) {
+      el.innerHTML = '<p style="color:var(--muted)">Could not load reviews.</p>';
+    }
+  }
+
   var ownerAddForm = document.getElementById("ownerAddForm");
   if (ownerAddForm) {
     ownerAddForm.addEventListener("submit", async function (e) {
@@ -2792,67 +3094,189 @@
   }
 
   var loginForm = document.getElementById("loginForm");
+  var pendingMfaFactorId = null;
   if (loginForm) {
     loginForm.addEventListener("submit", async function (e) {
       e.preventDefault();
       var status = document.getElementById("loginStatus");
+      var email = document.getElementById("loginEmail").value.trim();
       try {
-        await window.NiccAuth.logIn(
-          document.getElementById("loginEmail").value.trim(),
-          document.getElementById("loginPassword").value
-        );
+        await window.NiccAuth.logIn(email, document.getElementById("loginPassword").value);
+        loginForm.reset();
+        if (await window.NiccAuth.needsMfaChallenge()) {
+          var factors = await window.NiccAuth.mfaListFactors();
+          var verifiedFactor = factors.filter(function (f) { return f.status === "verified"; })[0];
+          if (verifiedFactor) {
+            pendingMfaFactorId = verifiedFactor.id;
+            loginForm.hidden = true;
+            document.getElementById("forgotPasswordBtn").hidden = true;
+            document.getElementById("mfaChallengeForm").hidden = false;
+            document.getElementById("mfaChallengeCode").focus();
+            return;
+          }
+        }
         status.textContent = "Logged in.";
         status.classList.remove("error");
         status.classList.add("show");
-        loginForm.reset();
         refreshAccountView();
       } catch (err) {
-        status.textContent = err.message || "Could not log in. Check your email and password.";
+        if (err.message && /email not confirmed/i.test(err.message)) {
+          status.innerHTML = 'Please confirm your email before logging in. ' +
+            '<button type="button" class="btn-link" id="resendLoginConfirmBtn">Resend the confirmation email</button>';
+          status.classList.add("show", "error");
+          var resendBtn = document.getElementById("resendLoginConfirmBtn");
+          if (resendBtn) {
+            resendBtn.addEventListener("click", async function () {
+              resendBtn.disabled = true;
+              try {
+                await window.NiccAuth.resendConfirmation(email);
+                resendBtn.textContent = "Sent again.";
+              } catch (resendErr) {
+                resendBtn.disabled = false;
+              }
+            });
+          }
+        } else {
+          status.textContent = err.message || "Could not log in. Check your email and password.";
+          status.classList.add("show", "error");
+        }
+      }
+    });
+  }
+
+  var mfaChallengeForm = document.getElementById("mfaChallengeForm");
+  if (mfaChallengeForm) {
+    mfaChallengeForm.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      var status = document.getElementById("mfaChallengeStatus");
+      var code = document.getElementById("mfaChallengeCode").value.trim();
+      if (!pendingMfaFactorId || !code) return;
+      try {
+        await window.NiccAuth.mfaChallengeAndVerify(pendingMfaFactorId, code);
+        mfaChallengeForm.reset();
+        mfaChallengeForm.hidden = true;
+        loginForm.hidden = false;
+        document.getElementById("forgotPasswordBtn").hidden = false;
+        pendingMfaFactorId = null;
+        refreshAccountView();
+      } catch (err) {
+        status.textContent = err.message || "That code did not work. Please try again.";
+        status.classList.add("show", "error");
+      }
+    });
+  }
+
+  var forgotPasswordBtn = document.getElementById("forgotPasswordBtn");
+  var forgotPasswordForm = document.getElementById("forgotPasswordForm");
+  if (forgotPasswordBtn && forgotPasswordForm) {
+    forgotPasswordBtn.addEventListener("click", function () {
+      loginForm.hidden = true;
+      forgotPasswordBtn.hidden = true;
+      forgotPasswordForm.hidden = false;
+      document.getElementById("forgotEmail").value = document.getElementById("loginEmail").value;
+      document.getElementById("forgotEmail").focus();
+    });
+    document.getElementById("cancelForgotPasswordBtn").addEventListener("click", function () {
+      forgotPasswordForm.hidden = true;
+      forgotPasswordForm.reset();
+      loginForm.hidden = false;
+      forgotPasswordBtn.hidden = false;
+    });
+    forgotPasswordForm.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      var status = document.getElementById("forgotPasswordStatus");
+      var email = document.getElementById("forgotEmail").value.trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+        status.textContent = "Please enter a valid email address.";
+        status.classList.add("show", "error");
+        return;
+      }
+      // Same message either way -- confirming or denying an account
+      // exists for this email would let anyone enumerate registered users.
+      try {
+        await window.NiccAuth.requestPasswordReset(email, location.origin + location.pathname + "#/account");
+      } catch (err) { /* fall through to the same generic message */ }
+      status.textContent = "If that email has an account, a reset link is on its way.";
+      status.classList.remove("error");
+      status.classList.add("show");
+    });
+  }
+
+  var recoveryForm = document.getElementById("recoveryForm");
+  if (recoveryForm) {
+    recoveryForm.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      var status = document.getElementById("recoveryStatus");
+      var pw = document.getElementById("recoveryPassword").value;
+      if (pw.length < 6) {
+        status.textContent = "Password must be at least 6 characters.";
+        status.classList.add("show", "error");
+        return;
+      }
+      try {
+        await window.NiccAuth.updatePassword(pw);
+        inPasswordRecovery = false;
+        recoveryForm.reset();
+        status.textContent = "Password updated.";
+        status.classList.remove("error");
+        status.classList.add("show");
+        refreshAccountView();
+      } catch (err) {
+        status.textContent = err.message || "Could not update your password.";
         status.classList.add("show", "error");
       }
     });
   }
 
   var signupForm = document.getElementById("signupForm");
-  var signupTurnstileId = null;
-  var signupTurnstileMountPromise = null;
-  // Turnstile can't size itself inside a hidden (display:none) container, so
-  // mounting it at script-load time -- while #page-account still carries the
-  // router's `hidden` attribute -- left the widget permanently stuck with no
-  // iframe ever rendered. Mount lazily, the first time the account page is
-  // actually visible (see refreshAccountView()).
-  function ensureSignupTurnstile() {
-    if (!signupTurnstileMountPromise) {
-      signupTurnstileMountPromise = turnstileMount("signupTurnstile").then(function (id) { signupTurnstileId = id; });
-    }
-    return signupTurnstileMountPromise;
-  }
   if (signupForm) {
     signupForm.addEventListener("submit", async function (e) {
       e.preventDefault();
       var status = document.getElementById("signupStatus");
-      var verified = await turnstileVerify(signupTurnstileId);
+      var verified = await turnstileVerify(getTurnstileId("signupTurnstile"));
       if (!verified) {
         status.textContent = "Please complete the verification challenge.";
         status.classList.add("show", "error");
-        if (signupTurnstileId && window.turnstile) window.turnstile.reset(signupTurnstileId);
+        resetTurnstile("signupTurnstile");
         return;
       }
+      var email = document.getElementById("signupEmail").value.trim();
       try {
-        await window.NiccAuth.signUp(
-          document.getElementById("signupEmail").value.trim(),
-          document.getElementById("signupPassword").value
-        );
-        status.textContent = "Account created. You are now logged in.";
-        status.classList.remove("error");
-        status.classList.add("show");
+        var result = await window.NiccAuth.signUp(email, document.getElementById("signupPassword").value);
+        resetTurnstile("signupTurnstile");
         signupForm.reset();
-        if (signupTurnstileId && window.turnstile) window.turnstile.reset(signupTurnstileId);
-        refreshAccountView();
+        status.classList.remove("error");
+        if (result.session) {
+          // "Confirm email" is off on this Supabase project (or the user
+          // was auto-confirmed): the account is usable immediately.
+          status.textContent = "Account created. You are now logged in.";
+          status.classList.add("show");
+          refreshAccountView();
+        } else {
+          // "Confirm email" is on: there's no session yet until the link
+          // in the email is clicked. Offer a resend in case it's missed.
+          status.innerHTML = 'Almost done — we sent a confirmation link to <strong>' + escapeAttr(email) +
+            '</strong>. Click it, then log in above. <button type="button" class="btn-link" id="resendConfirmBtn">Resend the email</button>';
+          status.classList.add("show");
+          var resendBtn = document.getElementById("resendConfirmBtn");
+          if (resendBtn) {
+            resendBtn.addEventListener("click", async function () {
+              resendBtn.disabled = true;
+              try {
+                await window.NiccAuth.resendConfirmation(email);
+                resendBtn.textContent = "Sent again.";
+              } catch (err) {
+                resendBtn.disabled = false;
+                status.textContent = err.message || "Could not resend the email.";
+                status.classList.add("error");
+              }
+            });
+          }
+        }
       } catch (err) {
         status.textContent = err.message || "Could not create account.";
         status.classList.add("show", "error");
-        if (signupTurnstileId && window.turnstile) window.turnstile.reset(signupTurnstileId);
+        resetTurnstile("signupTurnstile");
       }
     });
   }

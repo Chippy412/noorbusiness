@@ -81,12 +81,51 @@
     return publicUrl;
   }
 
+  async function submitReview(businessId, authorName, rating, body) {
+    var user = await window.NiccAuth.getCurrentUser();
+    if (!user) throw new Error("You must be logged in to leave a review.");
+    var result = await window.NiccSupabase.from("reviews").insert({
+      business_id: businessId,
+      author_id: user.id,
+      author_name: authorName,
+      rating: rating,
+      body: body,
+      status: "pending"
+    });
+    if (result.error) {
+      if (result.error.code === "23505") throw new Error("You've already reviewed this business.");
+      throw new Error(result.error.message || "Could not submit your review. Please try again.");
+    }
+  }
+
+  // Every review left on any business this owner owns, including
+  // pending ones -- lets an owner reply before a volunteer even
+  // publishes it. RLS scopes this to the caller's own businesses.
+  async function loadReviewsForMyBusinesses() {
+    var user = await window.NiccAuth.getCurrentUser();
+    if (!user) return [];
+    var result = await window.NiccSupabase
+      .from("reviews")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (result.error) throw result.error;
+    return result.data;
+  }
+
+  async function replyToReview(reviewId, reply) {
+    var result = await window.NiccSupabase.from("reviews").update({ owner_reply: reply }).eq("id", reviewId);
+    if (result.error) throw result.error;
+  }
+
   window.NiccOwner = {
     loadMyBusinesses: loadMyBusinesses,
     createBusiness: createBusiness,
     claimBusiness: claimBusiness,
     loadMyClaims: loadMyClaims,
     updateBusiness: updateBusiness,
-    uploadPhoto: uploadPhoto
+    uploadPhoto: uploadPhoto,
+    submitReview: submitReview,
+    loadReviewsForMyBusinesses: loadReviewsForMyBusinesses,
+    replyToReview: replyToReview
   };
 })();

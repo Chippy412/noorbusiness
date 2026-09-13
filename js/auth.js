@@ -5,7 +5,15 @@
   async function signUp(email, password) {
     var result = await window.NiccSupabase.auth.signUp({ email: email, password: password });
     if (result.error) throw result.error;
-    return result.data.user;
+    // If the Supabase project has "Confirm email" turned on, signUp
+    // returns a user but no session -- the caller needs to know which
+    // happened so it can show "check your email" instead of "logged in".
+    return { user: result.data.user, session: result.data.session };
+  }
+
+  async function resendConfirmation(email) {
+    var result = await window.NiccSupabase.auth.resend({ type: "signup", email: email });
+    if (result.error) throw result.error;
   }
 
   async function logIn(email, password) {
@@ -31,10 +39,83 @@
     return result.data.session.user;
   }
 
+  // Whether the current session still needs a second factor before it's
+  // treated as fully signed in (currentLevel aal1, but the account has a
+  // verified TOTP factor so nextLevel is aal2).
+  async function needsMfaChallenge() {
+    var result = await window.NiccSupabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (result.error) return false;
+    return result.data.nextLevel === "aal2" && result.data.currentLevel !== "aal2";
+  }
+
+  async function requestPasswordReset(email, redirectTo) {
+    var result = await window.NiccSupabase.auth.resetPasswordForEmail(email, { redirectTo: redirectTo });
+    if (result.error) throw result.error;
+  }
+
+  async function updatePassword(newPassword) {
+    var result = await window.NiccSupabase.auth.updateUser({ password: newPassword });
+    if (result.error) throw result.error;
+  }
+
+  function onAuthEvent(handler) {
+    window.NiccSupabase.auth.onAuthStateChange(function (event, session) {
+      handler(event, session);
+    });
+  }
+
+  /* ---------- Two-factor authentication (TOTP) ---------- */
+
+  async function mfaListFactors() {
+    var result = await window.NiccSupabase.auth.mfa.listFactors();
+    if (result.error) throw result.error;
+    return result.data.totp || [];
+  }
+
+  async function mfaEnroll() {
+    var result = await window.NiccSupabase.auth.mfa.enroll({ factorType: "totp" });
+    if (result.error) throw result.error;
+    return result.data; // { id, totp: { qr_code, secret, uri } }
+  }
+
+  async function mfaVerifyEnrollment(factorId, code) {
+    var challenge = await window.NiccSupabase.auth.mfa.challenge({ factorId: factorId });
+    if (challenge.error) throw challenge.error;
+    var verify = await window.NiccSupabase.auth.mfa.verify({
+      factorId: factorId,
+      challengeId: challenge.data.id,
+      code: code
+    });
+    if (verify.error) throw verify.error;
+    return verify.data;
+  }
+
+  async function mfaUnenroll(factorId) {
+    var result = await window.NiccSupabase.auth.mfa.unenroll({ factorId: factorId });
+    if (result.error) throw result.error;
+  }
+
+  // Completes the login-time 2FA step: challenges the given factor with
+  // the code the user just typed and verifies it, stepping the session
+  // up from aal1 to aal2.
+  async function mfaChallengeAndVerify(factorId, code) {
+    return mfaVerifyEnrollment(factorId, code);
+  }
+
   window.NiccAuth = {
     signUp: signUp,
+    resendConfirmation: resendConfirmation,
     logIn: logIn,
     logOut: logOut,
-    getCurrentUser: getCurrentUser
+    getCurrentUser: getCurrentUser,
+    needsMfaChallenge: needsMfaChallenge,
+    requestPasswordReset: requestPasswordReset,
+    updatePassword: updatePassword,
+    onAuthEvent: onAuthEvent,
+    mfaListFactors: mfaListFactors,
+    mfaEnroll: mfaEnroll,
+    mfaVerifyEnrollment: mfaVerifyEnrollment,
+    mfaUnenroll: mfaUnenroll,
+    mfaChallengeAndVerify: mfaChallengeAndVerify
   };
 })();

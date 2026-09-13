@@ -36,8 +36,7 @@
       address: row.address,
       photo: row.photo_url || null,
       verify: null,
-      hours: row.hours || [],
-      reviews: []
+      hours: row.hours || []
     };
   }
 
@@ -54,7 +53,21 @@
     return result.data.map(mapRow);
   }
 
+  async function loadReviews(businessId) {
+    var result = await window.NiccSupabase
+      .from("reviews")
+      .select("author_name, rating, body, owner_reply, created_at")
+      .eq("business_id", businessId)
+      .eq("status", "approved")
+      .order("created_at", { ascending: false });
+    if (result.error) throw result.error;
+    return result.data.map(function (r) {
+      return { name: r.author_name, stars: r.rating, text: r.body, reply: r.owner_reply || null };
+    });
+  }
+
   window.NiccData = {
-    loadBusinesses: loadBusinesses
+    loadBusinesses: loadBusinesses,
+    loadReviews: loadReviews
   };
 })();
