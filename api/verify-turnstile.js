@@ -16,7 +16,10 @@ module.exports = async function handler(req, res) {
   }
 
   var body = req.body || {};
-  var token = typeof body === "string" ? JSON.parse(body).token : body.token;
+  if (typeof body === "string") {
+    try { body = JSON.parse(body); } catch (e) { body = {}; }
+  }
+  var token = body.token;
   if (!token || typeof token !== "string") {
     res.status(400).json({ success: false, error: "Missing token." });
     return;
