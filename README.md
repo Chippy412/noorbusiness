@@ -66,12 +66,14 @@ and isn't something `git clone` gives you.
 | `/b/<id>` → `/api/listing` | A crawlable, shareable page for each approved listing (title, Open Graph, schema.org). |
 | `/sitemap.xml` → `/api/sitemap` | Home page plus every approved listing. |
 | `/api/verify-turnstile`, `/api/turnstile-config` | Turnstile helpers. |
+| `/api/digest` | Daily email summary of what is waiting for review (new listings, edits, claims, reviews, last 24h of messages). Run by a Vercel cron at 13:00 UTC; sends nothing when the queue is empty. |
 
 **Environment variables** (Vercel > Settings > Environment Variables):
 
 - `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` — already set up via `scripts/setup-turnstile.sh`.
 - `SUPABASE_SERVICE_ROLE_KEY` — Supabase > Project Settings > API (the *secret* key). Needed by `/api/submit`. Until it exists the site falls back to inserting from the browser.
 - `SUPABASE_AUTH_CAPTCHA=1` — set only after enabling Turnstile in Supabase > Authentication > Attack Protection (paste the Turnstile secret there). Then Supabase itself rejects bot sign-ups.
+- `CRON_SECRET` — any long random string; Vercel sends it as a Bearer token when the cron calls `/api/digest`, which rejects anything else. Needs the email-alert variables below to send.
 - Email alerts (optional): `NOTIFY_SECRET` (any long random string), `RESEND_API_KEY`, `NOTIFY_EMAIL_TO` (comma-separated), `NOTIFY_EMAIL_FROM` (a sender verified in Resend).
 
 **Setting up a fresh Supabase project, in order** (each `.sql` file is run
