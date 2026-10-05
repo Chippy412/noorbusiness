@@ -718,6 +718,9 @@
   .info-item p, .info-item a { color: var(--muted); font-size: 0.94rem; }
   .info-item a:hover { color: var(--accent); }
   @media (max-width: 900px) { .contact-grid { grid-template-columns: 1fr; gap: 34px; } .form-grid { grid-template-columns: 1fr; } .form-grid .full { grid-column: span 1; } }
+  /* grid items default to min-width:auto, so the fixed-width Turnstile box (300px) widened the column past the phone screen */
+  .contact-grid > * { min-width: 0; }
+  @media (max-width: 420px) { .form-card { padding: 20px; } }
 
   /* ---------- FAQ ---------- */
   .faq-group + .faq-group { margin-top: 48px; }
@@ -860,7 +863,7 @@
 <header class="site-nav">
   <div class="wrap nav-inner">
     <a class="brand" href="#/home" data-route="home">
-      <img class="logo-full brand-mark-full" src="images/logo.png" alt="NICC Business logo">
+      <img class="logo-full brand-mark-full" src="images/logo.png" width="300" height="300" alt="NICC Business logo">
       <span>NICC Business<small>Columbus, Ohio</small></span>
     </a>
     <nav class="nav-links" aria-label="Primary">
@@ -948,7 +951,7 @@
         </div>
         <div class="hero-visual">
           <div class="pattern-bg"></div>
-          <div class="arch hero-photo"><img src="images/hero.jpg" alt="A family owned storefront in Columbus, Ohio"></div>
+          <div class="arch hero-photo"><img src="images/hero.jpg" width="860" height="1060" alt="A family owned storefront in Columbus, Ohio"></div>
           <div class="hero-float">
             <span class="badge-icon"><svg class="icon"><use href="#i-shield"/></svg></span>
             <div>
@@ -992,7 +995,7 @@
         </div>
         <div class="category-layout">
           <button class="category-photo" data-quick-cat="Restaurants">
-            <img src="images/category-restaurants.jpg" alt="A busy restaurant kitchen">
+            <img src="images/category-restaurants.jpg" width="780" height="780" alt="A busy restaurant kitchen">
             <span class="cat-icon"><svg class="icon"><use href="#i-heart"/></svg></span>
             <h3>Restaurants</h3>
             <span>Levantine, Somali, Desi, Turkish, and more</span>
@@ -1050,7 +1053,7 @@
       <div class="wrap split">
         <div class="split-media reveal">
           <div class="pattern-bg"></div>
-          <div class="arch"><img loading="lazy" src="images/community.jpg" alt="A shopkeeper arranging goods in a local store"></div>
+          <div class="arch"><img loading="lazy" src="images/community.jpg" width="760" height="950" alt="A shopkeeper arranging goods in a local store"></div>
         </div>
         <div>
           <h2 style="font-size:clamp(1.6rem,1.2rem + 1.4vw,2.3rem)">Built for this community, not for ad revenue.</h2>
@@ -1207,7 +1210,7 @@
     <section>
       <div class="wrap-narrow">
         <div class="mission">
-          <img class="logo-full" src="images/logo.png" alt="NICC Business logo">
+          <img class="logo-full" src="images/logo.png" width="300" height="300" alt="NICC Business logo">
           <p class="arabic" lang="ar" style="font-size:2.4rem;margin-top:8px">&#1606;&#1608;&#1585;</p>
           <h2>Noor means light.</h2>
           <p>A directory is a small thing, but finding the right butcher, the right clinic, or the right tutor should not take three group chats and a drive across town. Our job is to make those answers easy to find and honest to trust.</p>
@@ -1225,7 +1228,7 @@
         </div>
         <div class="split-media reveal">
           <div class="pattern-bg"></div>
-          <div class="arch"><img loading="lazy" src="images/about.jpg" alt="A community gathering at a local business"></div>
+          <div class="arch"><img loading="lazy" src="images/about.jpg" width="760" height="950" alt="A community gathering at a local business"></div>
         </div>
       </div>
     </section>
@@ -1411,7 +1414,7 @@
           </div>
           <div class="split-media" style="margin-top:32px;padding:14px">
             <div class="pattern-bg"></div>
-            <div class="arch" style="aspect-ratio:4/3"><img loading="lazy" src="images/contact.jpg" alt="A street of small businesses in Columbus"></div>
+            <div class="arch" style="aspect-ratio:4/3"><img loading="lazy" src="images/contact.jpg" width="760" height="570" alt="A street of small businesses in Columbus"></div>
           </div>
         </div>
       </div>
@@ -1647,8 +1650,8 @@
                 </div>
                 <div class="field full">
                   <label for="signupPassword">Password</label>
-                  <input type="password" id="signupPassword" name="new-password" autocomplete="new-password" required minlength="6">
-                  <span class="error">Password must be at least 6 characters.</span>
+                  <input type="password" id="signupPassword" name="new-password" autocomplete="new-password" required minlength="8">
+                  <span class="error">Password must be at least 8 characters.</span>
                 </div>
               </div>
               <div id="signupTurnstile" style="margin:16px 0"></div>
@@ -1757,8 +1760,8 @@
             <form id="recoveryForm" novalidate>
               <div class="field full">
                 <label for="recoveryPassword">New password</label>
-                <input type="password" id="recoveryPassword" name="new-password" autocomplete="new-password" required minlength="6">
-                <span class="error">Password must be at least 6 characters.</span>
+                <input type="password" id="recoveryPassword" name="new-password" autocomplete="new-password" required minlength="8">
+                <span class="error">Password must be at least 8 characters.</span>
               </div>
               <div style="margin-top:22px">
                 <button type="submit" class="btn btn-primary">Update password</button>
@@ -1869,7 +1872,7 @@
     <div class="footer-grid">
       <div class="footer-brand">
         <a class="brand" href="#/home" data-route="home">
-          <img class="logo-full brand-mark-full" src="images/logo.png" alt="NICC Business logo">
+          <img class="logo-full brand-mark-full" src="images/logo.png" width="300" height="300" alt="NICC Business logo">
           <span>NICC Business<small>Columbus, Ohio</small></span>
         </a>
         <p>A community directory for Muslim owned and halal friendly businesses across central Ohio.</p>
@@ -2176,7 +2179,7 @@
               item.hours.map(function (h) { return '<div class="hours-row"><span>' + escapeAttr(h[0]) + '</span><span>' + escapeAttr(h[1]) + '</span></div>'; }).join("") +
               '</div></div>';
     } else {
-      html += '<div class="modal-section"><h3>Hours</h3><p style="color:var(--muted)">Not yet listed. Contact the business to confirm before visiting.</p></div>';
+      html += '<div class="modal-section"><h3>Hours</h3><p style="color:var(--muted)">Not yet listed. Check with the business before you visit.</p></div>';
     }
 
     html += '<div class="modal-section" id="modalReviewsSection"><h3>Community reviews</h3><p style="color:var(--muted)">Loading reviews…</p></div>';
@@ -3015,6 +3018,24 @@
     }
     if (recovery) recovery.hidden = true;
     var user = await window.NiccAuth.getCurrentUser();
+    // Password accepted but the 2FA code never entered (tab closed, page
+    // reloaded): that's a half-signed-in session. Put the code prompt back
+    // instead of showing the dashboard.
+    if (user && await window.NiccAuth.needsMfaChallenge()) {
+      try {
+        var factors = await window.NiccAuth.mfaListFactors();
+        var pending = factors.filter(function (f) { return f.status === "verified"; })[0];
+        if (pending) {
+          pendingMfaFactorId = pending.id;
+          loggedOut.hidden = false;
+          loggedIn.hidden = true;
+          loginForm.hidden = true;
+          document.getElementById("forgotPasswordBtn").hidden = true;
+          document.getElementById("mfaChallengeForm").hidden = false;
+          return;
+        }
+      } catch (e) { /* fall through to the normal views */ }
+    }
     if (user) {
       loggedOut.hidden = true;
       loggedIn.hidden = false;
@@ -3422,8 +3443,8 @@
       e.preventDefault();
       var status = document.getElementById("recoveryStatus");
       var pw = document.getElementById("recoveryPassword").value;
-      if (pw.length < 6) {
-        status.textContent = "Password must be at least 6 characters.";
+      if (pw.length < 8) {
+        status.textContent = "Password must be at least 8 characters.";
         status.classList.add("show", "error");
         return;
       }
@@ -3447,6 +3468,11 @@
     signupForm.addEventListener("submit", async function (e) {
       e.preventDefault();
       var status = document.getElementById("signupStatus");
+      if (document.getElementById("signupPassword").value.length < 8) {
+        status.textContent = "Password must be at least 8 characters.";
+        status.classList.add("show", "error");
+        return;
+      }
       // When Supabase's own captcha check is on (SUPABASE_AUTH_CAPTCHA=1),
       // Supabase verifies the token itself, so it must not be pre-verified
       // here (tokens are single-use). Otherwise fall back to the pre-check.
@@ -3505,7 +3531,11 @@
   var logoutBtn = document.getElementById("logoutBtn");
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async function () {
-      await window.NiccAuth.logOut();
+      try { await window.NiccAuth.logOut(); } catch (e) { toast("Could not log out. Please try again."); return; }
+      ["loginStatus", "signupStatus", "mfaChallengeStatus"].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) { el.textContent = ""; el.classList.remove("show", "error"); }
+      });
       refreshAccountView();
     });
   }
