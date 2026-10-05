@@ -34,11 +34,14 @@ module.exports = async function handler(req, res) {
 
   var payload = req.body;
   if (typeof payload === "string") { try { payload = JSON.parse(payload); } catch (e) { payload = null; } }
-  if (!payload || payload.type !== "INSERT" || !payload.record || !LABELS[payload.table]) {
+  var isInsert = payload && payload.type === "INSERT";
+  // An UPDATE only matters for a listing that an owner edit just sent back to review.
+  var isRequeue = payload && payload.type === "UPDATE" && payload.table === "businesses" && payload.record && payload.record.status === "pending";
+  if (!payload || !payload.record || !LABELS[payload.table] || !(isInsert || isRequeue)) {
     res.status(200).json({ ok: true, skipped: true }); return;
   }
 
-  var subject = LABELS[payload.table];
+  var subject = isRequeue ? "Edited listing needs re-review (hidden until approved)" : LABELS[payload.table];
   var text = summarize(payload.table, payload.record) + "\n\nModerate it in the Supabase Table Editor (" + payload.table + ").";
   try {
     var r = await fetch("https://api.resend.com/emails", {

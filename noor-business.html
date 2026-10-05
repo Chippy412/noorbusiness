@@ -1,5 +1,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#F8F8F2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#14180F" media="(prefers-color-scheme: dark)">
 <title>NICC Business</title>
 <meta name="description" content="NICC Business is a community-run directory of Muslim-owned and halal-verified businesses in Columbus, Ohio. Find local shops and restaurants, or list your own.">
 <link rel="canonical" href="https://nicc-business.vercel.app/">
@@ -133,6 +135,9 @@
 
   * { box-sizing: border-box; }
   html { color-scheme: light dark; scroll-behavior: smooth; }
+  /* No 300ms tap delay / double-tap zoom on controls; the open listing popup shouldn't scroll the page behind it. */
+  a, button, summary, label.toggle, select { touch-action: manipulation; }
+  .listing-modal { overscroll-behavior: contain; }
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 
   body {
@@ -3130,10 +3135,12 @@
           var status = row.querySelector(".owner-photo-status");
           status.textContent = "Uploading…";
           try {
-            var url = await window.NiccOwner.uploadPhoto(businessId, file);
-            preview.src = url;
+            var uploaded = await window.NiccOwner.uploadPhoto(businessId, file);
+            preview.src = uploaded.url;
             preview.style.display = "";
-            status.textContent = "Photo updated.";
+            status.textContent = uploaded.status === "approved"
+              ? "Photo updated."
+              : "Photo saved. A volunteer will re-check it before your listing is public again.";
           } catch (err) {
             status.textContent = err.message || "Could not upload photo.";
           }

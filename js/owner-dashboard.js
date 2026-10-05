@@ -85,9 +85,11 @@
       .upload(path, file, { cacheControl: "3600", upsert: false });
     if (uploadResult.error) throw uploadResult.error;
     var publicUrl = window.NiccSupabase.storage.from("business-photos").getPublicUrl(path).data.publicUrl;
-    var updateResult = await window.NiccSupabase.from("businesses").update({ photo_url: publicUrl }).eq("id", businessId);
+    var updateResult = await window.NiccSupabase.from("businesses").update({ photo_url: publicUrl }).eq("id", businessId).select("status").single();
     if (updateResult.error) throw updateResult.error;
-    return publicUrl;
+    // status can come back "pending": changing a public listing's photo
+    // sends it back to a volunteer for a re-check (database trigger).
+    return { url: publicUrl, status: updateResult.data.status };
   }
 
   async function submitReview(businessId, authorName, rating, body) {
@@ -113,9 +115,17 @@
   async function loadReviewsForMyBusinesses() {
     var user = await window.NiccAuth.getCurrentUser();
     if (!user) return [];
+    // RLS also lets people read reviews they wrote themselves, so scope this
+    // to businesses the caller owns -- otherwise their own reviews of other
+    // places show up here with a reply form that can't work.
+    var mine = await window.NiccSupabase.from("businesses").select("id").eq("owner_id", user.id);
+    if (mine.error) throw mine.error;
+    var ids = mine.data.map(function (b) { return b.id; });
+    if (!ids.length) return [];
     var result = await window.NiccSupabase
       .from("reviews")
       .select("*")
+      .in("business_id", ids)
       .order("created_at", { ascending: false });
     if (result.error) throw result.error;
     return result.data;
