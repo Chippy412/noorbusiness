@@ -800,6 +800,11 @@
   @media (max-width: 560px) { .footer-grid { grid-template-columns: 1fr; } .footer-brand { grid-column: span 1; } .footer-bottom { flex-direction: column; align-items: flex-start; } }
 
   /* Moderation page */
+  .nav-count { display: inline-block; min-width: 1.35em; margin-left: 6px; padding: 1px 6px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-size: 0.72rem; font-weight: 800; line-height: 1.4; text-align: center; font-variant-numeric: tabular-nums; vertical-align: 1px; }
+  .nav-toggle { position: relative; }
+  .nav-toggle[data-count]::after { content: attr(data-count); position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-size: 0.68rem; font-weight: 800; line-height: 18px; text-align: center; box-sizing: border-box; }
+  .admin-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 12px 16px; margin-bottom: 16px; border-radius: 14px; background: var(--accent-soft); color: var(--accent-soft-ink); border: 1px solid var(--accent); }
+  .admin-header .btn-link { margin-left: 4px; }
   .admin-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; align-items: center; }
   .admin-tab { border: 1px solid var(--hairline); background: var(--surface); color: var(--ink-2); padding: 9px 16px; border-radius: 999px; font: inherit; font-weight: 600; font-size: 0.9rem; cursor: pointer; }
   .admin-tab[aria-selected="true"] { background: var(--accent-soft); color: var(--accent-soft-ink); border-color: var(--accent); }
@@ -2051,8 +2056,10 @@
     var user = null;
     try { user = await window.NiccAuth.getCurrentUser(); } catch (e) { /* treat as logged out */ }
     document.querySelectorAll(".account-nav-link").forEach(function (a) {
-      a.textContent = user ? "My account" : "Log in";
+      a.firstChild && a.firstChild.nodeType === 3 ? (a.firstChild.nodeValue = user ? "My account" : "Log in")
+                                                   : a.insertBefore(document.createTextNode(user ? "My account" : "Log in"), a.firstChild);
     });
+    updateModerationBadges();
   }
   // Merges this device's saved list with the account's, both ways, so a
   // saved listing follows a logged-in person to their other devices.
@@ -2465,7 +2472,7 @@
       if (openId) openWhenReady(openId);
     }
     if (route === "account") refreshAccountView();
-    if (route === "admin") renderAdmin();
+    if (route === "admin") renderAdmin(); else stopAdmin();
     if (route === "contact") ensureTurnstile("contactTurnstile");
     if (route === "list") ensureTurnstile("listTurnstile");
   }
@@ -3195,7 +3202,44 @@
       "error": "Could not check your access. Please try again."
     }[s.state];
     if (msg) { root.innerHTML = '<p class="admin-empty">' + msg + "</p>"; return; }
-    window.NiccAdmin.mount(root, { escape: escapeAttr, safeUrl: safePhotoUrl, toast: toast, role: s.role, userId: s.userId });
+    // Mount into a fresh element each visit: re-using #adminRoot stacked a new
+    // set of click handlers on every visit, so actions fired more than once.
+    stopAdmin();
+    root.innerHTML = "";
+    var host = document.createElement("div");
+    root.appendChild(host);
+    adminStop = window.NiccAdmin.mount(host, { escape: escapeAttr, safeUrl: safePhotoUrl, toast: toast, role: s.role, userId: s.userId, onChange: updateModerationBadges });
+  }
+  var adminStop = null;
+  function stopAdmin() { if (adminStop) { adminStop(); adminStop = null; } }
+
+  /* Badges for moderators/volunteers: how many items are waiting, shown next
+     to "My account" in the nav and on the "Open moderation" button. */
+  var badgeTimer = null;
+  async function updateModerationBadges() {
+    var total = 0, isTeam = false;
+    try {
+      var s = await window.NiccAdmin.status();
+      if (s.state === "ok") { isTeam = true; total = (await window.NiccAdmin.counts()).total || 0; }
+    } catch (e) { /* not on the team, or offline */ }
+    document.querySelectorAll(".account-nav-link").forEach(function (a) {
+      var b = a.querySelector(".nav-count");
+      if (total > 0) {
+        if (!b) { b = document.createElement("span"); b.className = "nav-count"; a.appendChild(b); }
+        b.textContent = String(total);
+        b.setAttribute("aria-label", total + " waiting for review");
+      } else if (b) { b.remove(); }
+    });
+    // Phones: "My account" is inside the collapsed menu, so badge the menu button too.
+    var toggle = document.getElementById("navToggle");
+    if (toggle) {
+      if (total > 0) toggle.setAttribute("data-count", total > 99 ? "99+" : String(total));
+      else toggle.removeAttribute("data-count");
+    }
+    var link = document.getElementById("adminLink");
+    if (link) link.textContent = total > 0 ? "Open moderation (" + total + " waiting)" : "Open moderation";
+    if (isTeam && !badgeTimer) badgeTimer = window.setInterval(updateModerationBadges, 120000);
+    if (!isTeam && badgeTimer) { window.clearInterval(badgeTimer); badgeTimer = null; }
   }
 
   var STATUS_LABELS = { approved: "Live", pending: "Waiting for review", rejected: "Not approved" };

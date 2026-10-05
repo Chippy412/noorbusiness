@@ -132,3 +132,17 @@ test("submit rejects contact emails that could inject into a mailto: link", asyn
   }
   delete process.env.SUPABASE_SERVICE_ROLE_KEY;
 });
+
+test("alerts go to the whole team only once a real sender is set up", async () => {
+  const { recipients } = require("../api/notify")._test;
+  const team = async () => ["mod@noor.org", "Me@Gmail.com", "vol@noor.org"];
+  assert.deepStrictEqual(
+    await recipients({ NOTIFY_EMAIL_TO: "me@gmail.com", NOTIFY_EMAIL_FROM: "NICC Business <onboarding@resend.dev>" }, team),
+    ["me@gmail.com"], "Resend's test sender must not get extra recipients");
+  assert.deepStrictEqual(
+    await recipients({ NOTIFY_EMAIL_TO: "me@gmail.com", NOTIFY_EMAIL_FROM: "NICC Business <alerts@updates.noorohio.org>" }, team),
+    ["me@gmail.com", "mod@noor.org", "vol@noor.org"]);
+  assert.deepStrictEqual(
+    await recipients({ NOTIFY_EMAIL_TO: "me@gmail.com", NOTIFY_EMAIL_FROM: "alerts@updates.noorohio.org" }, async () => { throw new Error("db down"); }),
+    ["me@gmail.com"], "a team lookup failure falls back to NOTIFY_EMAIL_TO");
+});

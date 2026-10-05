@@ -28,6 +28,7 @@
   var api = {
     status: status,
     queue: function () { return rpc("admin_queue"); },
+    counts: function () { return rpc("admin_counts"); },
     allBusinesses: function () { return rpc("admin_all_businesses"); },
     team: function () { return rpc("admin_team"); },
     addMember: function (email, role) { return rpc("admin_add_member", { p_email: email, p_role: role }); },
@@ -194,15 +195,19 @@
       else if (state.tab === "messages") body = d.messages.length ? d.messages.map(messageCard).join("") : empty("No messages yet.");
       else if (state.tab === "team") body = state.team ? teamPanel(state.team) : empty("Loading…");
       else body = state.all ? allTable(state.all) : empty("Loading…");
-      root.innerHTML = '<p class="admin-meta">You are signed in as a <strong>' + esc(h.role || "volunteer") + "</strong>.</p>" +
+      root.innerHTML = '<p class="admin-meta admin-header">You are signed in as a <strong>' + esc(h.role || "volunteer") + "</strong>. New items are checked for every minute. " +
+        '<button class="btn-link" data-act="desktop-alerts">' + (desktopOn() ? "Turn off desktop alerts" : "Turn on desktop alerts") + "</button></p>" +
         tabs + '<div class="admin-body" role="tabpanel">' + body + "</div>";
     }
 
     async function refresh() {
       state.data = await api.queue();
+      lastSeen = queueTotal();
+      setTitle(lastSeen);
       if (state.tab === "all") state.all = await api.allBusinesses();
       if (state.tab === "team" && isMod) state.team = await api.team();
       render();
+      if (h.onChange) h.onChange();
     }
 
     root.addEventListener("click", async function (ev) {
@@ -221,6 +226,7 @@
       var btn = ev.target.closest("[data-act]");
       if (!btn) return;
       var act = btn.getAttribute("data-act"), id = btn.getAttribute("data-id"), s = btn.getAttribute("data-status");
+      if (act === "desktop-alerts") return; // handled by its own listener
       if (act === "claim-approve" && btn.getAttribute("data-has-owner") &&
           !window.confirm("This listing already has an owner. Approving moves it to the person who claimed it. Continue?")) return;
       btn.disabled = true;
@@ -289,9 +295,68 @@
       }
     });
 
-    return refresh().catch(function (err) {
+    /* ---- Live updates: check for new items every minute ---- */
+    var DESKTOP_KEY = "nicc-admin-desktop-alerts";
+    function desktopOn() {
+      try { return localStorage.getItem(DESKTOP_KEY) === "1" && window.Notification && Notification.permission === "granted"; } catch (e) { return false; }
+    }
+    function queueTotal() {
+      var d = state.data;
+      return d ? d.new_listings.length + d.edits.length + d.claims.length + d.reviews.length : 0;
+    }
+    function setTitle(n) {
+      document.title = (n ? "(" + n + ") " : "") + "Moderation — NICC Business";
+    }
+    function showBanner(n) {
+      var b = root.querySelector(".admin-banner");
+      if (!b) {
+        b = document.createElement("div");
+        b.className = "admin-banner";
+        b.setAttribute("role", "status");
+        root.insertBefore(b, root.firstChild);
+      }
+      b.innerHTML = '<strong>' + n + (n === 1 ? " new item" : " new items") + "</strong> waiting. " +
+        '<button class="btn btn-primary btn-sm" data-act="refresh">Show them</button>';
+    }
+    var lastSeen = null;
+    async function poll() {
+      if (document.getElementById("page-admin") && document.getElementById("page-admin").hidden) return;
+      var c;
+      try { c = await api.counts(); } catch (e) { return; }
+      setTitle(c.total);
+      if (lastSeen != null && c.total > lastSeen) {
+        var added = c.total - lastSeen;
+        // Don't re-render under the moderator (they may be mid-edit); offer it.
+        showBanner(added);
+        h.toast(added === 1 ? "A new item needs review." : added + " new items need review.");
+        if (desktopOn() && document.hidden) {
+          try { new Notification("NICC Business moderation", { body: (added === 1 ? "1 new item" : added + " new items") + " waiting for review.", tag: "nicc-moderation" }); } catch (e) { /* unsupported */ }
+        }
+      }
+      lastSeen = c.total;
+    }
+    var timer = window.setInterval(poll, 60000);
+
+    root.addEventListener("click", async function (ev) {
+      var t = ev.target.closest("[data-act='desktop-alerts']");
+      if (!t) return;
+      if (!window.Notification) { h.toast("This browser doesn't support desktop alerts."); return; }
+      if (desktopOn()) {
+        try { localStorage.removeItem(DESKTOP_KEY); } catch (e) { /* ignore */ }
+        h.toast("Desktop alerts turned off.");
+      } else {
+        var perm = await Notification.requestPermission();
+        if (perm !== "granted") { h.toast("Desktop alerts are blocked in your browser settings."); return; }
+        try { localStorage.setItem(DESKTOP_KEY, "1"); } catch (e) { /* ignore */ }
+        h.toast("Desktop alerts on. You'll get one when something new arrives while this page is open.");
+      }
+      render();
+    });
+
+    refresh().then(function () { lastSeen = queueTotal(); setTitle(lastSeen); }).catch(function (err) {
       root.innerHTML = '<p class="admin-empty">Could not load the moderation queue: ' + esc((err && err.message) || "unknown error") + "</p>";
     });
+    return function stop() { window.clearInterval(timer); };
   }
 
   window.NiccAdmin = Object.assign({ mount: mount }, api);
