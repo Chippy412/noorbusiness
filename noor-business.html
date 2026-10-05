@@ -362,7 +362,8 @@
   .hero-visual { position: relative; padding: 18px; }
   .hero-visual .pattern-bg { position: absolute; inset: 0; border-radius: 24px; }
   .hero-visual .pattern-bg::before { background-size: 140px 140px; opacity: calc(var(--pattern-opacity) * 1.6); }
-  .hero-photo { aspect-ratio: 4/5; }
+  .hero-photo { aspect-ratio: 4/3; }
+  .hero-photo img { object-position: 64% 50%; }
   .hero-float {
     position: absolute; left: -26px; bottom: 30px; background: var(--surface);
     border: 1px solid var(--hairline); border-radius: 18px; padding: 16px 18px;
@@ -378,7 +379,7 @@
   .hero-float p { color: var(--muted); font-size: 0.84rem; margin-top: 2px; }
   @media (max-width: 940px) {
     .hero-grid { grid-template-columns: 1fr; gap: 44px; }
-    .hero-photo { aspect-ratio: 16/11; }
+    .hero-photo { aspect-ratio: 16/9; }
     .hero-float { left: 14px; bottom: -20px; max-width: calc(100% - 28px); }
   }
   @media (max-width: 560px) {
@@ -1064,7 +1065,7 @@
         </div>
         <div class="hero-visual">
           <div class="pattern-bg"></div>
-          <div class="arch hero-photo"><img src="images/hero.jpg" width="640" height="800" alt="Noor Islamic Cultural Center with its domed tower and fountain pond"></div>
+          <div class="arch hero-photo"><img src="images/hero.jpg" width="1596" height="682" alt="Noor Islamic Cultural Center with its domed tower and fountain pond"></div>
           <div class="hero-float">
             <span class="badge-icon"><svg class="icon"><use href="#i-shield"/></svg></span>
             <div>
@@ -1341,7 +1342,7 @@
         </div>
         <div class="split-media reveal">
           <div class="pattern-bg"></div>
-          <div class="arch"><img loading="lazy" src="images/about.jpg" width="560" height="700" alt="Noor Islamic Cultural Center seen across its pond under a blue sky"></div>
+          <div class="arch" style="aspect-ratio:4/3"><img loading="lazy" src="images/about.jpg" width="655" height="468" alt="The Noor Islamic Cultural Center building on a green hill beside its pond"></div>
         </div>
       </div>
     </section>
@@ -1527,7 +1528,7 @@
           </div>
           <div class="split-media" style="margin-top:32px;padding:14px">
             <div class="pattern-bg"></div>
-            <div class="arch" style="aspect-ratio:4/3"><img loading="lazy" src="images/contact.jpg" width="624" height="468" alt="The Noor Islamic Cultural Center building beside its pond"></div>
+            <div class="arch" style="aspect-ratio:1/1;max-width:448px"><img loading="lazy" src="images/contact.jpg" width="448" height="446" alt="Noor Islamic Cultural Center seen across its fountain pond under a blue sky"></div>
           </div>
         </div>
       </div>
