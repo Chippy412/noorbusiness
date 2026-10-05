@@ -37,6 +37,7 @@ MIGRATIONS = [
     "2026-10-06-roles.sql",
     "2026-10-07-fixes.sql",
     "2026-10-08-review-fixes.sql",
+    "2026-10-09-notifications.sql",
 ]
 
 
@@ -573,6 +574,34 @@ def admins_table_is_not_self_service(t):
     t.admin()
     assert t.one("select role from admins where user_id = %s", (vol,)) == "volunteer", "volunteer promoted themselves!"
     assert t.one("select count(*) from admins") == 2, "volunteer removed the moderator!"
+
+
+@test
+def admin_counts_for_badges(t):
+    mod, vol = team(t)
+    o = t.user("o@x.co"); r = t.user("r@x.co"); c = t.user("c@x.co")
+    live = t.business(o, "approved"); t.business(o, "pending", "P1")
+    t.as_(o); t.q("select owner_update_business(%s, '{\"name\":\"E\"}'::jsonb)", (live,))
+    t.as_(r); t.q("insert into reviews (business_id, author_id, author_name, rating, body) values (%s, %s, 'R', 4, 'x')", (live, r))
+    t.as_(c); t.q("insert into claims (business_id, requester_id) values (%s, %s)", (live, c))
+    t.as_(vol, aal="aal2")
+    counts = t.one("select admin_counts()")
+    assert counts == {"new_listings": 1, "edits": 1, "claims": 1, "reviews": 1, "total": 4}, counts
+    t.as_(o, aal="aal2")
+    t.fails("select admin_counts()", contains="not authorized")
+    t.as_()
+    t.fails("select admin_counts()")
+
+
+@test
+def team_emails_only_for_the_server(t):
+    mod, vol = team(t)
+    t.as_(role="service_role")
+    assert sorted(r[0] for r in t.q("select notify_recipients()")) == ["mod@x.co", "vol@x.co"]
+    t.as_(mod, aal="aal2")
+    t.fails("select notify_recipients()")
+    t.as_()
+    t.fails("select notify_recipients()")
 
 
 # ------------------------------------------------------------------- alerts

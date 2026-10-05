@@ -85,7 +85,8 @@ once in the SQL editor; all are safe to re-run):
 5. `bash scripts/finish-setup.sh`: sets the email-alert variables in Vercel
    and puts the alert-trigger SQL (`2026-10-04-notify-triggers.sql` with the
    secret filled in) on your clipboard to run
-6. `2026-10-05-admin.sql`, `2026-10-06-roles.sql`, `2026-10-07-fixes.sql`
+6. `2026-10-05-admin.sql`, `2026-10-06-roles.sql`, `2026-10-07-fixes.sql`,
+   `2026-10-08-review-fixes.sql`, `2026-10-09-notifications.sql`
 7. Add the first moderator (see Moderation below)
 
 Alerts come from database triggers. Do **not** also create Supabase
@@ -114,6 +115,17 @@ My account page for moderators). It shows:
 - **Messages**: contact-form messages, with a reply-by-email link.
 - **All listings**: set badges (e.g. Halal verified; volunteers and
   moderators), Featured and status (moderators only, see Roles).
+
+**Notifications for the team:**
+
+- A count of waiting items shows next to *My account* (and on the phone menu
+  button) for moderators and volunteers, and on the *Open moderation* button.
+- The moderation page checks every minute while open: new items show a
+  banner and the count in the browser tab, and *Turn on desktop alerts* adds
+  a system notification.
+- Emails go to `NOTIFY_EMAIL_TO`. Once `NOTIFY_EMAIL_FROM` is an address on a
+  domain verified in Resend (not `onboarding@resend.dev`), every moderator
+  and volunteer on the team is emailed as well, automatically.
 
 **Roles** (managed on the Moderation page > **Team**, moderators only):
 
