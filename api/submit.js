@@ -12,7 +12,10 @@
 var crypto = require("crypto");
 var supa = require("./_lib/supa");
 
-var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+// Deliberately stricter than the RFC: no characters that mean something in
+// a mailto: link or HTML (? & = < > " ' etc.), since volunteers reply to
+// these addresses from the moderation page.
+var EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 
 function clientIp(req) {
   var fwd = req.headers["x-forwarded-for"];

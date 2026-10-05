@@ -121,3 +121,14 @@ test("notify summarises a queued listing edit", () => {
   assert.ok(text.includes("abc"));
   assert.ok(text.includes("description, phone"));
 });
+
+test("submit rejects contact emails that could inject into a mailto: link", async () => {
+  process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
+  const handler = require("../api/submit");
+  for (const email of ["x?bcc=evil@evil.com@example.com", "a&b@example.com", "a@b.co?subject=x", "<a@b.co>", "a b@c.co"]) {
+    const res = mockRes();
+    await handler({ method: "POST", headers: {}, body: { type: "contact", name: "A", email, message: "hi" } }, res);
+    assert.strictEqual(res.code, 400, email);
+  }
+  delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+});

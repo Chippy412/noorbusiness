@@ -91,7 +91,14 @@ once in the SQL editor; all are safe to re-run):
 Alerts come from database triggers. Do **not** also create Supabase
 "Database Webhooks" for the same tables, or every alert arrives twice.
 
-**Tests:** `node --test tests/api.test.js`
+**Tests:**
+
+- `node --test tests/api.test.js`: the serverless routes.
+- `python3 tests/db/run.py`: applies `schema.sql`, `seed.sql` and every
+  migration (twice, to prove they're re-runnable) to a real local Postgres
+  with a Supabase stand-in, then checks every permission rule as visitors,
+  owners, volunteers and moderators. Needs `pip3 install --user pgserver "psycopg[binary]"`.
+  Add new migrations to `MIGRATIONS` in that file.
 
 ## Moderation
 
@@ -105,8 +112,8 @@ My account page for moderators). It shows:
 - **Claims**: approving transfers ownership to the person who claimed it.
 - **Reviews**: approve or reject.
 - **Messages**: contact-form messages, with a reply-by-email link.
-- **All listings**: set status, badges (e.g. Halal verified) and Featured.
-  Only moderators can set badges.
+- **All listings**: set badges (e.g. Halal verified; volunteers and
+  moderators), Featured and status (moderators only, see Roles).
 
 **Roles** (managed on the Moderation page > **Team**, moderators only):
 

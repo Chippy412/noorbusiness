@@ -1505,7 +1505,7 @@
             <div class="form-grid">
               <div class="field full">
                 <label for="bName">Business name</label>
-                <input type="text" id="bName" required>
+                <input type="text" id="bName" maxlength="120" required>
                 <span class="error">Please enter your business name.</span>
               </div>
               <div class="field">
@@ -1551,7 +1551,7 @@
               </div>
               <div class="field full">
                 <label for="bDesc">Short description</label>
-                <textarea id="bDesc" required placeholder="What you do, and what makes people come back."></textarea>
+                <textarea id="bDesc" maxlength="300" required placeholder="One or two sentences about what you do."></textarea>
                 <span class="error">Please add a short description.</span>
               </div>
             </div>
@@ -1669,6 +1669,7 @@
               </div>
               <div style="margin-top:14px">
                 <button type="submit" class="btn btn-primary">Verify and log in</button>
+                <button type="button" class="btn btn-ghost" id="mfaCancelBtn">Use a different account</button>
               </div>
               <p class="form-status" id="mfaChallengeStatus" role="status"></p>
             </form>
@@ -1728,7 +1729,7 @@
               <div class="form-grid">
                 <div class="field full">
                   <label for="ownAddName">Business name</label>
-                  <input type="text" id="ownAddName" required>
+                  <input type="text" id="ownAddName" maxlength="120" required>
                   <span class="error">Please enter your business name.</span>
                 </div>
                 <div class="field">
@@ -1782,12 +1783,12 @@
                 </div>
                 <div class="field full">
                   <label for="ownAddDesc">Short description</label>
-                  <textarea id="ownAddDesc" required placeholder="One sentence for the listing card."></textarea>
+                  <textarea id="ownAddDesc" maxlength="300" required placeholder="One sentence for the listing card."></textarea>
                   <span class="error">Please add a short description.</span>
                 </div>
                 <div class="field full">
                   <label for="ownAddLong">Full description</label>
-                  <textarea id="ownAddLong" required placeholder="What you do, and what makes people come back."></textarea>
+                  <textarea id="ownAddLong" maxlength="3000" required placeholder="What you do, and what makes people come back."></textarea>
                   <span class="error">Please add a fuller description.</span>
                 </div>
               </div>
@@ -2203,7 +2204,7 @@
 
   function openListing(id) {
     var item = LISTINGS.filter(function (l) { return l.id === id; })[0];
-    if (!item) return;
+    if (!item) { toast("That listing isn't available any more."); return; }
     currentItem = item;
 
     modalTitle.textContent = item.name;
@@ -2436,6 +2437,9 @@
     return new URLSearchParams(i === -1 ? "" : h.slice(i + 1));
   }
   function currentRoute() {
+    // Supabase's email links come back as #access_token=... or #error=...;
+    // those belong on the account page, not "Page not found".
+    if (/^#(access_token|error|type)=/.test(location.hash || "")) return "account";
     var h = (location.hash || "").replace("#/", "").split("?")[0].trim();
     if (h === "") return "home";
     return ROUTES.indexOf(h) !== -1 ? h : "notfound";
@@ -2996,6 +3000,7 @@
         throw new Error("Please complete the verification challenge." + (why ? " (" + why + ")" : ""));
       }
       if (res.status === 429) throw new Error("You've sent several messages recently. Please wait a little while and try again.");
+      if (res.data && res.data.error === "invalid") throw new Error("Please check your email address. Use a plain address like name@example.com.");
       throw new Error("Could not send your message. Please try again.");
     }
   });
@@ -3101,6 +3106,15 @@
       return;
     }
     if (recovery) recovery.hidden = true;
+    // An expired or already-used email link: say so instead of silently
+    // showing the login form.
+    var linkError = /^#error/.test(location.hash) ? new URLSearchParams(location.hash.slice(1)) : null;
+    if (linkError) {
+      toast(linkError.get("error_code") === "otp_expired"
+        ? "That email link has expired or was already used. Log in, or ask for a new link."
+        : (linkError.get("error_description") || "That email link didn't work.").replace(/\+/g, " "));
+      try { history.replaceState(null, "", location.pathname + location.search + "#/account"); } catch (e) { /* ignore */ }
+    }
     var user = await window.NiccAuth.getCurrentUser();
     // Password accepted but the 2FA code never entered (tab closed, page
     // reloaded): that's a half-signed-in session. Put the code prompt back
@@ -3242,7 +3256,8 @@
 
       var claimRows = claims.map(function (c) {
         var name = c.businesses ? c.businesses.name : "Unknown listing";
-        return '<div class="hours-row"><span>Claim: ' + escapeAttr(name) + '</span><span>' + escapeAttr(c.status) + '</span></div>';
+        var claimLabel = { pending: "Waiting for review", approved: "Approved", rejected: "Not approved" }[c.status] || c.status;
+        return '<div class="hours-row"><span>Claim: ' + escapeAttr(name) + '</span><span>' + escapeAttr(claimLabel) + '</span></div>';
       });
 
       var all = businessBlocks.concat(claimRows);
@@ -3258,6 +3273,16 @@
           var row = input.closest(".owner-photo-row");
           var preview = row.querySelector(".owner-photo-preview");
           var status = row.querySelector(".owner-photo-status");
+          if (["image/jpeg", "image/png", "image/webp"].indexOf(file.type) === -1) {
+            status.textContent = "Please choose a JPG, PNG or WebP image.";
+            input.value = "";
+            return;
+          }
+          if (file.size > 5 * 1024 * 1024) {
+            status.textContent = "That photo is over 5 MB. Please choose a smaller one.";
+            input.value = "";
+            return;
+          }
           status.textContent = "Uploading…";
           try {
             var uploaded = await window.NiccOwner.uploadPhoto(businessId, file);
@@ -3299,7 +3324,9 @@
             });
             toast(newStatus.pending
               ? "Saved. A volunteer will review your changes. The current version stays public until then."
-              : "Saved.");
+              : (current.status === "rejected" && newStatus.status === "pending")
+                ? "Saved and sent back for review."
+                : "Saved.");
             renderMyListings();
           } catch (err) {
             status.textContent = err.message || "Could not save changes.";
@@ -3357,7 +3384,7 @@
             // SVG data: URL whose raw quote characters would break an HTML attribute.
             document.getElementById("mfaQr").src = enrolled.totp.qr_code;
             document.getElementById("mfaConfirmBtn").addEventListener("click", async function () {
-              var code = document.getElementById("mfaEnrollCode").value.trim();
+              var code = document.getElementById("mfaEnrollCode").value.replace(/\s+/g, "");
               var status = document.getElementById("mfaEnrollStatus");
               if (!code) return;
               try {
@@ -3523,7 +3550,7 @@
     mfaChallengeForm.addEventListener("submit", async function (e) {
       e.preventDefault();
       var status = document.getElementById("mfaChallengeStatus");
-      var code = document.getElementById("mfaChallengeCode").value.trim();
+      var code = document.getElementById("mfaChallengeCode").value.replace(/\s+/g, "");
       if (!pendingMfaFactorId || !code) return;
       try {
         await window.NiccAuth.mfaChallengeAndVerify(pendingMfaFactorId, code);
@@ -3537,6 +3564,23 @@
         status.textContent = err.message || "That code did not work. Please try again.";
         status.classList.add("show", "error");
       }
+    });
+  }
+
+  // Without this, someone at the code prompt who has lost their phone (or
+  // typed the wrong email) had no way back to the login form.
+  var mfaCancelBtn = document.getElementById("mfaCancelBtn");
+  if (mfaCancelBtn) {
+    mfaCancelBtn.addEventListener("click", async function () {
+      try { await window.NiccAuth.logOut(); } catch (e) { /* still reset the form */ }
+      pendingMfaFactorId = null;
+      mfaChallengeForm.reset();
+      mfaChallengeForm.hidden = true;
+      loginForm.hidden = false;
+      document.getElementById("forgotPasswordBtn").hidden = false;
+      var st = document.getElementById("mfaChallengeStatus");
+      st.textContent = ""; st.classList.remove("show", "error");
+      document.getElementById("loginEmail").focus();
     });
   }
 

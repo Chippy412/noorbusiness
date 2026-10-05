@@ -1,1 +1,11 @@
+# Only the site itself (noor-business.html, js/, images/, api/, robots.txt)
+# should be public. Everything below is for maintainers and must not be
+# served from the live domain.
 .env
+.env*
+.claude
+docs
+scripts
+supabase
+tests
+README.md
