@@ -31,6 +31,10 @@
       badges: row.badges || [],
       featured: !!row.featured,
       rating: null,
+      reviewCount: 0,
+      ownerId: row.owner_id || null,
+      phone: row.phone || null,
+      website: row.website || null,
       desc: row.description,
       long: row.long_description,
       address: row.address,
@@ -50,7 +54,26 @@
     if (result.error) {
       throw result.error;
     }
-    return result.data.map(mapRow);
+    var items = result.data.map(mapRow);
+
+    // Average rating per business from approved reviews. A failure here
+    // just means cards say "New to the directory" -- never block the list.
+    var ratings = await window.NiccSupabase
+      .from("reviews")
+      .select("business_id, rating")
+      .eq("status", "approved");
+    if (!ratings.error && ratings.data) {
+      var sums = {};
+      ratings.data.forEach(function (r) {
+        var t = sums[r.business_id] || (sums[r.business_id] = { sum: 0, n: 0 });
+        t.sum += r.rating; t.n += 1;
+      });
+      items.forEach(function (it) {
+        var t = sums[it.id];
+        if (t) { it.rating = t.sum / t.n; it.reviewCount = t.n; }
+      });
+    }
+    return items;
   }
 
   async function loadReviews(businessId) {
@@ -66,8 +89,29 @@
     });
   }
 
+  // Saved listings follow a logged-in user across devices. Anonymous
+  // visitors keep using localStorage only (handled in the page script).
+  async function loadSavedIds() {
+    var result = await window.NiccSupabase.from("saved_listings").select("business_id");
+    if (result.error) throw result.error;
+    return result.data.map(function (r) { return r.business_id; });
+  }
+  async function saveListing(userId, businessId) {
+    var result = await window.NiccSupabase.from("saved_listings")
+      .upsert({ user_id: userId, business_id: businessId }, { onConflict: "user_id,business_id", ignoreDuplicates: true });
+    if (result.error) throw result.error;
+  }
+  async function unsaveListing(userId, businessId) {
+    var result = await window.NiccSupabase.from("saved_listings")
+      .delete().eq("user_id", userId).eq("business_id", businessId);
+    if (result.error) throw result.error;
+  }
+
   window.NiccData = {
     loadBusinesses: loadBusinesses,
-    loadReviews: loadReviews
+    loadReviews: loadReviews,
+    loadSavedIds: loadSavedIds,
+    saveListing: saveListing,
+    unsaveListing: unsaveListing
   };
 })();

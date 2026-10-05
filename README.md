@@ -40,6 +40,7 @@ and isn't something `git clone` gives you.
 
 ## Project structure
 
+- `api/` — Vercel serverless routes (see below). `tests/` — their tests.
 - `noor-business.html` — the entire site: markup, styles, and the inline
   app script (routing, rendering, forms).
 - `js/supabase-client.js` — initializes `window.NiccSupabase`.
@@ -56,7 +57,42 @@ and isn't something `git clone` gives you.
 - `docs/superpowers/` — the design spec and implementation plan this
   backend was built from.
 
+## Server routes and setup (Vercel)
+
+| Route | What it does |
+| --- | --- |
+| `/api/submit` | Contact form + footer newsletter. Verifies Turnstile on the server, rate-limits per sender, writes with the service-role key. |
+| `/api/notify` | Emails volunteers when something needs moderating (called by Supabase webhooks). |
+| `/b/<id>` → `/api/listing` | A crawlable, shareable page for each approved listing (title, Open Graph, schema.org). |
+| `/sitemap.xml` → `/api/sitemap` | Home page plus every approved listing. |
+| `/api/verify-turnstile`, `/api/turnstile-config` | Turnstile helpers. |
+
+**Environment variables** (Vercel > Settings > Environment Variables):
+
+- `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` — already set up via `scripts/setup-turnstile.sh`.
+- `SUPABASE_SERVICE_ROLE_KEY` — Supabase > Project Settings > API (the *secret* key). Needed by `/api/submit`. Until it exists the site falls back to inserting from the browser.
+- `SUPABASE_AUTH_CAPTCHA=1` — set only after enabling Turnstile in Supabase > Authentication > Attack Protection (paste the Turnstile secret there). Then Supabase itself rejects bot sign-ups.
+- Email alerts (optional): `NOTIFY_SECRET` (any long random string), `RESEND_API_KEY`, `NOTIFY_EMAIL_TO` (comma-separated), `NOTIFY_EMAIL_FROM` (a sender verified in Resend).
+
+**Guided setup:** `bash scripts/setup-hardening.sh` walks through all of the steps below (migrations, keys, captcha, alert webhooks).
+
+**Supabase setup, in order:**
+
+1. Run `supabase/migrations/2026-10-04-hardening.sql` in the SQL editor.
+2. Add `SUPABASE_SERVICE_ROLE_KEY` in Vercel, redeploy, send a test message from the Contact page.
+3. Run `supabase/migrations/2026-10-04-lock-public-inserts.sql` (closes the direct-insert hole on `contact_messages`).
+4. For alerts: Supabase > Database > Webhooks > create one webhook per table (`businesses`, `claims`, `reviews`, `contact_messages`), event INSERT, method POST, URL `https://<your-site>/api/notify`, header `Authorization: Bearer <NOTIFY_SECRET>`.
+
+**Tests:** `node --test tests/api.test.js`
+
 ## Moderation
+
+Listing edits: when an owner changes the public details of an *approved*
+listing (name, description, address, phone, website, photo, category,
+neighborhood) it goes back to `pending` until a volunteer re-approves it.
+Hours edits go live immediately. Badges (e.g. "Halal verified") and
+`featured` can only be set by a volunteer in the Table Editor.
+
 
 New listings and claims start `pending`. There is no custom admin panel
 — a volunteer approves them directly in the Supabase Table Editor by

@@ -2,8 +2,11 @@
 (function () {
   "use strict";
 
-  async function signUp(email, password) {
-    var result = await window.NiccSupabase.auth.signUp({ email: email, password: password });
+  // captchaToken is only passed when Supabase's own Turnstile check is on
+  // (Authentication > Attack Protection); Supabase verifies it server-side.
+  async function signUp(email, password, captchaToken) {
+    var options = captchaToken ? { captchaToken: captchaToken } : undefined;
+    var result = await window.NiccSupabase.auth.signUp({ email: email, password: password, options: options });
     if (result.error) throw result.error;
     // If the Supabase project has "Confirm email" turned on, signUp
     // returns a user but no session -- the caller needs to know which

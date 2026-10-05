@@ -25,7 +25,9 @@
       neighborhood: fields.neighborhood,
       description: fields.description,
       long_description: fields.longDescription,
-      address: fields.address || null
+      address: fields.address || null,
+      phone: fields.phone || null,
+      website: fields.website || null
     }).select().single();
     if (result.error) throw result.error;
     return result.data;
@@ -54,6 +56,9 @@
     return result.data;
   }
 
+  // Returns the listing's status after the save. An approved listing whose
+  // public details changed is sent back to "pending" by a database trigger
+  // (see 2026-10-04-hardening.sql), so callers can tell the owner.
   async function updateBusiness(id, fields) {
     var result = await window.NiccSupabase.from("businesses").update({
       name: fields.name,
@@ -61,9 +66,13 @@
       neighborhood: fields.neighborhood,
       description: fields.description,
       long_description: fields.longDescription,
-      address: fields.address || null
-    }).eq("id", id);
+      address: fields.address || null,
+      phone: fields.phone || null,
+      website: fields.website || null,
+      hours: fields.hours || []
+    }).eq("id", id).select("status").single();
     if (result.error) throw result.error;
+    return result.data.status;
   }
 
   async function uploadPhoto(businessId, file) {
