@@ -112,6 +112,7 @@
     loadReviews: loadReviews,
     loadSavedIds: loadSavedIds,
     saveListing: saveListing,
-    unsaveListing: unsaveListing
+    unsaveListing: unsaveListing,
+    categoryIcons: CATEGORY_ICONS
   };
 })();
