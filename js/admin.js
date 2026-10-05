@@ -58,6 +58,12 @@
     ["halal", "Halal verified"], ["prayer", "Prayer space"], ["women", "Women owned"],
     ["family", "Family run"], ["community", "Community service"]
   ];
+  var HALAL_LABELS = {
+    certified: "Certified halal, says they can name the certifier",
+    supplier: "Halal supplier, not formally certified",
+    some: "Some halal options",
+    na: "Not applicable"
+  };
   var dateFmt = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
 
   // root: container element. h: { escape, safeUrl, toast, role, userId } from the page.
@@ -90,7 +96,8 @@
         (photo ? '<img src="' + photo + '" alt="" class="admin-thumb">' : "") +
         "<p>" + esc(l.description) + '</p><p class="admin-long">' + esc(l.long_description) + "</p>" +
         '<dl class="admin-dl"><dt>Address</dt><dd>' + cell(l.address) + "</dd><dt>Phone</dt><dd>" + cell(l.phone) +
-        "</dd><dt>Website</dt><dd>" + cell(l.website) + "</dd><dt>Hours</dt><dd>" + (hours || cell("")) + "</dd></dl>" +
+        "</dd><dt>Website</dt><dd>" + cell(l.website) + "</dd><dt>Hours</dt><dd>" + (hours || cell("")) +
+        "</dd><dt>Halal (owner says)</dt><dd>" + cell(HALAL_LABELS[l.halal_status] || l.halal_status) + "</dd></dl>" +
         '<div class="admin-actions">' +
         '<button class="btn btn-primary btn-sm" data-act="listing-status" data-id="' + esc(l.id) + '" data-status="approved">Approve</button>' +
         '<button class="btn btn-ghost btn-sm" data-act="listing-status" data-id="' + esc(l.id) + '" data-status="rejected">Reject</button></div></article>';
