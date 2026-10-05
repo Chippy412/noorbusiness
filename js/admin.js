@@ -17,11 +17,11 @@
   async function status() {
     var user = await window.NiccAuth.getCurrentUser();
     if (!user) return { state: "logged-out" };
-    var row = await window.NiccSupabase.from("admins").select("user_id").maybeSingle();
+    var row = await window.NiccSupabase.from("admins").select("user_id, role").maybeSingle();
     if (row.error || !row.data) return { state: "not-admin" };
     var aal = await window.NiccSupabase.auth.mfa.getAuthenticatorAssuranceLevel();
     if (aal.error) return { state: "need-code" };
-    if (aal.data.currentLevel === "aal2") return { state: "ok" };
+    if (aal.data.currentLevel === "aal2") return { state: "ok", role: row.data.role, userId: user.id };
     return { state: aal.data.nextLevel === "aal2" ? "need-code" : "need-2fa" };
   }
 
@@ -29,6 +29,10 @@
     status: status,
     queue: function () { return rpc("admin_queue"); },
     allBusinesses: function () { return rpc("admin_all_businesses"); },
+    team: function () { return rpc("admin_team"); },
+    addMember: function (email, role) { return rpc("admin_add_member", { p_email: email, p_role: role }); },
+    setMemberRole: function (userId, role) { return rpc("admin_set_member_role", { p_user: userId, p_role: role }); },
+    removeMember: function (userId) { return rpc("admin_remove_member", { p_user: userId }); },
     setListingStatus: function (id, s) { return rpc("admin_set_listing_status", { p_id: id, p_status: s }); },
     setFlags: function (id, badges, featured) { return rpc("admin_set_listing_flags", { p_id: id, p_badges: badges, p_featured: featured }); },
     applyEdit: function (id) { return rpc("admin_apply_edit", { p_id: id }); },
@@ -39,8 +43,12 @@
 
   var TABS = [
     ["new", "New listings"], ["edits", "Edits"], ["claims", "Claims"],
-    ["reviews", "Reviews"], ["messages", "Messages"], ["all", "All listings"]
+    ["reviews", "Reviews"], ["messages", "Messages"], ["all", "All listings"], ["team", "Team", "moderator"]
   ];
+  var ROLE_HELP = {
+    moderator: "Full control, including Featured, taking listings down, and managing the team.",
+    volunteer: "Reviews new listings, edits, claims and reviews, and sets badges."
+  };
   var FIELD_LABELS = {
     name: "Name", category: "Category", neighborhood: "Neighborhood",
     description: "Short description", long_description: "Full description",
@@ -52,10 +60,11 @@
   ];
   var dateFmt = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
 
-  // root: container element. h: { escape, safeUrl, toast } from the page.
+  // root: container element. h: { escape, safeUrl, toast, role, userId } from the page.
   function mount(root, h) {
     var esc = h.escape;
-    var state = { tab: "new", data: null, all: null };
+    var isMod = h.role === "moderator";
+    var state = { tab: "new", data: null, all: null, team: null };
 
     function when(iso) { try { return dateFmt.format(new Date(iso)); } catch (e) { return ""; } }
     function count(key) { return state.data && state.data[key] ? state.data[key].length : 0; }
@@ -130,20 +139,39 @@
       return '<div class="admin-scroll"><table class="admin-all"><thead><tr><th scope="col">Listing</th><th scope="col">Status</th><th scope="col">Badges</th><th scope="col">Featured</th><th></th></tr></thead><tbody>' +
         rows.map(function (b) {
           var id = esc(b.id);
-          var statusSel = '<select data-field="status" aria-label="Status for ' + esc(b.name) + '">' +
+          var statusSel = '<select data-field="status"' + (isMod ? "" : " disabled title=\"Only a moderator can change a published listing\"") + ' aria-label="Status for ' + esc(b.name) + '">' +
             ["approved", "pending", "rejected"].map(function (s) { return '<option value="' + s + '"' + (b.status === s ? " selected" : "") + ">" + s + "</option>"; }).join("") + "</select>";
           var badges = BADGES.map(function (p) {
             return '<label class="admin-check"><input type="checkbox" data-badge="' + p[0] + '"' + ((b.badges || []).indexOf(p[0]) !== -1 ? " checked" : "") + "> " + p[1] + "</label>";
           }).join("");
-          return '<tr data-id="' + id + '" data-name="' + esc(b.name) + '"><th scope="row">' + esc(b.name) +
+          return '<tr data-id="' + id + '" data-name="' + esc(b.name) + '" data-status="' + esc(b.status) + '"><th scope="row">' + esc(b.name) +
             '<div class="admin-meta">' + esc(b.category) + " · " + esc(b.neighborhood) + " · " + cell(b.owner_email) + "</div></th><td>" + statusSel +
-            "</td><td>" + badges + '</td><td><label class="admin-check"><input type="checkbox" data-field="featured"' + (b.featured ? " checked" : "") + '> Featured</label></td>' +
+            "</td><td>" + badges + '</td><td><label class="admin-check"><input type="checkbox" data-field="featured"' + (b.featured ? " checked" : "") + (isMod ? "" : " disabled") + '> Featured</label></td>' +
             '<td><button class="btn btn-ghost btn-sm" data-act="save-flags" data-id="' + id + '">Save</button></td></tr>';
         }).join("") + "</tbody></table></div>";
     }
 
+    function teamPanel(members) {
+      var rows = members.map(function (m) {
+        var me = m.user_id === h.userId;
+        var roleSel = '<select data-member-role aria-label="Role for ' + esc(m.email) + '">' +
+          ["moderator", "volunteer"].map(function (r) { return '<option value="' + r + '"' + (m.role === r ? " selected" : "") + ">" + r + "</option>"; }).join("") + "</select>";
+        return '<tr data-user="' + esc(m.user_id) + '" data-email="' + esc(m.email) + '" data-role="' + esc(m.role) + '"><th scope="row">' + esc(m.email) + (me ? ' <span class="admin-meta">(you)</span>' : "") +
+          '</th><td>' + roleSel + '</td><td class="admin-meta">Added ' + when(m.created_at) + '</td><td class="admin-actions-cell">' +
+          '<button class="btn btn-ghost btn-sm" data-act="member-role">Save role</button> ' +
+          '<button class="btn btn-ghost btn-sm" data-act="member-remove">Remove</button></td></tr>';
+      }).join("");
+      return '<div class="admin-card"><h3>Add someone to the team</h3>' +
+        '<p class="admin-meta">They need an account on the site first, with two-factor turned on (My account). Then add them by the email they signed up with.</p>' +
+        '<form class="admin-add" id="adminAddForm"><div class="field"><label for="adminAddEmail">Their email</label><input type="email" id="adminAddEmail" autocomplete="off" spellcheck="false" required></div>' +
+        '<div class="field"><label for="adminAddRole">Role</label><select id="adminAddRole"><option value="volunteer">Volunteer</option><option value="moderator">Moderator</option></select></div>' +
+        '<button type="submit" class="btn btn-primary btn-sm">Add to team</button></form>' +
+        '<ul class="admin-meta admin-rolehelp"><li><strong>Volunteer:</strong> ' + esc(ROLE_HELP.volunteer) + '</li><li><strong>Moderator:</strong> ' + esc(ROLE_HELP.moderator) + '</li></ul></div>' +
+        '<div class="admin-scroll"><table class="admin-all"><thead><tr><th scope="col">Member</th><th scope="col">Role</th><th scope="col">Added</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+    }
+
     function render() {
-      var tabs = '<div class="admin-tabs" role="tablist" aria-label="Moderation queues">' + TABS.map(function (t) {
+      var tabs = '<div class="admin-tabs" role="tablist" aria-label="Moderation queues">' + TABS.filter(function (t) { return !t[2] || isMod; }).map(function (t) {
         var n = tabCount(t[0]);
         return '<button role="tab" class="admin-tab" data-tab="' + t[0] + '" aria-selected="' + (state.tab === t[0]) + '">' + t[1] +
           (n ? ' <span class="admin-count">' + n + "</span>" : "") + "</button>";
@@ -157,13 +185,16 @@
       else if (state.tab === "claims") body = d.claims.length ? d.claims.map(claimCard).join("") : empty("No claims waiting.");
       else if (state.tab === "reviews") body = d.reviews.length ? d.reviews.map(reviewCard).join("") : empty("No reviews waiting.");
       else if (state.tab === "messages") body = d.messages.length ? d.messages.map(messageCard).join("") : empty("No messages yet.");
+      else if (state.tab === "team") body = state.team ? teamPanel(state.team) : empty("Loading…");
       else body = state.all ? allTable(state.all) : empty("Loading…");
-      root.innerHTML = tabs + '<div class="admin-body" role="tabpanel">' + body + "</div>";
+      root.innerHTML = '<p class="admin-meta">You are signed in as a <strong>' + esc(h.role || "volunteer") + "</strong>.</p>" +
+        tabs + '<div class="admin-body" role="tabpanel">' + body + "</div>";
     }
 
     async function refresh() {
       state.data = await api.queue();
       if (state.tab === "all") state.all = await api.allBusinesses();
+      if (state.tab === "team" && isMod) state.team = await api.team();
       render();
     }
 
@@ -174,6 +205,9 @@
         render();
         if (state.tab === "all" && !state.all) {
           try { state.all = await api.allBusinesses(); render(); } catch (e) { h.toast(e.message || "Could not load listings."); }
+        }
+        if (state.tab === "team" && isMod) {
+          try { state.team = await api.team(); render(); } catch (e) { h.toast(e.message || "Could not load the team."); }
         }
         return;
       }
@@ -197,15 +231,47 @@
           var badges = Array.prototype.slice.call(row.querySelectorAll("[data-badge]:checked")).map(function (c) { return c.getAttribute("data-badge"); });
           var featured = row.querySelector('[data-field="featured"]').checked;
           var newStatus = row.querySelector('[data-field="status"]').value;
-          if (newStatus !== "approved" && !window.confirm("Setting this to " + newStatus + " takes " + row.getAttribute("data-name") + " out of the public directory. Continue?")) { btn.disabled = false; return; }
+          var statusChanged = newStatus !== row.getAttribute("data-status");
+          if (statusChanged && newStatus !== "approved" && !window.confirm("Setting this to " + newStatus + " takes " + row.getAttribute("data-name") + " out of the public directory. Continue?")) { btn.disabled = false; return; }
           await api.setFlags(id, badges, featured);
-          await api.setListingStatus(id, newStatus);
+          if (statusChanged) await api.setListingStatus(id, newStatus);
           msg = "Saved.";
+        }
+        else if (act === "member-role") {
+          var mrow = btn.closest("tr");
+          await api.setMemberRole(mrow.getAttribute("data-user"), mrow.querySelector("[data-member-role]").value);
+          msg = "Role updated.";
+        }
+        else if (act === "member-remove") {
+          var rrow = btn.closest("tr");
+          if (!window.confirm("Remove " + rrow.getAttribute("data-email") + " from the team? They keep their account but lose moderation access.")) { btn.disabled = false; return; }
+          await api.removeMember(rrow.getAttribute("data-user"));
+          msg = "Removed from the team.";
         }
         await refresh();
         h.toast(msg);
       } catch (err) {
         h.toast((err && err.message) || "That didn't work. Please try again.");
+        btn.disabled = false;
+      }
+    });
+
+    root.addEventListener("submit", async function (ev) {
+      var form = ev.target.closest("#adminAddForm");
+      if (!form) return;
+      ev.preventDefault();
+      var email = document.getElementById("adminAddEmail").value.trim();
+      var role = document.getElementById("adminAddRole").value;
+      var btn = form.querySelector('button[type="submit"]');
+      if (!email) return;
+      btn.disabled = true;
+      try {
+        await api.addMember(email, role);
+        state.team = await api.team();
+        render();
+        h.toast("Added as " + role + ".");
+      } catch (err) {
+        h.toast((err && err.message) || "Could not add them. Please try again.");
         btn.disabled = false;
       }
     });

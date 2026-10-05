@@ -100,19 +100,30 @@ My account page for moderators). It shows:
 - **All listings**: set status, badges (e.g. Halal verified) and Featured.
   Only moderators can set badges.
 
-**Who can moderate:** the `admins` table, managed from the Supabase SQL
-editor. The person needs a site account with two-factor turned on (My
-account), then:
+**Roles** (managed on the Moderation page > **Team**, moderators only):
+
+| | Volunteer | Moderator |
+| --- | --- | --- |
+| Approve/reject new listings, edits, claims, reviews | yes | yes |
+| Read contact messages, set badges | yes | yes |
+| Set Featured | no | yes |
+| Change or take down an already-published listing | no | yes |
+| Add/remove team members, change roles | no | yes |
+
+To add someone, they first create an account on the site and turn on
+two-factor (My account). A moderator then enters their email under
+Moderation > Team and picks a role. The system always keeps at least one
+moderator. Both roles need two-factor to use the page.
+
+**The very first moderator** is added from the Supabase SQL editor:
 
 ```sql
-insert into admins (user_id)
-select id from auth.users where lower(email) = lower('someone@example.com')
-on conflict do nothing;
+insert into admins (user_id, role)
+select id, 'moderator' from auth.users where lower(email) = lower('someone@example.com')
+on conflict (user_id) do update set role = 'moderator';
 ```
-
-Remove someone: `delete from admins where user_id = (select id from auth.users where lower(email) = lower('someone@example.com'));`
 
 Every action is enforced in the database (`admin_*` functions require the
 caller to be on `admins` AND signed in with their second factor), not just in
-the page. Run `supabase/migrations/2026-10-05-admin.sql` to set this up
-(after the other `2026-10-04-*` migrations).
+the page. Run `supabase/migrations/2026-10-05-admin.sql`, then
+`2026-10-06-roles.sql`, to set this up (after the other `2026-10-04-*` migrations).
