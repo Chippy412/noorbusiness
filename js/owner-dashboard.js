@@ -27,7 +27,8 @@
       long_description: fields.longDescription,
       address: fields.address || null,
       phone: fields.phone || null,
-      website: fields.website || null
+      website: fields.website || null,
+      halal_status: fields.halalStatus || null
     }).select().single();
     if (result.error) throw result.error;
     return result.data;
@@ -41,7 +42,11 @@
       requester_id: user.id,
       note: note || null
     });
-    if (result.error) throw result.error;
+    if (result.error) {
+      if (result.error.code === "23505") throw new Error("You already have a claim waiting on this listing. A volunteer will get to it soon.");
+      if (result.error.code === "42501") throw new Error("You can't claim a listing you already own.");
+      throw new Error(result.error.message || "Could not submit your claim. Please try again.");
+    }
   }
 
   async function loadMyClaims() {

@@ -76,7 +76,17 @@
   }
 
   async function mfaEnroll() {
-    var result = await window.NiccSupabase.auth.mfa.enroll({ factorType: "totp" });
+    // A setup that was started but never confirmed leaves an "unverified"
+    // factor behind, and Supabase refuses a second enroll while it exists.
+    // Clear those first so "Set up two-factor" always works on a retry.
+    var existing = await window.NiccSupabase.auth.mfa.listFactors();
+    if (!existing.error && existing.data && existing.data.all) {
+      var stale = existing.data.all.filter(function (f) { return f.status === "unverified"; });
+      for (var i = 0; i < stale.length; i++) {
+        await window.NiccSupabase.auth.mfa.unenroll({ factorId: stale[i].id });
+      }
+    }
+    var result = await window.NiccSupabase.auth.mfa.enroll({ factorType: "totp", friendlyName: "NICC Business " + Date.now() });
     if (result.error) throw result.error;
     return result.data; // { id, totp: { qr_code, secret, uri } }
   }

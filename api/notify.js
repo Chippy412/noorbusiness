@@ -1,11 +1,9 @@
 // api/notify.js
-// Emails the volunteers when something needs moderating. Wire it up once
-// in Supabase: Database > Webhooks > Create webhook, for INSERT on each of
-// businesses, claims, reviews and contact_messages, method POST, URL
-// https://<your-site>/api/notify, with the HTTP header
-//   Authorization: Bearer <NOTIFY_SECRET>
+// Emails the volunteers when something needs moderating. Called by the
+// notify_volunteers() database trigger (supabase/migrations/
+// 2026-10-04-notify-triggers.sql) with  Authorization: Bearer <NOTIFY_SECRET>.
 // Env vars (Vercel): NOTIFY_SECRET, RESEND_API_KEY, NOTIFY_EMAIL_TO,
-// NOTIFY_EMAIL_FROM (a sender verified in Resend).
+// NOTIFY_EMAIL_FROM (a sender verified in Resend, or onboarding@resend.dev).
 var html = require("./_lib/html");
 
 var LABELS = {
