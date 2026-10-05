@@ -29,10 +29,12 @@ function parseBody(req) {
 }
 function str(v, max) { return typeof v === "string" ? v.trim().slice(0, max) : ""; }
 
+// Resolves {ok, codes}. codes are Cloudflare's error-codes (or "missing-token"
+// / "unreachable") so a rejected form can say why.
 async function verifyTurnstile(token, ip) {
   var secret = process.env.TURNSTILE_SECRET_KEY;
-  if (!secret) return true; // Turnstile not configured on this deployment
-  if (!token || typeof token !== "string") return false;
+  if (!secret) return { ok: true, codes: [] }; // Turnstile not configured on this deployment
+  if (!token || typeof token !== "string") return { ok: false, codes: ["missing-token"] };
   var params = new URLSearchParams();
   params.append("secret", secret);
   params.append("response", token);
@@ -40,8 +42,8 @@ async function verifyTurnstile(token, ip) {
   try {
     var r = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", { method: "POST", body: params });
     var data = await r.json();
-    return !!data.success;
-  } catch (e) { return false; }
+    return { ok: !!data.success, codes: data["error-codes"] || [] };
+  } catch (e) { return { ok: false, codes: ["unreachable"] }; }
 }
 
 async function recentCount(table, filter) {
@@ -66,7 +68,8 @@ module.exports = async function handler(req, res) {
   if (body.type === "contact") {
     var name = str(body.name, 120), email = str(body.email, 254), subject = str(body.subject, 200), message = str(body.message, 5000);
     if (!name || !EMAIL_RE.test(email) || !message) { res.status(400).json({ ok: false, error: "invalid" }); return; }
-    if (!(await verifyTurnstile(body.token, ip))) { res.status(400).json({ ok: false, error: "captcha" }); return; }
+    var ts = await verifyTurnstile(body.token, ip);
+    if (!ts.ok) { res.status(400).json({ ok: false, error: "captcha", codes: ts.codes }); return; }
     if ((await recentCount("contact_messages", "&ip_hash=eq." + ipHash)) >= 5 ||
         (await recentCount("contact_messages", "&email=eq." + encodeURIComponent(email))) >= 3) {
       res.status(429).json({ ok: false, error: "rate_limited" }); return;

@@ -795,10 +795,12 @@
   .toast {
     position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(140%);
     background: var(--ink); color: var(--ground); padding: 13px 22px; border-radius: 999px;
-    font-size: 0.9rem; font-weight: 600; z-index: 60; transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
+    font-size: 0.9rem; font-weight: 600; z-index: 60;
+    opacity: 0; visibility: hidden; pointer-events: none;
+    transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), opacity 0.3s, visibility 0s linear 0.4s;
     box-shadow: 0 16px 32px -14px rgba(0 0 0 / 0.5);
   }
-  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; visibility: visible; transition-delay: 0s; }
   @media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
 </style>
 
@@ -2905,7 +2907,10 @@
         if (direct.error) throw new Error("Could not send your message. Please try again.");
         return;
       }
-      if (res.data && res.data.error === "captcha") throw new Error("Please complete the verification challenge.");
+      if (res.data && res.data.error === "captcha") {
+        var why = (res.data.codes || []).join(", ");
+        throw new Error("Please complete the verification challenge." + (why ? " (" + why + ")" : ""));
+      }
       if (res.status === 429) throw new Error("You've sent several messages recently. Please wait a little while and try again.");
       throw new Error("Could not send your message. Please try again.");
     }
