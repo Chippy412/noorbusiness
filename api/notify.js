@@ -12,7 +12,8 @@ var LABELS = {
   businesses: "New business listing to review",
   claims: "New listing claim to review",
   reviews: "New review to review",
-  contact_messages: "New contact message"
+  contact_messages: "New contact message",
+  business_edits: "Edited listing awaiting review (the live version is unchanged)"
 };
 
 function summarize(table, r) {
@@ -20,6 +21,7 @@ function summarize(table, r) {
   if (table === "claims") return "Business id: " + r.business_id + "\nNote: " + (r.note || "(none)");
   if (table === "reviews") return "By: " + r.author_name + "\nRating: " + r.rating + "/5\n\n" + r.body;
   if (table === "contact_messages") return "From: " + r.name + " <" + r.email + ">\nSubject: " + (r.subject || "(none)") + "\n\n" + r.message;
+  if (table === "business_edits") return "Listing id: " + r.business_id + "\nChanged fields: " + Object.keys(r.changes || {}).join(", ");
   return JSON.stringify(r);
 }
 
@@ -34,12 +36,13 @@ module.exports = async function handler(req, res) {
 
   var payload = req.body;
   if (typeof payload === "string") { try { payload = JSON.parse(payload); } catch (e) { payload = null; } }
-  if (!payload || payload.type !== "INSERT" || !payload.record || !LABELS[payload.table]) {
+  var okType = payload && (payload.type === "INSERT" || (payload.type === "UPDATE" && payload.table === "business_edits"));
+  if (!payload || !payload.record || !LABELS[payload.table] || !okType) {
     res.status(200).json({ ok: true, skipped: true }); return;
   }
 
   var subject = LABELS[payload.table];
-  var text = summarize(payload.table, payload.record) + "\n\nModerate it in the Supabase Table Editor (" + payload.table + ").";
+  var text = summarize(payload.table, payload.record) + "\n\nModerate it at https://nicc-business.vercel.app/#/admin";
   try {
     var r = await fetch("https://api.resend.com/emails", {
       method: "POST",

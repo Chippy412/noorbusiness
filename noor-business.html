@@ -1,5 +1,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#F8F8F2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#14180F" media="(prefers-color-scheme: dark)">
 <title>NICC Business</title>
 <meta name="description" content="NICC Business is a community-run directory of Muslim-owned and halal-verified businesses in Columbus, Ohio. Find local shops and restaurants, or list your own.">
 <link rel="canonical" href="https://nicc-business.vercel.app/">
@@ -133,6 +135,9 @@
 
   * { box-sizing: border-box; }
   html { color-scheme: light dark; scroll-behavior: smooth; }
+  /* No 300ms tap delay / double-tap zoom on controls; the open listing popup shouldn't scroll the page behind it. */
+  a, button, summary, label.toggle, select { touch-action: manipulation; }
+  .listing-modal { overscroll-behavior: contain; }
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 
   body {
@@ -793,6 +798,37 @@
   .footer-social svg { width: 16px; height: 16px; }
   @media (max-width: 900px) { .footer-grid { grid-template-columns: 1fr 1fr; } .footer-brand { grid-column: span 2; } }
   @media (max-width: 560px) { .footer-grid { grid-template-columns: 1fr; } .footer-brand { grid-column: span 1; } .footer-bottom { flex-direction: column; align-items: flex-start; } }
+
+  /* Moderation page */
+  .admin-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; align-items: center; }
+  .admin-tab { border: 1px solid var(--hairline); background: var(--surface); color: var(--ink-2); padding: 9px 16px; border-radius: 999px; font: inherit; font-weight: 600; font-size: 0.9rem; cursor: pointer; }
+  .admin-tab[aria-selected="true"] { background: var(--accent-soft); color: var(--accent-soft-ink); border-color: var(--accent); }
+  .admin-count { display: inline-block; min-width: 1.4em; padding: 0 6px; margin-left: 4px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-size: 0.78rem; text-align: center; font-variant-numeric: tabular-nums; }
+  .admin-refresh { margin-left: auto; }
+  .admin-card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 18px; padding: 22px; margin-bottom: 16px; }
+  .admin-card-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-bottom: 4px; }
+  .admin-card-head h3 { font-size: 1.15rem; margin: 0; }
+  .admin-meta { color: var(--muted); font-size: 0.86rem; margin: 2px 0 10px; }
+  .admin-long { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink-2); }
+  .admin-none { color: var(--muted); font-style: italic; }
+  .admin-thumb { display: block; width: 96px; height: 96px; object-fit: cover; border-radius: 12px; margin: 6px 0 10px; background: var(--surface-2); }
+  .admin-dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 12px 0; font-size: 0.92rem; }
+  .admin-dl dt { color: var(--muted); }
+  .admin-dl dd { margin: 0; overflow-wrap: anywhere; }
+  .admin-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+  .admin-diff { width: 100%; border-collapse: collapse; font-size: 0.92rem; margin-top: 8px; }
+  .admin-diff th, .admin-diff td { text-align: left; vertical-align: top; padding: 10px 12px; border-top: 1px solid var(--hairline); overflow-wrap: anywhere; }
+  .admin-diff thead th { color: var(--muted); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; border-top: 0; }
+  .admin-new { background: var(--accent-soft); }
+  .admin-stars { color: var(--accent); letter-spacing: 2px; }
+  .admin-empty { text-align: center; color: var(--muted); padding: 48px 12px; }
+  .admin-scroll { overflow-x: auto; }
+  .admin-all { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  .admin-all th, .admin-all td { text-align: left; vertical-align: top; padding: 12px; border-top: 1px solid var(--hairline); }
+  .admin-all thead th { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; border-top: 0; }
+  .admin-check { display: block; white-space: nowrap; margin-bottom: 4px; cursor: pointer; }
+  .admin-all select { font: inherit; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--hairline); background: var(--ground); color: var(--ink); }
+  @media (max-width: 640px) { .admin-dl { grid-template-columns: 1fr; gap: 0; } .admin-dl dd { margin-bottom: 8px; } .admin-refresh { margin-left: 0; } }
 
   /* Toast */
   .toast {
@@ -1667,6 +1703,7 @@
           <div class="form-card">
             <p id="accountEmailDisplay" style="font-weight:700"></p>
             <p style="margin-top:12px">
+              <a class="btn btn-primary" id="adminLink" href="#/admin" hidden>Open moderation</a>
               <button type="button" class="btn btn-ghost" id="logoutBtn">Log out</button>
             </p>
           </div>
@@ -1829,6 +1866,20 @@
   </div>
 
   <!-- ============ NOT FOUND ============ -->
+  <div class="page" id="page-admin" hidden>
+    <div class="page-head">
+      <div class="wrap">
+        <h1>Moderation</h1>
+        <p>Review new listings, edits, claims and reviews. Volunteers only.</p>
+      </div>
+    </div>
+    <section>
+      <div class="wrap">
+        <div id="adminRoot" class="admin-root"><p class="admin-empty">Checking access…</p></div>
+      </div>
+    </section>
+  </div>
+
   <div class="page" id="page-notfound" hidden>
     <div class="page-head">
       <div class="wrap">
@@ -1925,11 +1976,12 @@
 <script src="js/businesses-data.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/owner-dashboard.js"></script>
+<script src="js/admin.js"></script>
 <script>
 (function () {
   "use strict";
 
-  var ROUTES = ["home", "explore", "about", "faq", "contact", "list", "account", "privacy", "terms", "notfound"];
+  var ROUTES = ["home", "explore", "about", "faq", "contact", "list", "account", "privacy", "terms", "admin", "notfound"];
   var PAGE_TITLES = {
     home: "NICC Business — Columbus, Ohio Business Directory",
     explore: "Explore listings — NICC Business",
@@ -1940,6 +1992,7 @@
     account: "My account — NICC Business",
     privacy: "Privacy policy — NICC Business",
     terms: "Terms & conditions — NICC Business",
+    admin: "Moderation — NICC Business",
     notfound: "Page not found — NICC Business"
   };
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -2384,6 +2437,7 @@
       if (openId) openWhenReady(openId);
     }
     if (route === "account") refreshAccountView();
+    if (route === "admin") renderAdmin();
     if (route === "contact") ensureTurnstile("contactTurnstile");
     if (route === "list") ensureTurnstile("listTurnstile");
   }
@@ -3040,6 +3094,10 @@
       loggedOut.hidden = true;
       loggedIn.hidden = false;
       document.getElementById("accountEmailDisplay").textContent = "Logged in as " + user.email;
+      window.NiccAdmin.status().then(function (s) {
+        var link = document.getElementById("adminLink");
+        if (link) link.hidden = !(s.state === "ok" || s.state === "need-code" || s.state === "need-2fa");
+      }).catch(function () { /* admin tables not set up yet */ });
       renderMyListings();
       renderMfaPanel();
       renderMyReviews();
@@ -3078,17 +3136,43 @@
     return (hours || []).map(function (h) { return h[0] + " | " + h[1]; }).join("\n");
   }
 
+  /* ============ Moderation page (js/admin.js) ============ */
+  async function renderAdmin() {
+    var root = document.getElementById("adminRoot");
+    if (!root) return;
+    root.innerHTML = '<p class="admin-empty">Checking access…</p>';
+    var s;
+    try { s = await window.NiccAdmin.status(); } catch (e) { s = { state: "error" }; }
+    var msg = {
+      "logged-out": 'Please <a class="text-link" href="#/account">log in</a> to continue.',
+      "not-admin": "This page is for NICC Business volunteers. If you should have access, ask an existing moderator to add you.",
+      "need-2fa": 'Moderators must use two-factor login. <a class="text-link" href="#/account">Turn it on in your account</a>, then log in again.',
+      "need-code": 'Finish logging in with your two-factor code on the <a class="text-link" href="#/account">account page</a>, then come back.',
+      "error": "Could not check your access. Please try again."
+    }[s.state];
+    if (msg) { root.innerHTML = '<p class="admin-empty">' + msg + "</p>"; return; }
+    window.NiccAdmin.mount(root, { escape: escapeAttr, safeUrl: safePhotoUrl, toast: toast });
+  }
+
   async function renderMyListings() {
     var el = document.getElementById("myListings");
     if (!el) return;
     try {
       var mine = await window.NiccOwner.loadMyBusinesses();
       var claims = await window.NiccOwner.loadMyClaims();
+      var edits = {};
+      try { edits = await window.NiccOwner.loadMyPendingEdits(); } catch (e) { /* edits table not set up yet */ }
 
-      var businessBlocks = mine.map(function (b) {
+      var businessBlocks = mine.map(function (live) {
+        // Show the owner their own pending edits layered over the live listing.
+        var pendingEdit = edits[live.id];
+        var b = pendingEdit ? Object.assign({}, live, pendingEdit.changes) : live;
         var ownerPhotoUrl = safePhotoUrl(b.photo_url);
         return '' +
-          '<div class="hours-row"><span>' + escapeAttr(b.name) + '</span><span>' + escapeAttr(b.status) + '</span></div>' +
+          '<div class="hours-row"><span>' + escapeAttr(live.name) + '</span><span>' + escapeAttr(live.status) + '</span></div>' +
+          (pendingEdit
+            ? '<p class="help" style="margin:8px 0">Your recent changes are waiting for a volunteer to approve them. The current version stays public until then.</p>'
+            : "") +
           '<div class="owner-photo-row" style="margin:10px 0 16px;display:flex;align-items:center;gap:14px">' +
             '<img class="owner-photo-preview" src="' + (ownerPhotoUrl || "") + '" alt="" style="width:64px;height:64px;border-radius:12px;object-fit:cover;background:var(--surface-2);' + (ownerPhotoUrl ? "" : "display:none;") + '">' +
             '<label class="btn btn-ghost btn-sm" style="cursor:pointer">Upload photo' +
@@ -3103,7 +3187,7 @@
               '<div class="field"><label for="ed-addr-' + b.id + '">Address</label><input type="text" id="ed-addr-' + b.id + '" class="edit-address" maxlength="250" value="' + escapeAttr(b.address || "") + '"></div>' +
               '<div class="field"><label for="ed-phone-' + b.id + '">Phone</label><input type="tel" id="ed-phone-' + b.id + '" class="edit-phone" maxlength="40" value="' + escapeAttr(b.phone || "") + '"></div>' +
               '<div class="field full"><label for="ed-web-' + b.id + '">Website</label><input type="text" id="ed-web-' + b.id + '" class="edit-website" inputmode="url" spellcheck="false" placeholder="https://…" value="' + escapeAttr(b.website || "") + '"><span class="error">Enter a web address like https://example.com.</span></div>' +
-              '<div class="field full"><label for="ed-hours-' + b.id + '">Hours</label><textarea id="ed-hours-' + b.id + '" class="edit-hours" rows="4" placeholder="Mon–Fri | 9am–5pm&#10;Sat | 10am–2pm">' + escapeAttr(formatHours(b.hours)) + '</textarea><span class="help">One per line, as days | times. Hours changes go live straight away; other changes are re-checked by a volunteer.</span></div>' +
+              '<div class="field full"><label for="ed-hours-' + b.id + '">Hours</label><textarea id="ed-hours-' + b.id + '" class="edit-hours" rows="4" placeholder="Mon–Fri | 9am–5pm&#10;Sat | 10am–2pm">' + escapeAttr(formatHours(b.hours)) + '</textarea><span class="help">One per line, as days | times. Hours changes go live straight away; other changes are reviewed by a volunteer first.</span></div>' +
             '</div>' +
             '<button type="submit" class="btn btn-ghost btn-sm" style="margin-top:8px">Save changes</button>' +
             '<p class="form-status edit-status" role="status"></p>' +
@@ -3130,10 +3214,12 @@
           var status = row.querySelector(".owner-photo-status");
           status.textContent = "Uploading…";
           try {
-            var url = await window.NiccOwner.uploadPhoto(businessId, file);
-            preview.src = url;
+            var uploaded = await window.NiccOwner.uploadPhoto(businessId, file);
+            preview.src = uploaded.url;
             preview.style.display = "";
-            status.textContent = "Photo updated.";
+            status.textContent = uploaded.pending
+              ? "Photo saved. A volunteer will review it; the current photo stays public until then."
+              : "Photo updated.";
           } catch (err) {
             status.textContent = err.message || "Could not upload photo.";
           }
@@ -3147,6 +3233,7 @@
           var status = form.querySelector(".edit-status");
           var businessId = form.getAttribute("data-business-id");
           var current = mine.filter(function (b) { return b.id === businessId; })[0];
+          current = edits[businessId] ? Object.assign({}, current, edits[businessId].changes) : current;
           var website = normalizeWebsite(form.querySelector(".edit-website").value);
           form.querySelector(".edit-website").closest(".field").classList.toggle("invalid", website === null);
           if (website === null) return;
@@ -3162,9 +3249,8 @@
               website: website,
               hours: parseHours(form.querySelector(".edit-hours").value)
             });
-            var requeued = current.status === "approved" && newStatus !== "approved";
-            toast(requeued
-              ? "Saved. A volunteer will re-check your changes, and the listing is hidden until then."
+            toast(newStatus.pending
+              ? "Saved. A volunteer will review your changes. The current version stays public until then."
               : "Saved.");
             renderMyListings();
           } catch (err) {
