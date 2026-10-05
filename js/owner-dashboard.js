@@ -84,6 +84,14 @@
     return result.data;
   }
 
+  // Hours on their own: they go live straight away, so a brand-new listing
+  // can carry them from the moment a volunteer approves it.
+  async function setHours(id, hours) {
+    var result = await window.NiccSupabase.rpc("owner_update_business", { p_id: id, p_fields: { hours: hours } });
+    if (result.error) throw result.error;
+    return result.data;
+  }
+
   // Edits awaiting review for the owner's listings, keyed by business id.
   async function loadMyPendingEdits() {
     var result = await window.NiccSupabase.from("business_edits").select("business_id, changes, submitted_at");
@@ -161,6 +169,7 @@
     updateBusiness: updateBusiness,
     loadMyPendingEdits: loadMyPendingEdits,
     uploadPhoto: uploadPhoto,
+    setHours: setHours,
     submitReview: submitReview,
     loadReviewsForMyBusinesses: loadReviewsForMyBusinesses,
     replyToReview: replyToReview
