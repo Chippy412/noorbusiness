@@ -146,26 +146,3 @@ test("alerts go to the whole team only once a real sender is set up", async () =
     await recipients({ NOTIFY_EMAIL_TO: "me@gmail.com", NOTIFY_EMAIL_FROM: "alerts@updates.noorohio.org" }, async () => { throw new Error("db down"); }),
     ["me@gmail.com"], "a team lookup failure falls back to NOTIFY_EMAIL_TO");
 });
-
-test("digest rejects requests without the cron secret", async () => {
-  process.env.CRON_SECRET = "s3cret";
-  const handler = require("../api/digest");
-  const res = mockRes();
-  await handler({ headers: {} }, res);
-  assert.strictEqual(res.code, 401);
-  const res2 = mockRes();
-  await handler({ headers: { authorization: "Bearer wrong" } }, res2);
-  assert.strictEqual(res2.code, 401);
-});
-
-test("digest lists only the queues that have items", () => {
-  const { digestText, total } = require("../api/digest")._test;
-  const counts = { businesses: 2, business_edits: 0, claims: 1, reviews: 0 };
-  const text = digestText(counts, 3);
-  assert.match(text, /New listings: 2/);
-  assert.match(text, /Claims: 1/);
-  assert.match(text, /Contact messages in the last 24 hours: 3/);
-  assert.doesNotMatch(text, /Reviews:/);
-  assert.strictEqual(total(counts, 3), 6);
-  assert.strictEqual(total({}, 0), 0);
-});

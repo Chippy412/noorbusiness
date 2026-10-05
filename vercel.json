@@ -43,11 +43,5 @@
         }
       ]
     }
-  ],
-  "crons": [
-    {
-      "path": "/api/digest",
-      "schedule": "0 13 * * *"
-    }
   ]
 }

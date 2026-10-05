@@ -5,7 +5,7 @@
 // Env vars (Vercel): NOTIFY_SECRET, RESEND_API_KEY, NOTIFY_EMAIL_TO,
 // NOTIFY_EMAIL_FROM (a sender verified in Resend, or onboarding@resend.dev).
 var html = require("./_lib/html");
-var mail = require("./_lib/mail");
+var supa = require("./_lib/supa");
 
 var LABELS = {
   businesses: "New business listing to review",
@@ -14,6 +14,33 @@ var LABELS = {
   contact_messages: "New contact message",
   business_edits: "Edited listing awaiting review (the live version is unchanged)"
 };
+
+// Who gets the alert: NOTIFY_EMAIL_TO, plus every moderator and volunteer on
+// the team once the sender is on a verified domain. Resend's test sender
+// (onboarding@resend.dev) can only deliver to the account owner and rejects
+// the whole email if any other recipient is included, so the team is only
+// added when a real sender is configured.
+async function recipients(env, loadTeam) {
+  var list = String(env.NOTIFY_EMAIL_TO || "").split(",").map(function (s) { return s.trim(); }).filter(Boolean);
+  var testSender = /@resend\.dev>?\s*$/i.test(String(env.NOTIFY_EMAIL_FROM || ""));
+  if (!testSender) {
+    try { list = list.concat(await loadTeam()); } catch (e) { /* fall back to NOTIFY_EMAIL_TO */ }
+  }
+  var seen = {};
+  return list.filter(function (e) {
+    var k = String(e).toLowerCase();
+    if (!e || seen[k]) return false;
+    seen[k] = true;
+    return true;
+  });
+}
+
+async function loadTeamEmails() {
+  if (!supa.serviceKey()) return [];
+  var r = await supa.rest("rpc/notify_recipients", { service: true, method: "POST", body: {} });
+  if (!r.ok || !Array.isArray(r.data)) return [];
+  return r.data.map(function (x) { return typeof x === "string" ? x : x && x.notify_recipients; }).filter(Boolean);
+}
 
 function summarize(table, r) {
   if (table === "businesses") return "Name: " + r.name + "\nCategory: " + r.category + "\nNeighborhood: " + r.neighborhood + "\nStatus: " + r.status;
@@ -43,11 +70,16 @@ module.exports = async function handler(req, res) {
   var subject = LABELS[payload.table];
   var text = summarize(payload.table, payload.record) + "\n\nModerate it at https://nicc-business.vercel.app/#/admin";
   try {
-    var sent = await mail.send(subject, text);
-    res.status(sent.ok ? 200 : 502).json({ ok: sent.ok });
+    var r = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + key, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: from, to: await recipients(process.env, loadTeamEmails), subject: "[NICC Business] " + subject, text: text })
+    });
+    if (!r.ok) console.error("notify: Resend rejected the email", r.status, await r.text());
+    res.status(r.ok ? 200 : 502).json({ ok: r.ok });
   } catch (e) {
     console.error("notify: could not reach Resend", e && e.message);
     res.status(502).json({ ok: false });
   }
 };
-module.exports._test = { summarize: summarize, esc: html.esc, recipients: mail.recipients };
+module.exports._test = { summarize: summarize, esc: html.esc, recipients: recipients };
