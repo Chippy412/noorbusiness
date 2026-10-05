@@ -913,6 +913,13 @@
 
 </head>
 <body>
+<noscript>
+  <div style="max-width:560px;margin:48px auto;padding:0 20px;font-family:system-ui,sans-serif;line-height:1.5;color:#14180f">
+    <h1 style="font-size:1.5rem">NICC Business needs JavaScript</h1>
+    <p>This directory of Muslim-owned and halal-friendly businesses in Columbus, Ohio loads its listings in your browser. Please turn on JavaScript and reload the page.</p>
+    <p>Questions? Email <a href="mailto:hello@noorbusiness.org">hello@noorbusiness.org</a>.</p>
+  </div>
+</noscript>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <!-- The NICC star: union of a square and its 45-degree rotation -->
   <symbol id="i-star-mark" viewBox="0 0 100 100">
@@ -1856,6 +1863,12 @@
                   <label for="ownAddLong">Full description</label>
                   <textarea id="ownAddLong" maxlength="3000" required placeholder="What you do, and what makes people come back."></textarea>
                   <span class="error">Please add a fuller description.</span>
+                </div>
+                <div class="field full">
+                  <label for="ownAddPhoto">Cover photo (optional)</label>
+                  <input type="file" id="ownAddPhoto" accept="image/png,image/jpeg,image/webp">
+                  <span class="help">JPG, PNG or WebP, up to 5 MB. A wide photo of your storefront or best product works well. You can change it later from your account.</span>
+                  <span class="error">Please choose a JPG, PNG or WebP under 5 MB.</span>
                 </div>
               </div>
               <div style="margin-top:22px">
@@ -3575,8 +3588,13 @@
         document.getElementById("ownAddLong").closest(".field").classList.toggle("invalid", !longDesc);
         return;
       }
+      var photoInput = document.getElementById("ownAddPhoto");
+      var photoFile = photoInput && photoInput.files && photoInput.files[0];
+      var photoOk = !photoFile || (/^image\/(png|jpeg|webp)$/.test(photoFile.type) && photoFile.size <= 5 * 1024 * 1024);
+      photoInput.closest(".field").classList.toggle("invalid", !photoOk);
+      if (!photoOk) return;
       try {
-        await window.NiccOwner.createBusiness({
+        var created = await window.NiccOwner.createBusiness({
           name: name,
           category: document.getElementById("ownAddCategory").value,
           neighborhood: document.getElementById("ownAddHood").value,
@@ -3587,7 +3605,12 @@
           website: addWebsite,
           halalStatus: document.getElementById("ownAddHalal").value
         });
-        status.textContent = "Thank you. Your listing has been submitted and a volunteer will review it within two business days.";
+        var photoNote = "";
+        if (photoFile && created && created.id) {
+          try { await window.NiccOwner.uploadPhoto(created.id, photoFile); }
+          catch (photoErr) { photoNote = " Your cover photo could not be uploaded; you can add it from your account."; }
+        }
+        status.textContent = "Thank you. Your listing has been submitted and a volunteer will review it within two business days." + photoNote;
         status.classList.remove("error");
         status.classList.add("show");
         ownerAddForm.reset();
