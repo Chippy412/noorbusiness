@@ -62,7 +62,7 @@ and isn't something `git clone` gives you.
 | Route | What it does |
 | --- | --- |
 | `/api/submit` | Contact form + footer newsletter. Verifies Turnstile on the server, rate-limits per sender, writes with the service-role key. |
-| `/api/notify` | Emails volunteers when something needs moderating (called by Supabase webhooks). |
+| `/api/notify` | Emails volunteers when something needs moderating (called by database triggers, see `2026-10-04-notify-triggers.sql`). |
 | `/b/<id>` → `/api/listing` | A crawlable, shareable page for each approved listing (title, Open Graph, schema.org). |
 | `/sitemap.xml` → `/api/sitemap` | Home page plus every approved listing. |
 | `/api/verify-turnstile`, `/api/turnstile-config` | Turnstile helpers. |
@@ -74,16 +74,32 @@ and isn't something `git clone` gives you.
 - `SUPABASE_AUTH_CAPTCHA=1` — set only after enabling Turnstile in Supabase > Authentication > Attack Protection (paste the Turnstile secret there). Then Supabase itself rejects bot sign-ups.
 - Email alerts (optional): `NOTIFY_SECRET` (any long random string), `RESEND_API_KEY`, `NOTIFY_EMAIL_TO` (comma-separated), `NOTIFY_EMAIL_FROM` (a sender verified in Resend).
 
-**Guided setup:** `bash scripts/setup-hardening.sh` walks through all of the steps below (migrations, keys, captcha, alert webhooks).
+**Setting up a fresh Supabase project, in order** (each `.sql` file is run
+once in the SQL editor; all are safe to re-run):
 
-**Supabase setup, in order:**
+1. `supabase/schema.sql`, then `supabase/seed.sql`
+2. `supabase/migrations/2026-09-*.sql`, in date order
+3. `2026-10-04-hardening.sql`, then `2026-10-04-insert-column-grants.sql`
+4. Add `SUPABASE_SERVICE_ROLE_KEY` in Vercel, redeploy, send a test message
+   from the Contact page, then run `2026-10-04-lock-public-inserts.sql`
+5. `bash scripts/finish-setup.sh`: sets the email-alert variables in Vercel
+   and puts the alert-trigger SQL (`2026-10-04-notify-triggers.sql` with the
+   secret filled in) on your clipboard to run
+6. `2026-10-05-admin.sql`, `2026-10-06-roles.sql`, `2026-10-07-fixes.sql`,
+   `2026-10-08-review-fixes.sql`, `2026-10-09-notifications.sql`
+7. Add the first moderator (see Moderation below)
 
-1. Run `supabase/migrations/2026-10-04-hardening.sql` in the SQL editor.
-2. Add `SUPABASE_SERVICE_ROLE_KEY` in Vercel, redeploy, send a test message from the Contact page.
-3. Run `supabase/migrations/2026-10-04-lock-public-inserts.sql` (closes the direct-insert hole on `contact_messages`).
-4. For alerts: Supabase > Database > Webhooks > create one webhook per table (`businesses`, `claims`, `reviews`, `contact_messages`), event INSERT, method POST, URL `https://<your-site>/api/notify`, header `Authorization: Bearer <NOTIFY_SECRET>`.
+Alerts come from database triggers. Do **not** also create Supabase
+"Database Webhooks" for the same tables, or every alert arrives twice.
 
-**Tests:** `node --test tests/api.test.js`
+**Tests:**
+
+- `node --test tests/api.test.js`: the serverless routes.
+- `python3 tests/db/run.py`: applies `schema.sql`, `seed.sql` and every
+  migration (twice, to prove they're re-runnable) to a real local Postgres
+  with a Supabase stand-in, then checks every permission rule as visitors,
+  owners, volunteers and moderators. Needs `pip3 install --user pgserver "psycopg[binary]"`.
+  Add new migrations to `MIGRATIONS` in that file.
 
 ## Moderation
 
@@ -97,8 +113,19 @@ My account page for moderators). It shows:
 - **Claims**: approving transfers ownership to the person who claimed it.
 - **Reviews**: approve or reject.
 - **Messages**: contact-form messages, with a reply-by-email link.
-- **All listings**: set status, badges (e.g. Halal verified) and Featured.
-  Only moderators can set badges.
+- **All listings**: set badges (e.g. Halal verified; volunteers and
+  moderators), Featured and status (moderators only, see Roles).
+
+**Notifications for the team:**
+
+- A count of waiting items shows next to *My account* (and on the phone menu
+  button) for moderators and volunteers, and on the *Open moderation* button.
+- The moderation page checks every minute while open: new items show a
+  banner and the count in the browser tab, and *Turn on desktop alerts* adds
+  a system notification.
+- Emails go to `NOTIFY_EMAIL_TO`. Once `NOTIFY_EMAIL_FROM` is an address on a
+  domain verified in Resend (not `onboarding@resend.dev`), every moderator
+  and volunteer on the team is emailed as well, automatically.
 
 **Roles** (managed on the Moderation page > **Team**, moderators only):
 
@@ -126,4 +153,4 @@ on conflict (user_id) do update set role = 'moderator';
 Every action is enforced in the database (`admin_*` functions require the
 caller to be on `admins` AND signed in with their second factor), not just in
 the page. Run `supabase/migrations/2026-10-05-admin.sql`, then
-`2026-10-06-roles.sql`, to set this up (after the other `2026-10-04-*` migrations).
+`2026-10-06-roles.sql` and `2026-10-07-fixes.sql`, to set this up (after the other `2026-10-04-*` migrations).

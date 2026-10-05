@@ -121,3 +121,28 @@ test("notify summarises a queued listing edit", () => {
   assert.ok(text.includes("abc"));
   assert.ok(text.includes("description, phone"));
 });
+
+test("submit rejects contact emails that could inject into a mailto: link", async () => {
+  process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
+  const handler = require("../api/submit");
+  for (const email of ["x?bcc=evil@evil.com@example.com", "a&b@example.com", "a@b.co?subject=x", "<a@b.co>", "a b@c.co"]) {
+    const res = mockRes();
+    await handler({ method: "POST", headers: {}, body: { type: "contact", name: "A", email, message: "hi" } }, res);
+    assert.strictEqual(res.code, 400, email);
+  }
+  delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+});
+
+test("alerts go to the whole team only once a real sender is set up", async () => {
+  const { recipients } = require("../api/notify")._test;
+  const team = async () => ["mod@noor.org", "Me@Gmail.com", "vol@noor.org"];
+  assert.deepStrictEqual(
+    await recipients({ NOTIFY_EMAIL_TO: "me@gmail.com", NOTIFY_EMAIL_FROM: "NICC Business <onboarding@resend.dev>" }, team),
+    ["me@gmail.com"], "Resend's test sender must not get extra recipients");
+  assert.deepStrictEqual(
+    await recipients({ NOTIFY_EMAIL_TO: "me@gmail.com", NOTIFY_EMAIL_FROM: "NICC Business <alerts@updates.noorohio.org>" }, team),
+    ["me@gmail.com", "mod@noor.org", "vol@noor.org"]);
+  assert.deepStrictEqual(
+    await recipients({ NOTIFY_EMAIL_TO: "me@gmail.com", NOTIFY_EMAIL_FROM: "alerts@updates.noorohio.org" }, async () => { throw new Error("db down"); }),
+    ["me@gmail.com"], "a team lookup failure falls back to NOTIFY_EMAIL_TO");
+});

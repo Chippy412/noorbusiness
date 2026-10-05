@@ -1,3 +1,6 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#F8F8F2" media="(prefers-color-scheme: light)">
@@ -137,6 +140,11 @@
 
   * { box-sizing: border-box; }
   html { color-scheme: light dark; scroll-behavior: smooth; }
+  /* When someone picks a theme with the toggle, the browser's own colors
+     (default text, form controls, scrollbars) must follow it, not the
+     operating system's setting. */
+  :root[data-theme="dark"] { color-scheme: dark; }
+  :root[data-theme="light"] { color-scheme: light; }
   /* No 300ms tap delay / double-tap zoom on controls; the open listing popup shouldn't scroll the page behind it. */
   a, button, summary, label.toggle, select { touch-action: manipulation; }
   .listing-modal { overscroll-behavior: contain; }
@@ -802,39 +810,93 @@
   @media (max-width: 560px) { .footer-grid { grid-template-columns: 1fr; } .footer-brand { grid-column: span 1; } .footer-bottom { flex-direction: column; align-items: flex-start; } }
 
   /* Moderation page */
-  .admin-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; align-items: center; }
-  .admin-tab { border: 1px solid var(--hairline); background: var(--surface); color: var(--ink-2); padding: 9px 16px; border-radius: 999px; font: inherit; font-weight: 600; font-size: 0.9rem; cursor: pointer; }
-  .admin-tab[aria-selected="true"] { background: var(--accent-soft); color: var(--accent-soft-ink); border-color: var(--accent); }
-  .admin-count { display: inline-block; min-width: 1.4em; padding: 0 6px; margin-left: 4px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-size: 0.78rem; text-align: center; font-variant-numeric: tabular-nums; }
-  .admin-refresh { margin-left: auto; }
-  .admin-card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 18px; padding: 22px; margin-bottom: 16px; }
-  .admin-card-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-bottom: 4px; }
-  .admin-card-head h3 { font-size: 1.15rem; margin: 0; }
-  .admin-meta { color: var(--muted); font-size: 0.86rem; margin: 2px 0 10px; }
-  .admin-long { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink-2); }
-  .admin-none { color: var(--muted); font-style: italic; }
-  .admin-thumb { display: block; width: 96px; height: 96px; object-fit: cover; border-radius: 12px; margin: 6px 0 10px; background: var(--surface-2); }
-  .admin-dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 12px 0; font-size: 0.92rem; }
-  .admin-dl dt { color: var(--muted); }
-  .admin-dl dd { margin: 0; overflow-wrap: anywhere; }
-  .admin-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
-  .admin-diff { width: 100%; border-collapse: collapse; font-size: 0.92rem; margin-top: 8px; }
-  .admin-diff th, .admin-diff td { text-align: left; vertical-align: top; padding: 10px 12px; border-top: 1px solid var(--hairline); overflow-wrap: anywhere; }
-  .admin-diff thead th { color: var(--muted); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; border-top: 0; }
-  .admin-new { background: var(--accent-soft); }
-  .admin-stars { color: var(--accent); letter-spacing: 2px; }
-  .admin-empty { text-align: center; color: var(--muted); padding: 48px 12px; }
-  .admin-scroll { overflow-x: auto; }
-  .admin-all { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-  .admin-all th, .admin-all td { text-align: left; vertical-align: top; padding: 12px; border-top: 1px solid var(--hairline); }
-  .admin-all thead th { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; border-top: 0; }
-  .admin-add { display: grid; grid-template-columns: 1fr 180px auto; gap: 12px; align-items: end; margin: 14px 0; }
-  .admin-rolehelp { padding-left: 1.1em; margin: 0; }
-  .admin-actions-cell { white-space: nowrap; }
-  @media (max-width: 640px) { .admin-add { grid-template-columns: 1fr; } .admin-actions-cell { white-space: normal; } }
-  .admin-check { display: block; white-space: nowrap; margin-bottom: 4px; cursor: pointer; }
-  .admin-all select { font: inherit; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--hairline); background: var(--ground); color: var(--ink); }
-  @media (max-width: 640px) { .admin-dl { grid-template-columns: 1fr; gap: 0; } .admin-dl dd { margin-bottom: 8px; } .admin-refresh { margin-left: 0; } }
+  .nav-count { display: inline-block; min-width: 1.35em; margin-left: 6px; padding: 1px 6px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-size: 0.72rem; font-weight: 800; line-height: 1.4; text-align: center; font-variant-numeric: tabular-nums; vertical-align: 1px; }
+  .nav-toggle { position: relative; }
+  .nav-toggle[data-count]::after { content: attr(data-count); position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-size: 0.68rem; font-weight: 800; line-height: 18px; text-align: center; box-sizing: border-box; }
+  .mod { display: grid; grid-template-columns: 216px minmax(0, 1fr); gap: 44px; align-items: start; }
+  .mod-rail { position: sticky; top: 104px; }
+  .mod-rail-sum { font-family: "Bricolage Grotesque", sans-serif; font-size: 1.2rem; font-weight: 600; line-height: 1.25; color: var(--ink); margin: 0 12px 14px; }
+  .mod-nav-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border: 0; border-radius: 12px; background: none; color: var(--ink-2); font: inherit; font-weight: 600; font-size: 0.95rem; text-align: left; cursor: pointer; }
+  .mod-nav-item:hover { background: var(--surface-2); color: var(--ink); }
+  .mod-nav-item[aria-selected="true"] { background: var(--accent-soft); color: var(--accent-soft-ink); }
+  .mod-nav-count { min-width: 1.7em; padding: 1px 8px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-size: 0.78rem; font-weight: 800; text-align: center; font-variant-numeric: tabular-nums; }
+  .mod-rail-rule { border: 0; border-top: 1px solid var(--hairline); margin: 10px 12px; }
+  .mod-rail-foot { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin: 18px 12px 0; padding-top: 16px; border-top: 1px solid var(--hairline); color: var(--muted); font-size: 0.84rem; line-height: 1.5; }
+  .mod-rail-foot p { margin: 0; }
+  .mod-main { min-width: 0; max-width: 780px; }
+  .mod-title { font-size: 1.65rem; margin: 0 0 20px; }
+  .mod-sheet { background: var(--surface); border: 1px solid var(--hairline); border-radius: 18px; padding: 26px 28px 22px; margin-bottom: 18px; }
+  .mod-sheet h3 { font-size: 1.3rem; line-height: 1.25; margin: 0; overflow-wrap: anywhere; }
+  .mod-sheet-head { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px 24px; margin-bottom: 18px; }
+  .mod-sub { color: var(--muted); font-size: 0.92rem; margin: 4px 0 0; }
+  .mod-when { color: var(--muted); font-size: 0.84rem; line-height: 1.45; text-align: right; margin: 0; overflow-wrap: anywhere; }
+  .mod-lede { color: var(--ink); font-size: 1.05rem; font-weight: 600; margin: 0 0 8px; }
+  .mod-prose { color: var(--ink-2); line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }
+  .mod-photo { display: block; width: 100%; max-height: 260px; object-fit: cover; border-radius: 14px; margin: 0 0 18px; background: var(--surface-2); }
+  .mod-facts { display: grid; grid-template-columns: 168px minmax(0, 1fr); margin: 20px 0 0; border-top: 1px solid var(--hairline); }
+  .mod-facts dt, .mod-facts dd { margin: 0; padding: 10px 0; border-bottom: 1px solid var(--hairline); font-size: 0.92rem; }
+  .mod-facts dt { color: var(--muted); }
+  .mod-facts dd { color: var(--ink); overflow-wrap: anywhere; }
+  .mod-none { color: var(--muted); font-style: italic; }
+  .mod-decide { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 22px; }
+  .mod-diff-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 14px 0; border-top: 1px solid var(--hairline); }
+  .mod-diff-row:last-child { border-bottom: 1px solid var(--hairline); }
+  .mod-diff-field { grid-column: 1 / -1; margin: 0; color: var(--ink); font-size: 0.92rem; font-weight: 700; }
+  .mod-diff-old, .mod-diff-new { padding: 12px 14px; border-radius: 12px; font-size: 0.92rem; }
+  .mod-diff-old { background: var(--surface-2); color: var(--ink-2); }
+  .mod-diff-new { background: var(--accent-soft); color: var(--accent-soft-ink); box-shadow: inset 3px 0 0 var(--accent); }
+  .mod-diff-new .mod-prose, .mod-diff-new .mod-none, .mod-diff-old .mod-none { color: inherit; }
+  .mod-diff-tag { display: block; margin-bottom: 6px; font-size: 0.78rem; font-weight: 700; opacity: 0.75; }
+  .mod-thumb { display: block; width: 120px; height: 90px; object-fit: cover; border-radius: 10px; background: var(--surface); }
+  .mod-quote { margin: 0; padding: 2px 0 2px 16px; border-left: 3px solid var(--sage); color: var(--ink); font-size: 1.05rem; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .mod-stars { display: flex; gap: 2px; color: var(--accent); }
+  .mod-stars .icon { width: 16px; height: 16px; }
+  .mod-stars .icon:not(.filled) { opacity: 0.3; }
+  .mod-empty { padding: 34px 28px; border: 1px dashed var(--hairline); border-radius: 18px; color: var(--muted); }
+  .mod-empty p { margin: 0; }
+  .mod-empty-title { color: var(--ink); font-size: 1.05rem; font-weight: 700; margin-bottom: 4px !important; }
+  .mod-loading { color: var(--muted); }
+  .mod-intro { color: var(--muted); margin: -8px 0 16px; }
+  .mod-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--hairline); }
+  .mod-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "main status" "pills save"; gap: 12px 16px; align-items: center; padding: 18px 0; border-bottom: 1px solid var(--hairline); }
+  .mod-row-team { grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "main status save"; }
+  .mod-row-main { grid-area: main; min-width: 0; }
+  .mod-row-status { grid-area: status; }
+  .mod-row-pills { grid-area: pills; display: flex; flex-wrap: wrap; gap: 6px; }
+  .mod-row-save { grid-area: save; display: flex; justify-content: flex-end; align-items: center; gap: 14px; }
+  .mod-row-title { margin: 0; color: var(--ink); font-weight: 700; overflow-wrap: anywhere; }
+  .mod-you { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); font-size: 0.75rem; font-weight: 700; vertical-align: 1px; }
+  .mod-row select { font: inherit; font-size: 0.9rem; padding: 7px 12px; border-radius: 10px; border: 1px solid var(--hairline); background-color: var(--ground); color: var(--ink); }
+  .mod-row select:disabled { opacity: 0.6; }
+  .mod-pill { position: relative; display: inline-flex; cursor: pointer; }
+  .mod-pill input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+  .mod-pill span { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--hairline); background: var(--surface); color: var(--ink-2); font-size: 0.84rem; font-weight: 600; }
+  .mod-pill input:checked + span { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .mod-pill-featured { margin-left: 10px; }
+  .mod-pill input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .mod-pill.is-locked, .mod-pill.is-locked input { cursor: not-allowed; }
+  .mod-pill.is-locked span { opacity: 0.55; }
+  .mod-add { display: grid; grid-template-columns: minmax(0, 1fr) 170px auto; gap: 12px; align-items: end; margin: 16px 0 4px; }
+  .mod-remove { color: var(--muted); }
+  .mod-banner { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; padding: 12px 16px; border: 1px solid var(--accent); border-radius: 14px; background: var(--accent-soft); color: var(--accent-soft-ink); }
+  .mod-banner p { margin: 0; }
+  @media (max-width: 860px) {
+    .mod { grid-template-columns: 1fr; gap: 22px; }
+    .mod-rail { position: static; }
+    .mod-rail-sum { margin: 0 0 10px; }
+    .mod-rail [role="tablist"] { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+    .mod-nav-item { flex: none; width: auto; white-space: nowrap; }
+    .mod-rail-rule { display: none; }
+    .mod-rail-foot { flex-direction: row; flex-wrap: wrap; gap: 4px 14px; margin: 12px 0 0; padding-top: 0; border-top: 0; }
+    .mod-sheet { padding: 20px 18px 18px; }
+    .mod-when { text-align: left; }
+    .mod-facts { grid-template-columns: 1fr; }
+    .mod-facts dt { padding-bottom: 0; border-bottom: 0; }
+    .mod-diff-row { grid-template-columns: 1fr; }
+    .mod-add { grid-template-columns: 1fr; }
+    .mod-row, .mod-row-team { grid-template-columns: 1fr; grid-template-areas: "main" "status" "pills" "save"; }
+    .mod-row-save { justify-content: flex-start; }
+  }
 
   /* Toast */
   .toast {
@@ -849,6 +911,8 @@
   @media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
 </style>
 
+</head>
+<body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <!-- The NICC star: union of a square and its 45-degree rotation -->
   <symbol id="i-star-mark" viewBox="0 0 100 100">
@@ -998,7 +1062,7 @@
             <span class="badge-icon"><svg class="icon"><use href="#i-shield"/></svg></span>
             <div>
               <strong>Halal verified</strong>
-              <p>Owners name their supplier and certifier before the badge appears.</p>
+              <p>A volunteer checks the halal details before the badge appears.</p>
             </div>
           </div>
         </div>
@@ -1079,7 +1143,7 @@
             <span class="step-index">02</span>
             <div class="step-num"><svg class="icon"><use href="#i-shield"/></svg></div>
             <h3>Check the verification</h3>
-            <p>Open a listing to see the supplier, the certifier, and the date it was confirmed.</p>
+            <p>Open a listing to see its badges, hours, reviews, and how to reach the business.</p>
           </div>
           <div class="step reveal">
             <span class="step-index">03</span>
@@ -1102,7 +1166,7 @@
           <div class="value-list">
             <div class="value-item">
               <span class="v-icon"><svg class="icon"><use href="#i-shield"/></svg></span>
-              <div><h3>Verification you can ask about</h3><p>Every halal badge shows what the owner told us: the supplier, the certifier, and the date they confirmed it.</p></div>
+              <div><h3>Verification you can ask about</h3><p>Every halal badge is checked by a community volunteer before it appears, and you can ask us how any listing was verified.</p></div>
             </div>
             <div class="value-item">
               <span class="v-icon"><svg class="icon"><use href="#i-mosque"/></svg></span>
@@ -1291,7 +1355,7 @@
         <div class="value-rows">
           <div class="value-row reveal">
             <span class="v-icon"><svg class="icon"><use href="#i-shield"/></svg></span>
-            <div><h3>Verification over assumption</h3><p>A halal badge means an owner named their supplier and certifier and dated it. If they cannot, the badge does not appear. We would rather show less than imply more.</p></div>
+            <div><h3>Verification over assumption</h3><p>A halal badge appears only after a volunteer has checked the owner&rsquo;s halal details. If they cannot be confirmed, the badge does not appear. We would rather show less than imply more.</p></div>
           </div>
           <div class="value-row reveal">
             <span class="v-icon"><svg class="icon"><use href="#i-users"/></svg></span>
@@ -1299,11 +1363,11 @@
           </div>
           <div class="value-row reveal">
             <span class="v-icon"><svg class="icon"><use href="#i-storefront"/></svg></span>
-            <div><h3>No pay to rank</h3><p>Nobody buys their way to the top of a category. Placement follows relevance, distance, and community ratings.</p></div>
+            <div><h3>No pay to rank</h3><p>Nobody buys their way to the top of a category. Placement follows relevance and community ratings.</p></div>
           </div>
           <div class="value-row reveal">
             <span class="v-icon"><svg class="icon"><use href="#i-lamp"/></svg></span>
-            <div><h3>Owners keep control</h3><p>You edit your own listing, respond to reviews in public, and remove yourself at any time without emailing support.</p></div>
+            <div><h3>Owners keep control</h3><p>You edit your own listing, respond to reviews in public, and can ask us to remove it at any time.</p></div>
           </div>
         </div>
       </div>
@@ -1339,7 +1403,7 @@
           <div class="faq-list">
             <div class="faq-item">
               <button class="faq-q" aria-expanded="false" aria-controls="fa1">What does the halal verified badge actually mean?<svg class="icon"><use href="#i-plus"/></svg></button>
-              <div class="faq-a" id="fa1"><p>The owner has told us which supplier they buy from, which body certifies that supplier, and when they last confirmed it. That record shows on the listing so you can judge it yourself. We are not a certifying authority, and we say so plainly.</p></div>
+              <div class="faq-a" id="fa1"><p>The owner has told us where their halal products come from, and a community volunteer has checked those details before adding the badge. If you have a question about a particular listing, contact us and we will tell you what was checked. We are not a certifying authority, and we say so plainly.</p></div>
             </div>
             <div class="faq-item">
               <button class="faq-q" aria-expanded="false" aria-controls="fa2">Are non Muslim owned businesses listed?<svg class="icon"><use href="#i-plus"/></svg></button>
@@ -1351,7 +1415,7 @@
             </div>
             <div class="faq-item">
               <button class="faq-q" aria-expanded="false" aria-controls="fa4">Do I need an account to browse?<svg class="icon"><use href="#i-plus"/></svg></button>
-              <div class="faq-a" id="fa4"><p>No. Browsing, searching, filtering, and saving listings are open to everyone. Saved listings stay in your own browser. You only need an account to leave a review or claim a business.</p></div>
+              <div class="faq-a" id="fa4"><p>No. Browsing, searching, filtering, and saving listings are open to everyone. Saved listings stay in your browser, and follow you to other devices if you log in. You only need an account to leave a review or claim a business.</p></div>
             </div>
           </div>
         </div>
@@ -1368,11 +1432,11 @@
             </div>
             <div class="faq-item">
               <button class="faq-q" aria-expanded="false" aria-controls="fb3">Can I edit my listing later?<svg class="icon"><use href="#i-plus"/></svg></button>
-              <div class="faq-a" id="fb3"><p>Yes. Hours, photos, description, and contact details are all editable from your own dashboard. Hours update right away; other changes are reviewed by a volunteer, and your current listing stays live until they are approved. Halal verification details are confirmed again once a year.</p></div>
+              <div class="faq-a" id="fb3"><p>Yes. Hours, photos, description, and contact details are all editable from your own account. Hours update straight away; other changes are checked by a volunteer first, and your current listing stays public in the meantime.</p></div>
             </div>
             <div class="faq-item">
               <button class="faq-q" aria-expanded="false" aria-controls="fb4">Can I pay to appear at the top?<svg class="icon"><use href="#i-plus"/></svg></button>
-              <div class="faq-a" id="fb4"><p>No. Ranking follows relevance to the search, distance, and community ratings. There is no way to buy placement, which is the point.</p></div>
+              <div class="faq-a" id="fb4"><p>No. Ranking follows relevance to the search and community ratings. There is no way to buy placement, which is the point.</p></div>
             </div>
           </div>
         </div>
@@ -1488,7 +1552,7 @@
           <div class="benefit">
             <span class="v-icon"><svg class="icon"><use href="#i-lamp"/></svg></span>
             <h3>You keep control</h3>
-            <p>Edit hours, photos, and details yourself. Reply to reviews in public. Remove your listing any time.</p>
+            <p>Edit hours, photos, and details yourself. Reply to reviews in public. Ask us to remove your listing any time.</p>
           </div>
         </div>
       </div>
@@ -1507,7 +1571,7 @@
             <div class="form-grid">
               <div class="field full">
                 <label for="bName">Business name</label>
-                <input type="text" id="bName" required>
+                <input type="text" id="bName" maxlength="120" required>
                 <span class="error">Please enter your business name.</span>
               </div>
               <div class="field">
@@ -1537,11 +1601,6 @@
                 </select>
               </div>
               <div class="field">
-                <label for="bEmail">Contact email</label>
-                <input type="email" id="bEmail" name="email" autocomplete="email" spellcheck="false" required>
-                <span class="error">Please enter a valid email address.</span>
-              </div>
-              <div class="field">
                 <label for="bWebsite">Website or social page</label>
                 <input type="text" id="bWebsite" name="website" autocomplete="url" inputmode="url" spellcheck="false" placeholder="https://… (optional)">
                 <span class="help">Optional, but it helps us verify faster.</span>
@@ -1549,16 +1608,16 @@
               <div class="field full">
                 <label for="bHalal">Halal status</label>
                 <select id="bHalal">
-                  <option>Certified halal, I can name the certifier</option>
-                  <option>Halal supplier, not formally certified</option>
-                  <option>Some halal options</option>
-                  <option>Not applicable to my business</option>
+                  <option value="certified">Certified halal, I can name the certifier</option>
+                  <option value="supplier">Halal supplier, not formally certified</option>
+                  <option value="some">Some halal options</option>
+                  <option value="na">Not applicable to my business</option>
                 </select>
                 <span class="help">We ask for supplier details before any halal badge appears.</span>
               </div>
               <div class="field full">
                 <label for="bDesc">Short description</label>
-                <textarea id="bDesc" required placeholder="What you do, and what makes people come back."></textarea>
+                <textarea id="bDesc" maxlength="300" required placeholder="One or two sentences about what you do."></textarea>
                 <span class="error">Please add a short description.</span>
               </div>
             </div>
@@ -1603,15 +1662,15 @@
             </div>
             <div class="tl-item">
               <h3>We confirm halal details if they apply</h3>
-              <p>If you claimed certification, we ask for the supplier and certifying body before the badge goes on.</p>
+              <p>If you claimed certification, a volunteer confirms the details with you before the badge goes on.</p>
             </div>
             <div class="tl-item">
               <h3>Your listing goes live</h3>
-              <p>You get an email with a link to your page and access to edit it yourself.</p>
+              <p>Once approved it appears in the directory, and you can edit it yourself from your account.</p>
             </div>
           </div>
           <hr class="rule-sage" style="margin:34px 0">
-          <p style="color:var(--muted);font-size:0.95rem">Already listed and need to make a change? Use the <a href="#/contact" data-route="contact" style="color:var(--accent);font-weight:700">contact form</a> and we will connect your account.</p>
+          <p style="color:var(--muted);font-size:0.95rem">Already listed? <a href="#/explore" data-route="explore" style="color:var(--accent);font-weight:700">Find your business</a>, open it, and choose <strong>Claim this business</strong> to manage it from your account.</p>
         </div>
       </div>
     </section>
@@ -1676,6 +1735,7 @@
               </div>
               <div style="margin-top:14px">
                 <button type="submit" class="btn btn-primary">Verify and log in</button>
+                <button type="button" class="btn btn-ghost" id="mfaCancelBtn">Use a different account</button>
               </div>
               <p class="form-status" id="mfaChallengeStatus" role="status"></p>
             </form>
@@ -1735,7 +1795,7 @@
               <div class="form-grid">
                 <div class="field full">
                   <label for="ownAddName">Business name</label>
-                  <input type="text" id="ownAddName" required>
+                  <input type="text" id="ownAddName" maxlength="120" required>
                   <span class="error">Please enter your business name.</span>
                 </div>
                 <div class="field">
@@ -1778,13 +1838,23 @@
                   <span class="error">Enter a web address like https://example.com.</span>
                 </div>
                 <div class="field full">
+                  <label for="ownAddHalal">Halal status</label>
+                  <select id="ownAddHalal">
+                  <option value="certified">Certified halal, I can name the certifier</option>
+                  <option value="supplier">Halal supplier, not formally certified</option>
+                  <option value="some">Some halal options</option>
+                  <option value="na">Not applicable to my business</option>
+                  </select>
+                  <span class="help">A volunteer confirms halal details before any halal badge appears.</span>
+                </div>
+                <div class="field full">
                   <label for="ownAddDesc">Short description</label>
-                  <textarea id="ownAddDesc" required placeholder="One sentence for the listing card."></textarea>
+                  <textarea id="ownAddDesc" maxlength="300" required placeholder="One sentence for the listing card."></textarea>
                   <span class="error">Please add a short description.</span>
                 </div>
                 <div class="field full">
                   <label for="ownAddLong">Full description</label>
-                  <textarea id="ownAddLong" required placeholder="What you do, and what makes people come back."></textarea>
+                  <textarea id="ownAddLong" maxlength="3000" required placeholder="What you do, and what makes people come back."></textarea>
                   <span class="error">Please add a fuller description.</span>
                 </div>
               </div>
@@ -1881,7 +1951,7 @@
     </div>
     <section>
       <div class="wrap">
-        <div id="adminRoot" class="admin-root"><p class="admin-empty">Checking access…</p></div>
+        <div id="adminRoot"><p class="mod-loading">Checking access…</p></div>
       </div>
     </section>
   </div>
@@ -2047,8 +2117,10 @@
     var user = null;
     try { user = await window.NiccAuth.getCurrentUser(); } catch (e) { /* treat as logged out */ }
     document.querySelectorAll(".account-nav-link").forEach(function (a) {
-      a.textContent = user ? "My account" : "Log in";
+      a.firstChild && a.firstChild.nodeType === 3 ? (a.firstChild.nodeValue = user ? "My account" : "Log in")
+                                                   : a.insertBefore(document.createTextNode(user ? "My account" : "Log in"), a.firstChild);
     });
+    updateModerationBadges();
   }
   // Merges this device's saved list with the account's, both ways, so a
   // saved listing follows a logged-in person to their other devices.
@@ -2200,7 +2272,7 @@
 
   function openListing(id) {
     var item = LISTINGS.filter(function (l) { return l.id === id; })[0];
-    if (!item) return;
+    if (!item) { toast("That listing isn't available any more."); return; }
     currentItem = item;
 
     modalTitle.textContent = item.name;
@@ -2253,6 +2325,13 @@
 
     modalBody.innerHTML = html;
     modalSave.innerHTML = '<svg class="icon"><use href="#i-bookmark"/></svg> ' + (isSaved(item.id) ? "Saved" : "Save listing");
+    var claimBtn = document.getElementById("modalClaim");
+    if (claimBtn) {
+      claimBtn.hidden = false;
+      window.NiccAuth.getCurrentUser().then(function (u) {
+        if (currentItem === item && u && item.ownerId === u.id) claimBtn.hidden = true;
+      }).catch(function () { /* leave it visible */ });
+    }
     modal.showModal();
     renderReviewsSection(item);
   }
@@ -2287,12 +2366,12 @@
     } else if (user) {
       html += '<form id="reviewForm" style="margin-top:20px;padding-top:20px;border-top:1px solid var(--hairline)">' +
         '<h4 style="margin-bottom:12px">Leave a review</h4>' +
-        '<div class="field full"><label for="reviewName">Your name</label><input type="text" id="reviewName" required placeholder="How this appears publicly…"></div>' +
+        '<div class="field full"><label for="reviewName">Your name</label><input type="text" id="reviewName" maxlength="80" autocomplete="name" required placeholder="How this appears publicly…"></div>' +
         '<div class="field full" style="margin-top:10px"><label for="reviewRating">Rating</label>' +
         '<select id="reviewRating" required><option value="">Choose a rating</option>' +
         '<option value="5">5 - Excellent</option><option value="4">4 - Good</option><option value="3">3 - Okay</option>' +
         '<option value="2">2 - Poor</option><option value="1">1 - Very poor</option></select></div>' +
-        '<div class="field full" style="margin-top:10px"><label for="reviewBody">Your review</label><textarea id="reviewBody" required placeholder="Share your experience…"></textarea></div>' +
+        '<div class="field full" style="margin-top:10px"><label for="reviewBody">Your review</label><textarea id="reviewBody" maxlength="2000" required placeholder="Share your experience…"></textarea></div>' +
         '<button type="submit" class="btn btn-primary btn-sm" style="margin-top:14px">Submit for review</button>' +
         '<p class="form-status" id="reviewStatus" role="status"></p>' +
         '</form>';
@@ -2426,6 +2505,9 @@
     return new URLSearchParams(i === -1 ? "" : h.slice(i + 1));
   }
   function currentRoute() {
+    // Supabase's email links come back as #access_token=... or #error=...;
+    // those belong on the account page, not "Page not found".
+    if (/^#(access_token|error|type)=/.test(location.hash || "")) return "account";
     var h = (location.hash || "").replace("#/", "").split("?")[0].trim();
     if (h === "") return "home";
     return ROUTES.indexOf(h) !== -1 ? h : "notfound";
@@ -2451,7 +2533,7 @@
       if (openId) openWhenReady(openId);
     }
     if (route === "account") refreshAccountView();
-    if (route === "admin") renderAdmin();
+    if (route === "admin") renderAdmin(); else stopAdmin();
     if (route === "contact") ensureTurnstile("contactTurnstile");
     if (route === "list") ensureTurnstile("listTurnstile");
   }
@@ -2817,7 +2899,10 @@
   function ensureTurnstile(containerId) {
     var w = turnstileWidgets[containerId] || (turnstileWidgets[containerId] = {});
     if (!w.mountPromise) {
-      w.mountPromise = turnstileMount(containerId).then(function (id) { w.id = id; return id; });
+      w.mountPromise = turnstileMount(containerId).then(function (id) { w.id = id; return id; }, function () {
+        w.mountPromise = null; // e.g. Cloudflare's script was blocked: try again on the next visit to this page
+        return null;
+      });
     }
     return w.mountPromise;
   }
@@ -2983,6 +3068,7 @@
         throw new Error("Please complete the verification challenge." + (why ? " (" + why + ")" : ""));
       }
       if (res.status === 429) throw new Error("You've sent several messages recently. Please wait a little while and try again.");
+      if (res.data && res.data.error === "invalid") throw new Error("Please check your email address. Use a plain address like name@example.com.");
       throw new Error("Could not send your message. Please try again.");
     }
   });
@@ -2995,7 +3081,8 @@
         category: document.getElementById("bCategory").value,
         neighborhood: document.getElementById("bHood").value,
         description: document.getElementById("bDesc").value.trim(),
-        website: document.getElementById("bWebsite").value.trim()
+        website: document.getElementById("bWebsite").value.trim(),
+        halal: document.getElementById("bHalal").value
       };
       try {
         sessionStorage.setItem("nicc-list-draft", JSON.stringify(draft));
@@ -3050,6 +3137,7 @@
     if (draft.neighborhood) document.getElementById("ownAddHood").value = draft.neighborhood;
     if (draft.description) document.getElementById("ownAddDesc").value = draft.description;
     if (draft.website) document.getElementById("ownAddWebsite").value = draft.website;
+    if (draft.halal) document.getElementById("ownAddHalal").value = draft.halal;
     try { sessionStorage.removeItem("nicc-list-draft"); } catch (e) { /* private mode */ }
     var status = document.getElementById("ownerAddStatus");
     if (status) {
@@ -3086,6 +3174,15 @@
       return;
     }
     if (recovery) recovery.hidden = true;
+    // An expired or already-used email link: say so instead of silently
+    // showing the login form.
+    var linkError = /^#error/.test(location.hash) ? new URLSearchParams(location.hash.slice(1)) : null;
+    if (linkError) {
+      toast(linkError.get("error_code") === "otp_expired"
+        ? "That email link has expired or was already used. Log in, or ask for a new link."
+        : (linkError.get("error_description") || "That email link didn't work.").replace(/\+/g, " "));
+      try { history.replaceState(null, "", location.pathname + location.search + "#/account"); } catch (e) { /* ignore */ }
+    }
     var user = await window.NiccAuth.getCurrentUser();
     // Password accepted but the 2FA code never entered (tab closed, page
     // reloaded): that's a half-signed-in session. Put the code prompt back
@@ -3155,7 +3252,7 @@
   async function renderAdmin() {
     var root = document.getElementById("adminRoot");
     if (!root) return;
-    root.innerHTML = '<p class="admin-empty">Checking access…</p>';
+    root.innerHTML = '<p class="mod-loading">Checking access…</p>';
     var s;
     try { s = await window.NiccAdmin.status(); } catch (e) { s = { state: "error" }; }
     var msg = {
@@ -3165,8 +3262,58 @@
       "need-code": 'Finish logging in with your two-factor code on the <a class="text-link" href="#/account">account page</a>, then come back.',
       "error": "Could not check your access. Please try again."
     }[s.state];
-    if (msg) { root.innerHTML = '<p class="admin-empty">' + msg + "</p>"; return; }
-    window.NiccAdmin.mount(root, { escape: escapeAttr, safeUrl: safePhotoUrl, toast: toast, role: s.role, userId: s.userId });
+    if (msg) { root.innerHTML = '<div class="mod-empty"><p>' + msg + "</p></div>"; return; }
+    // Mount into a fresh element each visit: re-using #adminRoot stacked a new
+    // set of click handlers on every visit, so actions fired more than once.
+    stopAdmin();
+    root.innerHTML = "";
+    var host = document.createElement("div");
+    root.appendChild(host);
+    adminStop = window.NiccAdmin.mount(host, { escape: escapeAttr, safeUrl: safePhotoUrl, toast: toast, role: s.role, userId: s.userId, onChange: updateModerationBadges });
+  }
+  var adminStop = null;
+  function stopAdmin() { if (adminStop) { adminStop(); adminStop = null; } }
+
+  /* Badges for moderators/volunteers: how many items are waiting, shown next
+     to "My account" in the nav and on the "Open moderation" button. */
+  var badgeTimer = null;
+  async function updateModerationBadges() {
+    var total = 0, isTeam = false;
+    try {
+      var s = await window.NiccAdmin.status();
+      if (s.state === "ok") { isTeam = true; total = (await window.NiccAdmin.counts()).total || 0; }
+    } catch (e) { /* not on the team, or offline */ }
+    document.querySelectorAll(".account-nav-link").forEach(function (a) {
+      var b = a.querySelector(".nav-count");
+      if (total > 0) {
+        if (!b) { b = document.createElement("span"); b.className = "nav-count"; a.appendChild(b); }
+        b.textContent = String(total);
+        b.setAttribute("aria-label", total + " waiting for review");
+      } else if (b) { b.remove(); }
+    });
+    // Phones: "My account" is inside the collapsed menu, so badge the menu button too.
+    var toggle = document.getElementById("navToggle");
+    if (toggle) {
+      if (total > 0) toggle.setAttribute("data-count", total > 99 ? "99+" : String(total));
+      else toggle.removeAttribute("data-count");
+    }
+    var link = document.getElementById("adminLink");
+    if (link) link.textContent = total > 0 ? "Open moderation (" + total + " waiting)" : "Open moderation";
+    if (isTeam && !badgeTimer) badgeTimer = window.setInterval(updateModerationBadges, 120000);
+    if (!isTeam && badgeTimer) { window.clearInterval(badgeTimer); badgeTimer = null; }
+  }
+
+  var STATUS_LABELS = { approved: "Live", pending: "Waiting for review", rejected: "Not approved" };
+  // <option>s for an owner's edit form, copied from the add-business form so
+  // there's one list of categories/neighborhoods. Keeps a value that isn't in
+  // the list (an older listing) selectable instead of silently changing it.
+  function optionsHtml(sourceSelectId, selected) {
+    var src = document.getElementById(sourceSelectId);
+    var values = src ? Array.prototype.map.call(src.options, function (o) { return o.value; }) : [];
+    if (selected && values.indexOf(selected) === -1) values.unshift(selected);
+    return values.map(function (v) {
+      return '<option value="' + escapeAttr(v) + '"' + (v === selected ? " selected" : "") + ">" + escapeAttr(v) + "</option>";
+    }).join("");
   }
 
   async function renderMyListings() {
@@ -3184,7 +3331,7 @@
         var b = pendingEdit ? Object.assign({}, live, pendingEdit.changes) : live;
         var ownerPhotoUrl = safePhotoUrl(b.photo_url);
         return '' +
-          '<div class="hours-row"><span>' + escapeAttr(live.name) + '</span><span>' + escapeAttr(live.status) + '</span></div>' +
+          '<div class="hours-row"><span>' + escapeAttr(live.name) + '</span><span>' + escapeAttr(STATUS_LABELS[live.status] || live.status) + '</span></div>' +
           (pendingEdit
             ? '<p class="help" style="margin:8px 0">Your recent changes are waiting for a volunteer to approve them. The current version stays public until then.</p>'
             : "") +
@@ -3197,6 +3344,9 @@
           '</div>' +
           '<form class="owner-edit-form" data-business-id="' + b.id + '" style="margin:10px 0 20px">' +
             '<div class="form-grid">' +
+              '<div class="field full"><label for="ed-name-' + b.id + '">Business name</label><input type="text" id="ed-name-' + b.id + '" class="edit-name" maxlength="120" required value="' + escapeAttr(b.name) + '"></div>' +
+              '<div class="field"><label for="ed-cat-' + b.id + '">Category</label><select id="ed-cat-' + b.id + '" class="edit-cat">' + optionsHtml("ownAddCategory", b.category) + '</select></div>' +
+              '<div class="field"><label for="ed-hood-' + b.id + '">Neighborhood</label><select id="ed-hood-' + b.id + '" class="edit-hood">' + optionsHtml("ownAddHood", b.neighborhood) + '</select></div>' +
               '<div class="field full"><label for="ed-desc-' + b.id + '">Short description</label><textarea id="ed-desc-' + b.id + '" class="edit-desc" maxlength="300" required>' + escapeAttr(b.description) + '</textarea></div>' +
               '<div class="field full"><label for="ed-long-' + b.id + '">Full description</label><textarea id="ed-long-' + b.id + '" class="edit-long" maxlength="3000" required>' + escapeAttr(b.long_description) + '</textarea></div>' +
               '<div class="field"><label for="ed-addr-' + b.id + '">Address</label><input type="text" id="ed-addr-' + b.id + '" class="edit-address" maxlength="250" value="' + escapeAttr(b.address || "") + '"></div>' +
@@ -3211,7 +3361,8 @@
 
       var claimRows = claims.map(function (c) {
         var name = c.businesses ? c.businesses.name : "Unknown listing";
-        return '<div class="hours-row"><span>Claim: ' + escapeAttr(name) + '</span><span>' + escapeAttr(c.status) + '</span></div>';
+        var claimLabel = { pending: "Waiting for review", approved: "Approved", rejected: "Not approved" }[c.status] || c.status;
+        return '<div class="hours-row"><span>Claim: ' + escapeAttr(name) + '</span><span>' + escapeAttr(claimLabel) + '</span></div>';
       });
 
       var all = businessBlocks.concat(claimRows);
@@ -3227,6 +3378,16 @@
           var row = input.closest(".owner-photo-row");
           var preview = row.querySelector(".owner-photo-preview");
           var status = row.querySelector(".owner-photo-status");
+          if (["image/jpeg", "image/png", "image/webp"].indexOf(file.type) === -1) {
+            status.textContent = "Please choose a JPG, PNG or WebP image.";
+            input.value = "";
+            return;
+          }
+          if (file.size > 5 * 1024 * 1024) {
+            status.textContent = "That photo is over 5 MB. Please choose a smaller one.";
+            input.value = "";
+            return;
+          }
           status.textContent = "Uploading…";
           try {
             var uploaded = await window.NiccOwner.uploadPhoto(businessId, file);
@@ -3253,10 +3414,12 @@
           form.querySelector(".edit-website").closest(".field").classList.toggle("invalid", website === null);
           if (website === null) return;
           try {
+            var newName = form.querySelector(".edit-name").value.trim();
+            if (!newName) { form.querySelector(".edit-name").focus(); return; }
             var newStatus = await window.NiccOwner.updateBusiness(businessId, {
-              name: current.name,
-              category: current.category,
-              neighborhood: current.neighborhood,
+              name: newName,
+              category: form.querySelector(".edit-cat").value,
+              neighborhood: form.querySelector(".edit-hood").value,
               description: form.querySelector(".edit-desc").value.trim(),
               longDescription: form.querySelector(".edit-long").value.trim(),
               address: form.querySelector(".edit-address").value.trim(),
@@ -3266,7 +3429,9 @@
             });
             toast(newStatus.pending
               ? "Saved. A volunteer will review your changes. The current version stays public until then."
-              : "Saved.");
+              : (current.status === "rejected" && newStatus.status === "pending")
+                ? "Saved and sent back for review."
+                : "Saved.");
             renderMyListings();
           } catch (err) {
             status.textContent = err.message || "Could not save changes.";
@@ -3292,6 +3457,7 @@
           '<p class="form-status" id="mfaPanelStatus" role="status"></p>';
         document.getElementById("mfaDisableBtn").addEventListener("click", async function () {
           var status = document.getElementById("mfaPanelStatus");
+          if (!window.confirm("Turn off two-factor authentication? Your account will only be protected by your password, and moderation access needs it turned on.")) return;
           try {
             await window.NiccAuth.mfaUnenroll(verified.id);
             renderMfaPanel();
@@ -3313,14 +3479,17 @@
             var enrolled = await window.NiccAuth.mfaEnroll();
             panel.innerHTML =
               '<p>Scan this with your authenticator app:</p>' +
-              '<img src="' + enrolled.totp.qr_code + '" alt="Scan this QR code with your authenticator app" style="margin:12px 0;width:180px;height:180px;border-radius:8px">' +
+              '<img id="mfaQr" alt="Scan this QR code with your authenticator app" style="margin:12px 0;width:180px;height:180px;border-radius:8px;background:#fff">' +
               '<p style="font-size:0.85rem;color:var(--muted)">Or enter this key manually: <code>' + escapeAttr(enrolled.totp.secret) + '</code></p>' +
               '<div class="field full" style="margin-top:14px"><label for="mfaEnrollCode">Enter the 6-digit code from the app</label>' +
               '<input type="text" id="mfaEnrollCode" inputmode="numeric" autocomplete="one-time-code"></div>' +
               '<button type="button" class="btn btn-primary btn-sm" id="mfaConfirmBtn" style="margin-top:12px">Confirm</button>' +
               '<p class="form-status" id="mfaEnrollStatus" role="status"></p>';
+            // Set as a property, not spliced into markup: Supabase's QR code is an
+            // SVG data: URL whose raw quote characters would break an HTML attribute.
+            document.getElementById("mfaQr").src = enrolled.totp.qr_code;
             document.getElementById("mfaConfirmBtn").addEventListener("click", async function () {
-              var code = document.getElementById("mfaEnrollCode").value.trim();
+              var code = document.getElementById("mfaEnrollCode").value.replace(/\s+/g, "");
               var status = document.getElementById("mfaEnrollStatus");
               if (!code) return;
               try {
@@ -3415,7 +3584,8 @@
           longDescription: longDesc,
           address: document.getElementById("ownAddAddress").value.trim(),
           phone: document.getElementById("ownAddPhone").value.trim(),
-          website: addWebsite
+          website: addWebsite,
+          halalStatus: document.getElementById("ownAddHalal").value
         });
         status.textContent = "Thank you. Your listing has been submitted and a volunteer will review it within two business days.";
         status.classList.remove("error");
@@ -3485,7 +3655,7 @@
     mfaChallengeForm.addEventListener("submit", async function (e) {
       e.preventDefault();
       var status = document.getElementById("mfaChallengeStatus");
-      var code = document.getElementById("mfaChallengeCode").value.trim();
+      var code = document.getElementById("mfaChallengeCode").value.replace(/\s+/g, "");
       if (!pendingMfaFactorId || !code) return;
       try {
         await window.NiccAuth.mfaChallengeAndVerify(pendingMfaFactorId, code);
@@ -3499,6 +3669,23 @@
         status.textContent = err.message || "That code did not work. Please try again.";
         status.classList.add("show", "error");
       }
+    });
+  }
+
+  // Without this, someone at the code prompt who has lost their phone (or
+  // typed the wrong email) had no way back to the login form.
+  var mfaCancelBtn = document.getElementById("mfaCancelBtn");
+  if (mfaCancelBtn) {
+    mfaCancelBtn.addEventListener("click", async function () {
+      try { await window.NiccAuth.logOut(); } catch (e) { /* still reset the form */ }
+      pendingMfaFactorId = null;
+      mfaChallengeForm.reset();
+      mfaChallengeForm.hidden = true;
+      loginForm.hidden = false;
+      document.getElementById("forgotPasswordBtn").hidden = false;
+      var st = document.getElementById("mfaChallengeStatus");
+      st.textContent = ""; st.classList.remove("show", "error");
+      document.getElementById("loginEmail").focus();
     });
   }
 
@@ -3666,3 +3853,5 @@
   updateAccountNav();
 })();
 </script>
+</body>
+</html>
