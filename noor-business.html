@@ -387,6 +387,37 @@
     .search-card .btn { width: 100%; padding: 14px; margin-top: 4px; }
   }
 
+  /* ---------- New-listing preview ---------- */
+  .composer-grid {
+    display: grid; gap: 24px; grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "form" "pv" "submit";
+  }
+  #ownerAddForm { grid-area: form; }
+  .composer-preview { grid-area: pv; background: var(--surface-2); border: 1px solid var(--hairline); border-radius: 18px; padding: 16px; min-width: 0; }
+  .composer-submit { grid-area: submit; }
+  .pv-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+  .pv-head h3 { font-size: 1.05rem; }
+  .seg { display: inline-flex; padding: 3px; border: 1px solid var(--hairline); border-radius: 999px; background: var(--surface); }
+  .seg button {
+    border: 0; background: transparent; padding: 6px 14px; border-radius: 999px; cursor: pointer;
+    font: inherit; font-size: 0.82rem; font-weight: 700; color: var(--muted);
+  }
+  .seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-soft-ink); }
+  .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .pv-stage .listing { cursor: default; }
+  .pv-stage .ghost { opacity: 0.45; }
+  .pv-full { background: var(--surface); border: 1px solid var(--hairline); border-radius: 18px; overflow: hidden; }
+  .pv-full .listing-art { aspect-ratio: 16/9; }
+  .pv-full-body { padding: 18px 20px 6px; }
+  .pv-full-body h4 { font-size: 1.3rem; }
+  .pv-full-body .modal-section { padding: 14px 0; }
+  .pv-note { color: var(--muted); font-size: 0.84rem; margin-top: 14px; max-width: 46ch; }
+  @media (min-width: 1000px) {
+    .composer { position: relative; left: 50%; transform: translateX(-50%); width: min(1080px, calc(100vw - 48px)); }
+    .composer-grid { grid-template-columns: minmax(0, 1fr) 360px; column-gap: 40px; grid-template-areas: "form pv" "submit pv"; align-items: start; }
+    .composer-preview { position: sticky; top: 96px; }
+  }
+
   /* ---------- Pill rail ---------- */
   .pill-rail { display: flex; gap: 10px; overflow-x: auto; padding: 4px 0 10px; scrollbar-width: none; }
   .pill-rail::-webkit-scrollbar { display: none; }
@@ -1792,8 +1823,9 @@
             <div id="myReviews"><p style="color:var(--muted)">Loading…</p></div>
           </div>
 
-          <div class="form-card" style="margin-top:24px">
+          <div class="form-card composer" style="margin-top:24px">
             <h2 style="font-size:1.3rem;margin-bottom:20px">Add a new business</h2>
+            <div class="composer-grid">
             <form id="ownerAddForm" novalidate>
               <div class="form-grid">
                 <div class="field full">
@@ -1867,11 +1899,23 @@
                   <span class="error">Please choose a JPG, PNG or WebP under 5 MB.</span>
                 </div>
               </div>
-              <div style="margin-top:22px">
-                <button type="submit" class="btn btn-primary">Submit for review</button>
-              </div>
-              <p class="form-status" id="ownerAddStatus" role="status"></p>
             </form>
+            <aside class="composer-preview" aria-labelledby="pvTitle">
+              <div class="pv-head">
+                <h3 id="pvTitle">Preview</h3>
+                <div class="seg" role="group" aria-label="Preview view">
+                  <button type="button" id="pvCardBtn" aria-pressed="true">Card</button>
+                  <button type="button" id="pvFullBtn" aria-pressed="false">Full listing</button>
+                </div>
+              </div>
+              <div class="pv-stage" id="pvStage"></div>
+              <p class="pv-note">This is how your listing will look once a volunteer approves it. Halal badges are added by a volunteer after your details are confirmed.</p>
+            </aside>
+            <div class="composer-submit">
+              <button type="submit" form="ownerAddForm" class="btn btn-primary">Submit for review</button>
+              <p class="form-status" id="ownerAddStatus" role="status"></p>
+            </div>
+            </div>
           </div>
         </div>
 
@@ -3617,6 +3661,146 @@
       }
     });
   }
+
+  /* ============ New-listing preview ============ */
+  // Draws the same card and detail layout the public sees, from whatever is
+  // typed in the form so far. The chosen photo is shown from the device
+  // (a blob: URL) and is never uploaded until the form is submitted.
+  (function () {
+    var form = document.getElementById("ownerAddForm");
+    var stage = document.getElementById("pvStage");
+    if (!form || !stage) return;
+    var cardBtn = document.getElementById("pvCardBtn");
+    var fullBtn = document.getElementById("pvFullBtn");
+    var photoInput = document.getElementById("ownAddPhoto");
+    var sample = {
+      name: "Your business name",
+      desc: "A one-sentence summary shows here.",
+      long: "Your full description shows here. Say what you do and what makes people come back."
+    };
+    var view = "card", photoUrl = null, queued = false;
+
+    function val(id) { return document.getElementById(id).value.trim(); }
+
+    function current() {
+      var icons = (window.NiccData && window.NiccData.categoryIcons) || {};
+      var catSel = document.getElementById("ownAddCategory");
+      var hoodSel = document.getElementById("ownAddHood");
+      var cat = catSel.options[catSel.selectedIndex].text;
+      var site = normalizeWebsite(document.getElementById("ownAddWebsite").value);
+      var empty = { name: !val("ownAddName"), desc: !val("ownAddDesc"), long: !val("ownAddLong") };
+      return {
+        empty: empty,
+        item: {
+          id: "preview",
+          name: val("ownAddName") || sample.name,
+          cat: cat,
+          hood: hoodSel.options[hoodSel.selectedIndex].text,
+          icon: icons[cat] || "i-storefront",
+          tone: 1,
+          badges: [],
+          rating: null,
+          reviewCount: 0,
+          desc: val("ownAddDesc") || sample.desc,
+          long: val("ownAddLong") || sample.long,
+          address: val("ownAddAddress"),
+          phone: val("ownAddPhone"),
+          website: site || ""
+        }
+      };
+    }
+
+    function fullHtml(item) {
+      var phoneDigits = item.phone.replace(/[^\d+]/g, "");
+      var siteUrl = safePhotoUrl(item.website);
+      var html = '<article class="pv-full">' +
+        '<div class="listing-art art-tone-1"><span class="art-badge"><svg class="icon"><use href="#' + item.icon + '"/></svg></span></div>' +
+        '<div class="pv-full-body">' +
+          '<h4>' + escapeAttr(item.name) + '</h4>' +
+          '<p class="listing-meta">' + escapeAttr(item.cat) + ' in ' + escapeAttr(item.hood) + ', Columbus</p>' +
+          '<div class="modal-section"><div class="badges"><span class="badge neutral">New to the directory</span></div></div>' +
+          '<div class="modal-section"><p style="color:var(--ink-2)">' + escapeAttr(item.long) + '</p></div>';
+      if (item.address) {
+        html += '<div class="modal-section"><h3>Location</h3><p style="color:var(--ink-2);display:flex;align-items:center;gap:8px">' +
+          '<svg class="icon" style="color:var(--accent);flex-shrink:0"><use href="#i-pin"/></svg>' + escapeAttr(item.address) + '</p></div>';
+      }
+      if (siteUrl || phoneDigits) {
+        html += '<div class="modal-section"><h3>Contact</h3><div class="hours-list">' +
+          (phoneDigits ? '<div class="hours-row"><span>Phone</span><span>' + escapeAttr(item.phone) + '</span></div>' : "") +
+          (siteUrl ? '<div class="hours-row"><span>Website</span><span>' + escapeAttr(item.website.replace(/^https?:\/\//, "").replace(/\/$/, "")) + '</span></div>' : "") +
+          '</div></div>';
+      }
+      html += '<div class="modal-section"><h3>Hours</h3><p style="color:var(--muted)">You can add your hours from your account after you submit.</p></div>' +
+        '</div></article>';
+      return html;
+    }
+
+    function render() {
+      queued = false;
+      var cur = current(), item = cur.item;
+      var html;
+      if (view === "card") {
+        html = cardHtml(item)
+          .replace(" reveal", "")
+          .replace(/<button class="save-btn"[\s\S]*?<\/button>/, "");
+      } else {
+        html = fullHtml(item);
+      }
+      stage.innerHTML = '<div inert>' + html + '</div>';
+      if (view === "card") {
+        if (cur.empty.name) stage.querySelector("h3").classList.add("ghost");
+        if (cur.empty.desc) stage.querySelector(".listing-desc").classList.add("ghost");
+      } else {
+        if (cur.empty.name) stage.querySelector("h4").classList.add("ghost");
+        if (cur.empty.long) stage.querySelector(".modal-section p").classList.add("ghost");
+      }
+      if (photoUrl) {
+        var art = stage.querySelector(".listing-art");
+        var badge = art.querySelector(".art-badge");
+        if (badge) badge.remove();
+        var img = document.createElement("img");
+        img.src = photoUrl;
+        img.alt = "";
+        art.appendChild(img);
+      }
+    }
+
+    function schedule() {
+      if (queued) return;
+      queued = true;
+      setTimeout(render, 30);
+    }
+
+    function setView(next) {
+      view = next;
+      cardBtn.setAttribute("aria-pressed", next === "card" ? "true" : "false");
+      fullBtn.setAttribute("aria-pressed", next === "full" ? "true" : "false");
+      render();
+    }
+    cardBtn.addEventListener("click", function () { setView("card"); });
+    fullBtn.addEventListener("click", function () { setView("full"); });
+
+    function setPhoto() {
+      if (photoUrl) { URL.revokeObjectURL(photoUrl); photoUrl = null; }
+      var file = photoInput && photoInput.files && photoInput.files[0];
+      if (file && /^image\/(png|jpeg|webp)$/.test(file.type) && file.size <= 5 * 1024 * 1024) {
+        photoUrl = URL.createObjectURL(file);
+      }
+      schedule();
+    }
+
+    form.addEventListener("input", schedule);
+    form.addEventListener("change", function (e) {
+      if (e.target === photoInput) setPhoto(); else schedule();
+    });
+    form.addEventListener("reset", function () {
+      setTimeout(function () {
+        if (photoUrl) { URL.revokeObjectURL(photoUrl); photoUrl = null; }
+        render();
+      }, 0);
+    });
+    render();
+  })();
 
   var loginForm = document.getElementById("loginForm");
   var pendingMfaFactorId = null;
