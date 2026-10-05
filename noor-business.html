@@ -3665,7 +3665,7 @@
   /* ============ New-listing preview ============ */
   // Draws the same card and detail layout the public sees, from whatever is
   // typed in the form so far. The chosen photo is shown from the device
-  // (a blob: URL) and is never uploaded until the form is submitted.
+  // (a data: URL) and is never uploaded until the form is submitted.
   (function () {
     var form = document.getElementById("ownerAddForm");
     var stage = document.getElementById("pvStage");
@@ -3780,13 +3780,18 @@
     cardBtn.addEventListener("click", function () { setView("card"); });
     fullBtn.addEventListener("click", function () { setView("full"); });
 
+    // A data: URL, not a blob: URL: the site's Content-Security-Policy allows
+    // data: images but blocks blob:, so a blob preview would show nothing.
     function setPhoto() {
-      if (photoUrl) { URL.revokeObjectURL(photoUrl); photoUrl = null; }
+      photoUrl = null;
       var file = photoInput && photoInput.files && photoInput.files[0];
-      if (file && /^image\/(png|jpeg|webp)$/.test(file.type) && file.size <= 5 * 1024 * 1024) {
-        photoUrl = URL.createObjectURL(file);
-      }
-      schedule();
+      if (!file || !/^image\/(png|jpeg|webp)$/.test(file.type) || file.size > 5 * 1024 * 1024) { schedule(); return; }
+      var reader = new FileReader();
+      reader.onload = function () {
+        // Ignore a result that arrives after the file was changed or cleared.
+        if (photoInput.files && photoInput.files[0] === file) { photoUrl = reader.result; schedule(); }
+      };
+      reader.readAsDataURL(file);
     }
 
     form.addEventListener("input", schedule);
@@ -3795,7 +3800,7 @@
     });
     form.addEventListener("reset", function () {
       setTimeout(function () {
-        if (photoUrl) { URL.revokeObjectURL(photoUrl); photoUrl = null; }
+        photoUrl = null;
         render();
       }, 0);
     });
