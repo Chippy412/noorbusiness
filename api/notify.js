@@ -46,8 +46,10 @@ module.exports = async function handler(req, res) {
       headers: { Authorization: "Bearer " + key, "Content-Type": "application/json" },
       body: JSON.stringify({ from: from, to: to.split(",").map(function (s) { return s.trim(); }), subject: "[NICC Business] " + subject, text: text })
     });
+    if (!r.ok) console.error("notify: Resend rejected the email", r.status, await r.text());
     res.status(r.ok ? 200 : 502).json({ ok: r.ok });
   } catch (e) {
+    console.error("notify: could not reach Resend", e && e.message);
     res.status(502).json({ ok: false });
   }
 };
