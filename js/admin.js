@@ -139,7 +139,7 @@
       var subject = "Re: " + (m.subject || "your message to NICC Business");
       return '<article class="admin-card"><div class="admin-card-head"><h3>' + esc(m.name) + '</h3><span class="admin-meta">' + esc(m.subject || "") + "</span></div>" +
         '<p class="admin-meta">' + when(m.created_at) + " · " + esc(m.email) + '</p><p class="admin-long">' + esc(m.message) + "</p>" +
-        '<div class="admin-actions"><a class="btn btn-ghost btn-sm" href="mailto:' + esc(m.email) + "?subject=" + encodeURIComponent(subject) + '">Reply by email</a></div></article>';
+        '<div class="admin-actions"><a class="btn btn-ghost btn-sm" href="mailto:' + esc(encodeURIComponent(m.email)) + "?subject=" + encodeURIComponent(subject) + '">Reply by email</a></div></article>';
     }
 
     function allTable(rows) {
@@ -247,6 +247,12 @@
         else if (act === "member-role") {
           var mrow = btn.closest("tr");
           await api.setMemberRole(mrow.getAttribute("data-user"), mrow.querySelector("[data-member-role]").value);
+          if (mrow.getAttribute("data-user") === h.userId) {
+            // Your own role changed: reload so the page shows what you can do now.
+            h.toast("Your role was updated.");
+            window.setTimeout(function () { window.location.reload(); }, 600);
+            return;
+          }
           msg = "Role updated.";
         }
         else if (act === "member-remove") {
