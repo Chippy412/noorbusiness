@@ -2907,7 +2907,10 @@
         if (direct.error) throw new Error("Could not send your message. Please try again.");
         return;
       }
-      if (res.data && res.data.error === "captcha") throw new Error("Please complete the verification challenge.");
+      if (res.data && res.data.error === "captcha") {
+        var why = (res.data.codes || []).join(", ");
+        throw new Error("Please complete the verification challenge." + (why ? " (" + why + ")" : ""));
+      }
       if (res.status === 429) throw new Error("You've sent several messages recently. Please wait a little while and try again.");
       throw new Error("Could not send your message. Please try again.");
     }
