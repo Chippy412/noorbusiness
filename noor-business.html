@@ -912,7 +912,7 @@
       <a href="#/about" data-route="about">About</a>
       <a href="#/faq" data-route="faq">FAQ</a>
       <a href="#/contact" data-route="contact">Contact</a>
-      <a href="#/account" data-route="account">Log in</a>
+      <a href="#/account" data-route="account" class="account-nav-link">Log in</a>
     </nav>
     <div class="nav-actions">
       <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to dark mode">
@@ -934,7 +934,7 @@
   <a href="#/about" data-route="about">About</a>
   <a href="#/faq" data-route="faq">FAQ</a>
   <a href="#/contact" data-route="contact">Contact</a>
-  <a href="#/account" data-route="account">Log in</a>
+  <a href="#/account" data-route="account" class="account-nav-link">Log in</a>
   <button class="theme-toggle theme-toggle-mobile" id="themeToggleMobile" type="button">
     <svg class="icon"><use href="#i-moon"/></svg> <span id="themeToggleMobileLabel">Switch to dark mode</span>
   </button>
@@ -2040,6 +2040,14 @@
     }
     return isSaved(id);
   }
+  // The nav says "Log in" for visitors and "My account" once someone is signed in.
+  async function updateAccountNav() {
+    var user = null;
+    try { user = await window.NiccAuth.getCurrentUser(); } catch (e) { /* treat as logged out */ }
+    document.querySelectorAll(".account-nav-link").forEach(function (a) {
+      a.textContent = user ? "My account" : "Log in";
+    });
+  }
   // Merges this device's saved list with the account's, both ways, so a
   // saved listing follows a logged-in person to their other devices.
   var savedUserId = null;
@@ -3056,6 +3064,7 @@
   window.NiccAuth.onAuthEvent(function (event) {
     // Deferred: Supabase auth callbacks must not await further Supabase calls.
     if (event === "SIGNED_IN" || event === "SIGNED_OUT") setTimeout(syncSavedWithAccount, 0);
+    setTimeout(updateAccountNav, 0);
     if (event === "PASSWORD_RECOVERY") {
       inPasswordRecovery = true;
       if (currentRoute() !== "account") location.hash = "#/account";
@@ -3652,5 +3661,6 @@
   urlSyncReady = true;
   bootBusinessData();
   syncSavedWithAccount();
+  updateAccountNav();
 })();
 </script>
