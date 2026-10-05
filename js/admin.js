@@ -42,9 +42,17 @@
     setReviewStatus: function (id, s) { return rpc("admin_set_review_status", { p_id: id, p_status: s }); }
   };
 
-  var TABS = [
-    ["new", "New listings"], ["edits", "Edits"], ["claims", "Claims"],
-    ["reviews", "Reviews"], ["messages", "Messages"], ["all", "All listings"], ["team", "Team", "moderator"]
+  // Queues that need a decision come first; the rest is reference/management.
+  var QUEUES = [
+    { id: "new", label: "New listings", key: "new_listings", empty: "No new listings to review." },
+    { id: "edits", label: "Edits", key: "edits", empty: "No edits waiting." },
+    { id: "claims", label: "Claims", key: "claims", empty: "No claims waiting." },
+    { id: "reviews", label: "Reviews", key: "reviews", empty: "No reviews waiting." }
+  ];
+  var SECTIONS = [
+    { id: "messages", label: "Messages" },
+    { id: "all", label: "All listings" },
+    { id: "team", label: "Team", modOnly: true }
   ];
   var ROLE_HELP = {
     moderator: "Full control, including Featured, taking listings down, and managing the team.",
@@ -60,144 +68,191 @@
     ["family", "Family run"], ["community", "Community service"]
   ];
   var HALAL_LABELS = {
-    certified: "Certified halal, says they can name the certifier",
+    certified: "Certified halal (says they can name the certifier)",
     supplier: "Halal supplier, not formally certified",
     some: "Some halal options",
     na: "Not applicable"
   };
-  var dateFmt = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
+  var STATUS_LABELS = { approved: "Live", pending: "Waiting for review", rejected: "Not approved" };
+  var dateFmt = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
-  // root: container element. h: { escape, safeUrl, toast, role, userId } from the page.
+  // root: container element. h: { escape, safeUrl, toast, role, userId, onChange } from the page.
   function mount(root, h) {
     var esc = h.escape;
     var isMod = h.role === "moderator";
     var state = { tab: "new", data: null, all: null, team: null };
 
     function when(iso) { try { return dateFmt.format(new Date(iso)); } catch (e) { return ""; } }
-    function count(key) { return state.data && state.data[key] ? state.data[key].length : 0; }
-    function tabCount(id) {
-      return { "new": count("new_listings"), edits: count("edits"), claims: count("claims"), reviews: count("reviews") }[id];
+    function queueItems(id) {
+      var q = QUEUES.filter(function (x) { return x.id === id; })[0];
+      return q && state.data ? state.data[q.key] || [] : [];
     }
-    function cell(v) { return v == null || v === "" ? '<span class="admin-none">(none)</span>' : esc(v); }
-    function val(field, v) {
+    function none(text) { return '<span class="mod-none">' + (text || "Not given") + "</span>"; }
+    function val(v) { return v == null || v === "" ? none() : esc(v); }
+    function where(cat, hood) { return esc(cat) + " in " + esc(hood); }
+    function star(filled) { return '<svg class="icon' + (filled ? " filled" : "") + '" aria-hidden="true"><use href="#i-star"/></svg>'; }
+    function fieldVal(field, v) {
       if (field === "photo_url") {
         var u = h.safeUrl(v);
-        return u ? '<img src="' + u + '" alt="" class="admin-thumb">' : '<span class="admin-none">(none)</span>';
+        return u ? '<img src="' + u + '" alt="" class="mod-thumb" width="120" height="90">' : none("No photo");
       }
-      return field === "description" || field === "long_description"
-        ? '<span class="admin-long">' + cell(v) + "</span>" : cell(v);
+      return v == null || v === "" ? none("Empty") : '<span class="mod-prose">' + esc(v) + "</span>";
+    }
+    function rows(pairs) {
+      return '<dl class="mod-facts">' + pairs.map(function (p) { return "<dt>" + p[0] + "</dt><dd>" + p[1] + "</dd>"; }).join("") + "</dl>";
+    }
+    function decision(reject, approve) {
+      return '<div class="mod-decide">' + reject + approve + "</div>";
+    }
+    function btn(kind, act, id, label, extra) {
+      return '<button class="btn ' + (kind === "primary" ? "btn-primary" : "btn-ghost") + ' btn-sm" data-act="' + act + '" data-id="' + esc(id) + '"' + (extra || "") + ">" + label + "</button>";
     }
 
-    function listingCard(l) {
+    /* ---------- one sheet per item ---------- */
+    function listingSheet(l) {
       var photo = h.safeUrl(l.photo_url);
-      var hours = (l.hours || []).map(function (r) { return esc(r[0]) + " " + esc(r[1]); }).join(" · ");
-      return '<article class="admin-card" data-id="' + esc(l.id) + '">' +
-        '<div class="admin-card-head"><h3>' + esc(l.name) + '</h3><span class="admin-meta">' + esc(l.category) + " · " + esc(l.neighborhood) + "</span></div>" +
-        '<p class="admin-meta">Submitted ' + when(l.created_at) + " by " + cell(l.owner_email) + "</p>" +
-        (photo ? '<img src="' + photo + '" alt="" class="admin-thumb">' : "") +
-        "<p>" + esc(l.description) + '</p><p class="admin-long">' + esc(l.long_description) + "</p>" +
-        '<dl class="admin-dl"><dt>Address</dt><dd>' + cell(l.address) + "</dd><dt>Phone</dt><dd>" + cell(l.phone) +
-        "</dd><dt>Website</dt><dd>" + cell(l.website) + "</dd><dt>Hours</dt><dd>" + (hours || cell("")) +
-        "</dd><dt>Halal (owner says)</dt><dd>" + cell(HALAL_LABELS[l.halal_status] || l.halal_status) + "</dd></dl>" +
-        '<div class="admin-actions">' +
-        '<button class="btn btn-primary btn-sm" data-act="listing-status" data-id="' + esc(l.id) + '" data-status="approved">Approve</button>' +
-        '<button class="btn btn-ghost btn-sm" data-act="listing-status" data-id="' + esc(l.id) + '" data-status="rejected">Reject</button></div></article>';
+      var hours = (l.hours || []).map(function (r) { return esc(r[0]) + " " + esc(r[1]); }).join("<br>");
+      return '<article class="mod-sheet">' +
+        '<header class="mod-sheet-head"><div><h3>' + esc(l.name) + '</h3><p class="mod-sub">' + where(l.category, l.neighborhood) + "</p></div>" +
+        '<p class="mod-when">Submitted ' + when(l.created_at) + "<br>by " + val(l.owner_email) + "</p></header>" +
+        (photo ? '<img src="' + photo + '" alt="" class="mod-photo">' : "") +
+        '<p class="mod-lede">' + esc(l.description) + '</p><p class="mod-prose">' + esc(l.long_description) + "</p>" +
+        rows([
+          ["Halal (owner says)", l.halal_status ? esc(HALAL_LABELS[l.halal_status] || l.halal_status) : none()],
+          ["Address", val(l.address)], ["Phone", val(l.phone)], ["Website", val(l.website)],
+          ["Hours", hours || none()]
+        ]) +
+        decision(btn("ghost", "listing-status", l.id, "Reject", ' data-status="rejected"'),
+                 btn("primary", "listing-status", l.id, "Approve and publish", ' data-status="approved"')) +
+        "</article>";
     }
 
-    function editCard(e) {
-      var rows = Object.keys(e.changes).map(function (k) {
-        return "<tr><th scope=\"row\">" + esc(FIELD_LABELS[k] || k) + "</th><td>" + val(k, e.live[k]) + "</td><td class=\"admin-new\">" + val(k, e.changes[k]) + "</td></tr>";
-      }).join("");
-      return '<article class="admin-card"><div class="admin-card-head"><h3>' + esc(e.business_name) + "</h3></div>" +
-        '<p class="admin-meta">Edited ' + when(e.submitted_at) + " by " + cell(e.owner_email) + ". The live listing is unchanged until you apply this.</p>" +
-        '<table class="admin-diff"><thead><tr><th></th><th scope="col">Live now</th><th scope="col">Proposed</th></tr></thead><tbody>' + rows + "</tbody></table>" +
-        '<div class="admin-actions">' +
-        '<button class="btn btn-primary btn-sm" data-act="edit-apply" data-id="' + esc(e.business_id) + '">Apply changes</button>' +
-        '<button class="btn btn-ghost btn-sm" data-act="edit-reject" data-id="' + esc(e.business_id) + '">Reject</button></div></article>';
+    function editSheet(e) {
+      var changed = Object.keys(e.changes);
+      return '<article class="mod-sheet">' +
+        '<header class="mod-sheet-head"><div><h3>' + esc(e.business_name) + '</h3><p class="mod-sub">' +
+        changed.length + (changed.length === 1 ? " change" : " changes") + " proposed. The live listing stays as it is until you apply them.</p></div>" +
+        '<p class="mod-when">Edited ' + when(e.submitted_at) + "<br>by " + val(e.owner_email) + "</p></header>" +
+        '<div class="mod-diff">' + changed.map(function (k) {
+          return '<div class="mod-diff-row"><p class="mod-diff-field">' + esc(FIELD_LABELS[k] || k) + "</p>" +
+            '<div class="mod-diff-old"><span class="mod-diff-tag">Now</span>' + fieldVal(k, e.live[k]) + "</div>" +
+            '<div class="mod-diff-new"><span class="mod-diff-tag">Proposed</span>' + fieldVal(k, e.changes[k]) + "</div></div>";
+        }).join("") + "</div>" +
+        decision(btn("ghost", "edit-reject", e.business_id, "Reject changes"), btn("primary", "edit-apply", e.business_id, "Apply changes")) +
+        "</article>";
     }
 
-    function claimCard(c) {
-      return '<article class="admin-card"><div class="admin-card-head"><h3>' + esc(c.business_name) + "</h3></div>" +
-        '<p class="admin-meta">Requested ' + when(c.created_at) + "</p>" +
-        "<dl class=\"admin-dl\"><dt>Requested by</dt><dd>" + cell(c.requester_email) + "</dd><dt>Current owner</dt><dd>" +
-        (c.current_owner_email ? esc(c.current_owner_email) : '<span class="admin-none">no one yet</span>') + "</dd><dt>Note</dt><dd>" + cell(c.note) + "</dd></dl>" +
-        '<div class="admin-actions">' +
-        '<button class="btn btn-primary btn-sm" data-act="claim-approve" data-id="' + esc(c.id) + '" data-has-owner="' + (c.current_owner_email ? "1" : "") + '">Approve: make them the owner</button>' +
-        '<button class="btn btn-ghost btn-sm" data-act="claim-reject" data-id="' + esc(c.id) + '">Reject</button></div></article>';
+    function claimSheet(c) {
+      return '<article class="mod-sheet">' +
+        '<header class="mod-sheet-head"><div><h3>' + esc(c.business_name) + '</h3><p class="mod-sub">' +
+        (c.current_owner_email ? "Already has an owner. Approving moves the listing to the person claiming it." : "No owner yet.") + "</p></div>" +
+        '<p class="mod-when">Requested ' + when(c.created_at) + "</p></header>" +
+        rows([["Claimed by", val(c.requester_email)], ["Current owner", c.current_owner_email ? esc(c.current_owner_email) : none("No one")], ["Their note", val(c.note)]]) +
+        decision(btn("ghost", "claim-reject", c.id, "Reject"),
+                 btn("primary", "claim-approve", c.id, "Approve and transfer", ' data-has-owner="' + (c.current_owner_email ? "1" : "") + '"')) +
+        "</article>";
     }
 
-    function reviewCard(r) {
+    function reviewSheet(r) {
       var rating = Math.min(5, Math.max(0, Number(r.rating) | 0)); // always a plain 0-5 integer
-      var stars = "★★★★★☆☆☆☆☆".slice(5 - rating, 10 - rating);
-      return '<article class="admin-card"><div class="admin-card-head"><h3>' + esc(r.business_name) + '</h3><span class="admin-stars" aria-label="' + rating + ' out of 5">' + stars + "</span></div>" +
-        '<p class="admin-meta">By ' + esc(r.author_name) + ", " + when(r.created_at) + '</p><p class="admin-long">' + esc(r.body) + "</p>" +
-        '<div class="admin-actions">' +
-        '<button class="btn btn-primary btn-sm" data-act="review-status" data-id="' + esc(r.id) + '" data-status="approved">Approve</button>' +
-        '<button class="btn btn-ghost btn-sm" data-act="review-status" data-id="' + esc(r.id) + '" data-status="rejected">Reject</button></div></article>';
+      var stars = "";
+      for (var i = 1; i <= 5; i++) stars += star(i <= rating);
+      return '<article class="mod-sheet">' +
+        '<header class="mod-sheet-head"><div><h3>' + esc(r.business_name) + '</h3><p class="mod-sub mod-stars" aria-label="' + rating + ' out of 5">' + stars + "</p></div>" +
+        '<p class="mod-when">' + when(r.created_at) + "<br>by " + esc(r.author_name) + "</p></header>" +
+        '<blockquote class="mod-quote">' + esc(r.body) + "</blockquote>" +
+        decision(btn("ghost", "review-status", r.id, "Reject", ' data-status="rejected"'), btn("primary", "review-status", r.id, "Publish review", ' data-status="approved"')) +
+        "</article>";
     }
 
-    function messageCard(m) {
+    function messageSheet(m) {
       var subject = "Re: " + (m.subject || "your message to NICC Business");
-      return '<article class="admin-card"><div class="admin-card-head"><h3>' + esc(m.name) + '</h3><span class="admin-meta">' + esc(m.subject || "") + "</span></div>" +
-        '<p class="admin-meta">' + when(m.created_at) + " · " + esc(m.email) + '</p><p class="admin-long">' + esc(m.message) + "</p>" +
-        '<div class="admin-actions"><a class="btn btn-ghost btn-sm" href="mailto:' + esc(encodeURIComponent(m.email)) + "?subject=" + encodeURIComponent(subject) + '">Reply by email</a></div></article>';
+      return '<article class="mod-sheet mod-sheet-quiet">' +
+        '<header class="mod-sheet-head"><div><h3>' + esc(m.name) + '</h3><p class="mod-sub">' + esc(m.subject || "No subject") + "</p></div>" +
+        '<p class="mod-when">' + when(m.created_at) + "<br>" + esc(m.email) + "</p></header>" +
+        '<p class="mod-prose">' + esc(m.message) + "</p>" +
+        '<div class="mod-decide"><span></span><a class="btn btn-ghost btn-sm" href="mailto:' + esc(encodeURIComponent(m.email)) + "?subject=" + encodeURIComponent(subject) + '">Reply by email</a></div>' +
+        "</article>";
     }
 
-    function allTable(rows) {
-      return '<div class="admin-scroll"><table class="admin-all"><thead><tr><th scope="col">Listing</th><th scope="col">Status</th><th scope="col">Badges</th><th scope="col">Featured</th><th></th></tr></thead><tbody>' +
-        rows.map(function (b) {
-          var id = esc(b.id);
-          var statusSel = '<select data-field="status"' + (isMod ? "" : " disabled title=\"Only a moderator can change a published listing\"") + ' aria-label="Status for ' + esc(b.name) + '">' +
-            ["approved", "pending", "rejected"].map(function (s) { return '<option value="' + s + '"' + (b.status === s ? " selected" : "") + ">" + s + "</option>"; }).join("") + "</select>";
-          var badges = BADGES.map(function (p) {
-            return '<label class="admin-check"><input type="checkbox" data-badge="' + p[0] + '"' + ((b.badges || []).indexOf(p[0]) !== -1 ? " checked" : "") + "> " + p[1] + "</label>";
-          }).join("");
-          return '<tr data-id="' + id + '" data-name="' + esc(b.name) + '" data-status="' + esc(b.status) + '"><th scope="row">' + esc(b.name) +
-            '<div class="admin-meta">' + esc(b.category) + " · " + esc(b.neighborhood) + " · " + cell(b.owner_email) + "</div></th><td>" + statusSel +
-            "</td><td>" + badges + '</td><td><label class="admin-check"><input type="checkbox" data-field="featured"' + (b.featured ? " checked" : "") + (isMod ? "" : " disabled") + '> Featured</label></td>' +
-            '<td><button class="btn btn-ghost btn-sm" data-act="save-flags" data-id="' + id + '">Save</button></td></tr>';
-        }).join("") + "</tbody></table></div>";
+    /* ---------- management views ---------- */
+    function pill(attrs, label, on, disabled, title) {
+      return '<label class="mod-pill' + (disabled ? " is-locked" : "") + '"' + (title ? ' title="' + esc(title) + '"' : "") + '><input type="checkbox" ' + attrs + (on ? " checked" : "") + (disabled ? " disabled" : "") + "><span>" + label + "</span></label>";
+    }
+    function allListings(rows_) {
+      return '<p class="mod-intro">Every listing in the directory. Badges are set by volunteers and moderators' + (isMod ? "; status and Featured by moderators." : ". Status and Featured are set by moderators.") + "</p>" +
+        '<ul class="mod-list">' + rows_.map(function (b) {
+          var statusSel = '<select data-field="status" aria-label="Status for ' + esc(b.name) + '"' + (isMod ? "" : " disabled") + ">" +
+            ["approved", "pending", "rejected"].map(function (s) { return '<option value="' + s + '"' + (b.status === s ? " selected" : "") + ">" + STATUS_LABELS[s] + "</option>"; }).join("") + "</select>";
+          return '<li class="mod-row" data-id="' + esc(b.id) + '" data-name="' + esc(b.name) + '" data-status="' + esc(b.status) + '">' +
+            '<div class="mod-row-main"><p class="mod-row-title">' + esc(b.name) + '</p><p class="mod-sub">' + where(b.category, b.neighborhood) +
+            (b.owner_email ? ", owned by " + esc(b.owner_email) : ", no owner") + "</p></div>" +
+            '<div class="mod-row-status">' + statusSel + "</div>" +
+            '<div class="mod-row-pills" role="group" aria-label="Badges for ' + esc(b.name) + '">' +
+            BADGES.map(function (p) { return pill('data-badge="' + p[0] + '"', p[1], (b.badges || []).indexOf(p[0]) !== -1); }).join("") +
+            pill('data-field="featured"', "Featured on home page", b.featured, !isMod, isMod ? "" : "Only moderators can change Featured").replace('class="mod-pill', 'class="mod-pill mod-pill-featured') + "</div>" +
+            '<div class="mod-row-save"><button class="btn btn-ghost btn-sm" data-act="save-flags" data-id="' + esc(b.id) + '">Save</button></div>' +
+            "</li>";
+        }).join("") + "</ul>";
     }
 
     function teamPanel(members) {
-      var rows = members.map(function (m) {
-        var me = m.user_id === h.userId;
-        var roleSel = '<select data-member-role aria-label="Role for ' + esc(m.email) + '">' +
-          ["moderator", "volunteer"].map(function (r) { return '<option value="' + r + '"' + (m.role === r ? " selected" : "") + ">" + r + "</option>"; }).join("") + "</select>";
-        return '<tr data-user="' + esc(m.user_id) + '" data-email="' + esc(m.email) + '" data-role="' + esc(m.role) + '"><th scope="row">' + esc(m.email) + (me ? ' <span class="admin-meta">(you)</span>' : "") +
-          '</th><td>' + roleSel + '</td><td class="admin-meta">Added ' + when(m.created_at) + '</td><td class="admin-actions-cell">' +
-          '<button class="btn btn-ghost btn-sm" data-act="member-role">Save role</button> ' +
-          '<button class="btn btn-ghost btn-sm" data-act="member-remove">Remove</button></td></tr>';
-      }).join("");
-      return '<div class="admin-card"><h3>Add someone to the team</h3>' +
-        '<p class="admin-meta">They need an account on the site first, with two-factor turned on (My account). Then add them by the email they signed up with.</p>' +
-        '<form class="admin-add" id="adminAddForm"><div class="field"><label for="adminAddEmail">Their email</label><input type="email" id="adminAddEmail" autocomplete="off" spellcheck="false" required></div>' +
+      return '<section class="mod-sheet mod-sheet-quiet">' +
+        '<h3>Add someone</h3>' +
+        '<p class="mod-sub">They need an account on the site with two-factor turned on (My account). Add them by the email they signed up with.</p>' +
+        '<form class="mod-add" id="adminAddForm"><div class="field"><label for="adminAddEmail">Email</label><input type="email" id="adminAddEmail" autocomplete="off" spellcheck="false" required></div>' +
         '<div class="field"><label for="adminAddRole">Role</label><select id="adminAddRole"><option value="volunteer">Volunteer</option><option value="moderator">Moderator</option></select></div>' +
         '<button type="submit" class="btn btn-primary btn-sm">Add to team</button></form>' +
-        '<ul class="admin-meta admin-rolehelp"><li><strong>Volunteer:</strong> ' + esc(ROLE_HELP.volunteer) + '</li><li><strong>Moderator:</strong> ' + esc(ROLE_HELP.moderator) + '</li></ul></div>' +
-        '<div class="admin-scroll"><table class="admin-all"><thead><tr><th scope="col">Member</th><th scope="col">Role</th><th scope="col">Added</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+        rows([["Volunteer", esc(ROLE_HELP.volunteer)], ["Moderator", esc(ROLE_HELP.moderator)]]) +
+        "</section>" +
+        '<ul class="mod-list">' + members.map(function (m) {
+          var me = m.user_id === h.userId;
+          return '<li class="mod-row mod-row-team" data-user="' + esc(m.user_id) + '" data-email="' + esc(m.email) + '" data-role="' + esc(m.role) + '">' +
+            '<div class="mod-row-main"><p class="mod-row-title">' + esc(m.email) + (me ? ' <span class="mod-you">You</span>' : "") + '</p><p class="mod-sub">Added ' + when(m.created_at) + "</p></div>" +
+            '<div class="mod-row-status"><select data-member-role aria-label="Role for ' + esc(m.email) + '">' +
+            ["volunteer", "moderator"].map(function (r) { return '<option value="' + r + '"' + (m.role === r ? " selected" : "") + ">" + (r === "moderator" ? "Moderator" : "Volunteer") + "</option>"; }).join("") + "</select></div>" +
+            '<div class="mod-row-save"><button class="btn btn-ghost btn-sm" data-act="member-role">Save role</button><button class="btn-link mod-remove" data-act="member-remove">Remove</button></div>' +
+            "</li>";
+        }).join("") + "</ul>";
     }
 
+    /* ---------- layout ---------- */
+    function navItem(id, label, n) {
+      return '<button class="mod-nav-item" role="tab" data-tab="' + id + '" aria-selected="' + (state.tab === id) + '">' +
+        "<span>" + label + "</span>" + (n ? '<span class="mod-nav-count">' + n + "</span>" : "") + "</button>";
+    }
     function render() {
-      var tabs = '<div class="admin-tabs" role="tablist" aria-label="Moderation queues">' + TABS.filter(function (t) { return !t[2] || isMod; }).map(function (t) {
-        var n = tabCount(t[0]);
-        return '<button role="tab" class="admin-tab" data-tab="' + t[0] + '" aria-selected="' + (state.tab === t[0]) + '">' + t[1] +
-          (n ? ' <span class="admin-count">' + n + "</span>" : "") + "</button>";
-      }).join("") + '<button class="btn btn-ghost btn-sm admin-refresh" data-act="refresh">Refresh</button></div>';
-
-      var body = "";
       var d = state.data;
-      var empty = function (msg) { return '<p class="admin-empty">' + msg + "</p>"; };
-      if (state.tab === "new") body = d.new_listings.length ? d.new_listings.map(listingCard).join("") : empty("No new listings waiting. 🎉");
-      else if (state.tab === "edits") body = d.edits.length ? d.edits.map(editCard).join("") : empty("No edits waiting.");
-      else if (state.tab === "claims") body = d.claims.length ? d.claims.map(claimCard).join("") : empty("No claims waiting.");
-      else if (state.tab === "reviews") body = d.reviews.length ? d.reviews.map(reviewCard).join("") : empty("No reviews waiting.");
-      else if (state.tab === "messages") body = d.messages.length ? d.messages.map(messageCard).join("") : empty("No messages yet.");
-      else if (state.tab === "team") body = state.team ? teamPanel(state.team) : empty("Loading…");
-      else body = state.all ? allTable(state.all) : empty("Loading…");
-      root.innerHTML = '<p class="admin-meta admin-header">You are signed in as a <strong>' + esc(h.role || "volunteer") + "</strong>. New items are checked for every minute. " +
-        '<button class="btn-link" data-act="desktop-alerts">' + (desktopOn() ? "Turn off desktop alerts" : "Turn on desktop alerts") + "</button></p>" +
-        tabs + '<div class="admin-body" role="tabpanel">' + body + "</div>";
+      var waiting = QUEUES.reduce(function (sum, q) { return sum + queueItems(q.id).length; }, 0);
+      var nav = '<nav class="mod-rail" aria-label="Moderation">' +
+        '<p class="mod-rail-sum">' + (waiting ? waiting + (waiting === 1 ? " item needs" : " items need") + " a decision" : "All caught up") + "</p>" +
+        '<div role="tablist" aria-orientation="vertical">' +
+        QUEUES.map(function (q) { return navItem(q.id, q.label, queueItems(q.id).length); }).join("") +
+        '<hr class="mod-rail-rule">' +
+        SECTIONS.filter(function (x) { return !x.modOnly || isMod; }).map(function (x) { return navItem(x.id, x.label, 0); }).join("") +
+        "</div>" +
+        '<div class="mod-rail-foot"><p>Signed in as a ' + esc(h.role === "moderator" ? "moderator" : "volunteer") + ".</p>" +
+        '<p>Checks for new items every minute.</p>' +
+        '<button class="btn-link" data-act="desktop-alerts">' + (desktopOn() ? "Turn off desktop alerts" : "Turn on desktop alerts") + "</button>" +
+        '<button class="btn-link" data-act="refresh">Refresh now</button></div>' +
+        "</nav>";
+
+      var body;
+      var q = QUEUES.filter(function (x) { return x.id === state.tab; })[0];
+      var title = q ? q.label : SECTIONS.filter(function (x) { return x.id === state.tab; })[0].label;
+      if (q) {
+        var items = queueItems(q.id);
+        var sheet = { "new": listingSheet, edits: editSheet, claims: claimSheet, reviews: reviewSheet }[q.id];
+        body = items.length ? items.map(sheet).join("") : '<div class="mod-empty"><p class="mod-empty-title">' + q.empty + "</p><p>New submissions show up here, and you'll see a count by My account.</p></div>";
+      } else if (state.tab === "messages") {
+        body = d.messages.length ? d.messages.map(messageSheet).join("") : '<div class="mod-empty"><p class="mod-empty-title">No messages yet.</p></div>';
+      } else if (state.tab === "team") {
+        body = state.team ? teamPanel(state.team) : '<p class="mod-loading">Loading the team…</p>';
+      } else {
+        body = state.all ? allListings(state.all) : '<p class="mod-loading">Loading listings…</p>';
+      }
+      root.innerHTML = '<div class="mod">' + nav +
+        '<section class="mod-main" role="tabpanel" aria-label="' + esc(title) + '"><h2 class="mod-title">' + esc(title) + "</h2>" + body + "</section></div>";
     }
 
     async function refresh() {
@@ -215,6 +270,8 @@
       if (tab) {
         state.tab = tab.getAttribute("data-tab");
         render();
+        var focusTarget = root.querySelector('[data-tab="' + state.tab + '"]');
+        if (focusTarget) focusTarget.focus();
         if (state.tab === "all" && !state.all) {
           try { state.all = await api.allBusinesses(); render(); } catch (e) { h.toast(e.message || "Could not load listings."); }
         }
@@ -232,26 +289,26 @@
       btn.disabled = true;
       try {
         var msg = "Done.";
-        if (act === "refresh") { await refresh(); h.toast("Refreshed."); return; }
-        else if (act === "listing-status") { await api.setListingStatus(id, s); msg = s === "approved" ? "Listing approved and now public." : "Listing rejected."; }
+        if (act === "refresh") { await refresh(); h.toast("Up to date."); return; }
+        else if (act === "listing-status") { await api.setListingStatus(id, s); msg = s === "approved" ? "Published. It's now in the directory." : "Listing rejected."; }
         else if (act === "edit-apply") { await api.applyEdit(id); msg = "Changes applied to the live listing."; }
-        else if (act === "edit-reject") { await api.rejectEdit(id); msg = "Edit rejected. The live listing is unchanged."; }
+        else if (act === "edit-reject") { await api.rejectEdit(id); msg = "Changes rejected. The live listing is unchanged."; }
         else if (act === "claim-approve") { await api.resolveClaim(id, true); msg = "Claim approved. They now own the listing."; }
         else if (act === "claim-reject") { await api.resolveClaim(id, false); msg = "Claim rejected."; }
         else if (act === "review-status") { await api.setReviewStatus(id, s); msg = s === "approved" ? "Review published." : "Review rejected."; }
         else if (act === "save-flags") {
-          var row = btn.closest("tr");
+          var row = btn.closest(".mod-row"); // not [data-id]: the button itself carries one
           var badges = Array.prototype.slice.call(row.querySelectorAll("[data-badge]:checked")).map(function (c) { return c.getAttribute("data-badge"); });
           var featured = row.querySelector('[data-field="featured"]').checked;
           var newStatus = row.querySelector('[data-field="status"]').value;
           var statusChanged = newStatus !== row.getAttribute("data-status");
-          if (statusChanged && newStatus !== "approved" && !window.confirm("Setting this to " + newStatus + " takes " + row.getAttribute("data-name") + " out of the public directory. Continue?")) { btn.disabled = false; return; }
+          if (statusChanged && newStatus !== "approved" && !window.confirm("This takes " + row.getAttribute("data-name") + " out of the public directory. Continue?")) { btn.disabled = false; return; }
           await api.setFlags(id, badges, featured);
           if (statusChanged) await api.setListingStatus(id, newStatus);
           msg = "Saved.";
         }
         else if (act === "member-role") {
-          var mrow = btn.closest("tr");
+          var mrow = btn.closest("[data-user]");
           await api.setMemberRole(mrow.getAttribute("data-user"), mrow.querySelector("[data-member-role]").value);
           if (mrow.getAttribute("data-user") === h.userId) {
             // Your own role changed: reload so the page shows what you can do now.
@@ -262,7 +319,7 @@
           msg = "Role updated.";
         }
         else if (act === "member-remove") {
-          var rrow = btn.closest("tr");
+          var rrow = btn.closest("[data-user]");
           if (!window.confirm("Remove " + rrow.getAttribute("data-email") + " from the team? They keep their account but lose moderation access.")) { btn.disabled = false; return; }
           await api.removeMember(rrow.getAttribute("data-user"));
           msg = "Removed from the team.";
@@ -288,7 +345,7 @@
         await api.addMember(email, role);
         state.team = await api.team();
         render();
-        h.toast("Added as " + role + ".");
+        h.toast("Added as a " + role + ".");
       } catch (err) {
         h.toast((err && err.message) || "Could not add them. Please try again.");
         btn.disabled = false;
@@ -308,14 +365,16 @@
       document.title = (n ? "(" + n + ") " : "") + "Moderation — NICC Business";
     }
     function showBanner(n) {
-      var b = root.querySelector(".admin-banner");
+      var main = root.querySelector(".mod-main");
+      if (!main) return;
+      var b = root.querySelector(".mod-banner");
       if (!b) {
         b = document.createElement("div");
-        b.className = "admin-banner";
+        b.className = "mod-banner";
         b.setAttribute("role", "status");
-        root.insertBefore(b, root.firstChild);
+        main.insertBefore(b, main.firstChild);
       }
-      b.innerHTML = '<strong>' + n + (n === 1 ? " new item" : " new items") + "</strong> waiting. " +
+      b.innerHTML = "<p><strong>" + n + (n === 1 ? " new item" : " new items") + "</strong> came in.</p>" +
         '<button class="btn btn-primary btn-sm" data-act="refresh">Show them</button>';
     }
     var lastSeen = null;
@@ -354,7 +413,7 @@
     });
 
     refresh().then(function () { lastSeen = queueTotal(); setTitle(lastSeen); }).catch(function (err) {
-      root.innerHTML = '<p class="admin-empty">Could not load the moderation queue: ' + esc((err && err.message) || "unknown error") + "</p>";
+      root.innerHTML = '<div class="mod-empty"><p class="mod-empty-title">Could not load the moderation queue.</p><p>' + esc((err && err.message) || "Unknown error") + "</p></div>";
     });
     return function stop() { window.clearInterval(timer); };
   }
