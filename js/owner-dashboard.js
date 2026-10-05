@@ -56,23 +56,36 @@
     return result.data;
   }
 
-  // Returns the listing's status after the save. An approved listing whose
-  // public details changed is sent back to "pending" by a database trigger
-  // (see 2026-10-04-hardening.sql), so callers can tell the owner.
+  // Saves through owner_update_business() (see 2026-10-05-admin.sql).
+  // For an approved listing the live version stays public and the change
+  // waits for a volunteer; hours go live immediately. Resolves
+  // {status, pending}. pending = there is an edit awaiting review.
   async function updateBusiness(id, fields) {
-    var result = await window.NiccSupabase.from("businesses").update({
-      name: fields.name,
-      category: fields.category,
-      neighborhood: fields.neighborhood,
-      description: fields.description,
-      long_description: fields.longDescription,
-      address: fields.address || null,
-      phone: fields.phone || null,
-      website: fields.website || null,
-      hours: fields.hours || []
-    }).eq("id", id).select("status").single();
+    var result = await window.NiccSupabase.rpc("owner_update_business", {
+      p_id: id,
+      p_fields: {
+        name: fields.name,
+        category: fields.category,
+        neighborhood: fields.neighborhood,
+        description: fields.description,
+        long_description: fields.longDescription,
+        address: fields.address || null,
+        phone: fields.phone || null,
+        website: fields.website || null,
+        hours: fields.hours || []
+      }
+    });
     if (result.error) throw result.error;
-    return result.data.status;
+    return result.data;
+  }
+
+  // Edits awaiting review for the owner's listings, keyed by business id.
+  async function loadMyPendingEdits() {
+    var result = await window.NiccSupabase.from("business_edits").select("business_id, changes, submitted_at");
+    if (result.error) throw result.error;
+    var byId = {};
+    result.data.forEach(function (e) { byId[e.business_id] = e; });
+    return byId;
   }
 
   async function uploadPhoto(businessId, file) {
@@ -85,11 +98,10 @@
       .upload(path, file, { cacheControl: "3600", upsert: false });
     if (uploadResult.error) throw uploadResult.error;
     var publicUrl = window.NiccSupabase.storage.from("business-photos").getPublicUrl(path).data.publicUrl;
-    var updateResult = await window.NiccSupabase.from("businesses").update({ photo_url: publicUrl }).eq("id", businessId).select("status").single();
+    var updateResult = await window.NiccSupabase.rpc("owner_update_business", { p_id: businessId, p_fields: { photo_url: publicUrl } });
     if (updateResult.error) throw updateResult.error;
-    // status can come back "pending": changing a public listing's photo
-    // sends it back to a volunteer for a re-check (database trigger).
-    return { url: publicUrl, status: updateResult.data.status };
+    // On a public listing the new photo waits for a volunteer (pending = true).
+    return { url: publicUrl, status: updateResult.data.status, pending: updateResult.data.pending };
   }
 
   async function submitReview(businessId, authorName, rating, body) {
@@ -142,6 +154,7 @@
     claimBusiness: claimBusiness,
     loadMyClaims: loadMyClaims,
     updateBusiness: updateBusiness,
+    loadMyPendingEdits: loadMyPendingEdits,
     uploadPhoto: uploadPhoto,
     submitReview: submitReview,
     loadReviewsForMyBusinesses: loadReviewsForMyBusinesses,

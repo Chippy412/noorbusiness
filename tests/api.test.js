@@ -103,7 +103,7 @@ test("verify-turnstile survives a malformed JSON body", async () => {
   delete process.env.TURNSTILE_SECRET_KEY;
 });
 
-test("notify ignores updates that are not a re-queued listing", async () => {
+test("notify skips updates except for queued listing edits", async () => {
   process.env.NOTIFY_SECRET = "s3cret";
   process.env.RESEND_API_KEY = "k"; process.env.NOTIFY_EMAIL_TO = "a@b.co"; process.env.NOTIFY_EMAIL_FROM = "x <x@y.co>";
   const handler = require("../api/notify");
@@ -113,4 +113,11 @@ test("notify ignores updates that are not a re-queued listing", async () => {
   assert.strictEqual(res.code, 200);
   assert.strictEqual(res.body.skipped, true);
   for (const k of ["NOTIFY_SECRET", "RESEND_API_KEY", "NOTIFY_EMAIL_TO", "NOTIFY_EMAIL_FROM"]) delete process.env[k];
+});
+
+test("notify summarises a queued listing edit", () => {
+  const { summarize } = require("../api/notify")._test;
+  const text = summarize("business_edits", { business_id: "abc", changes: { description: "x", phone: "y" } });
+  assert.ok(text.includes("abc"));
+  assert.ok(text.includes("description, phone"));
 });

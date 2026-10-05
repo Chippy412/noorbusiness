@@ -87,13 +87,32 @@ and isn't something `git clone` gives you.
 
 ## Moderation
 
-Listing edits: when an owner changes the public details of an *approved*
-listing (name, description, address, phone, website, photo, category,
-neighborhood) it goes back to `pending` until a volunteer re-approves it.
-Hours edits go live immediately. Badges (e.g. "Halal verified") and
-`featured` can only be set by a volunteer in the Table Editor.
+Volunteers moderate at **`/#/admin`** (a "Moderation" button appears on the
+My account page for moderators). It shows:
 
+- **New listings**: approve or reject.
+- **Edits**: when an owner changes an *approved* listing, the live version
+  stays public and the edit waits here as a side-by-side comparison. Apply or
+  reject it. (Hours changes go live immediately.)
+- **Claims**: approving transfers ownership to the person who claimed it.
+- **Reviews**: approve or reject.
+- **Messages**: contact-form messages, with a reply-by-email link.
+- **All listings**: set status, badges (e.g. Halal verified) and Featured.
+  Only moderators can set badges.
 
-New listings and claims start `pending`. There is no custom admin panel
-— a volunteer approves them directly in the Supabase Table Editor by
-changing a row's `status` to `approved`.
+**Who can moderate:** the `admins` table, managed from the Supabase SQL
+editor. The person needs a site account with two-factor turned on (My
+account), then:
+
+```sql
+insert into admins (user_id)
+select id from auth.users where lower(email) = lower('someone@example.com')
+on conflict do nothing;
+```
+
+Remove someone: `delete from admins where user_id = (select id from auth.users where lower(email) = lower('someone@example.com'));`
+
+Every action is enforced in the database (`admin_*` functions require the
+caller to be on `admins` AND signed in with their second factor), not just in
+the page. Run `supabase/migrations/2026-10-05-admin.sql` to set this up
+(after the other `2026-10-04-*` migrations).
