@@ -826,6 +826,10 @@
   .admin-all { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
   .admin-all th, .admin-all td { text-align: left; vertical-align: top; padding: 12px; border-top: 1px solid var(--hairline); }
   .admin-all thead th { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; border-top: 0; }
+  .admin-add { display: grid; grid-template-columns: 1fr 180px auto; gap: 12px; align-items: end; margin: 14px 0; }
+  .admin-rolehelp { padding-left: 1.1em; margin: 0; }
+  .admin-actions-cell { white-space: nowrap; }
+  @media (max-width: 640px) { .admin-add { grid-template-columns: 1fr; } .admin-actions-cell { white-space: normal; } }
   .admin-check { display: block; white-space: nowrap; margin-bottom: 4px; cursor: pointer; }
   .admin-all select { font: inherit; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--hairline); background: var(--ground); color: var(--ink); }
   @media (max-width: 640px) { .admin-dl { grid-template-columns: 1fr; gap: 0; } .admin-dl dd { margin-bottom: 8px; } .admin-refresh { margin-left: 0; } }
@@ -3151,7 +3155,7 @@
       "error": "Could not check your access. Please try again."
     }[s.state];
     if (msg) { root.innerHTML = '<p class="admin-empty">' + msg + "</p>"; return; }
-    window.NiccAdmin.mount(root, { escape: escapeAttr, safeUrl: safePhotoUrl, toast: toast });
+    window.NiccAdmin.mount(root, { escape: escapeAttr, safeUrl: safePhotoUrl, toast: toast, role: s.role, userId: s.userId });
   }
 
   async function renderMyListings() {
