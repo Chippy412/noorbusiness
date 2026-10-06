@@ -411,6 +411,12 @@
   .pv-full-body { padding: 18px 20px 6px; }
   .pv-full-body h4 { font-size: 1.3rem; }
   .pv-full-body .modal-section { padding: 14px 0; }
+  .edit-preview { margin: 4px 0 22px; }
+  .edit-preview summary { cursor: pointer; font-weight: 700; font-size: 0.9rem; color: var(--accent); padding: 6px 0; }
+  .edit-preview summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+  .edit-preview[open] { background: var(--surface-2); border: 1px solid var(--hairline); border-radius: 18px; padding: 8px 16px 16px; }
+  .edit-preview .pv-head { margin-top: 8px; }
+  .pv-sub { color: var(--muted); font-size: 0.84rem; }
   .pv-note { color: var(--muted); font-size: 0.84rem; margin-top: 14px; max-width: 46ch; }
   @media (min-width: 1000px) {
     .composer { position: relative; left: 50%; transform: translateX(-50%); width: min(1080px, calc(100vw - 48px)); }
@@ -1549,6 +1555,7 @@
                 <label for="cSubject">Subject</label>
                 <select id="cSubject">
                   <option>A question about a listing</option>
+                  <option>Reporting a problem with a listing</option>
                   <option>Halal verification</option>
                   <option>Reporting a review</option>
                   <option>Volunteering</option>
@@ -1925,6 +1932,11 @@
                   <span class="error">Please add a fuller description.</span>
                 </div>
                 <div class="field full">
+                  <label for="ownAddHours">Hours (optional)</label>
+                  <textarea id="ownAddHours" rows="4" maxlength="800" placeholder="Mon–Fri | 9am–5pm&#10;Sat | 10am–2pm"></textarea>
+                  <span class="help">One per line, as days | times. You can change them any time from your account.</span>
+                </div>
+                <div class="field full">
                   <label for="ownAddPhoto">Cover photo (optional)</label>
                   <input type="file" id="ownAddPhoto" accept="image/png,image/jpeg,image/webp">
                   <span class="help">JPG, PNG or WebP, up to 5 MB. A wide photo of your storefront or best product works well. You can change it later from your account.</span>
@@ -2073,6 +2085,7 @@
   <div class="modal-foot">
     <button class="btn btn-primary" id="modalSave"><svg class="icon"><use href="#i-bookmark"/></svg> Save listing</button>
     <button class="btn btn-ghost" type="button" id="modalShare">Share listing</button>
+    <button class="btn btn-ghost" type="button" id="modalReport">Report a problem</button>
     <button class="btn btn-ghost" id="modalClaim">Claim this business</button>
   </div>
 </dialog>
@@ -2556,6 +2569,24 @@
       if (e && e.name === "AbortError") return; // user dismissed the share sheet
       toast(link);
     }
+  });
+  // Report a problem: hands off to the contact form with the listing named,
+  // so the report lands in the same inbox volunteers already watch.
+  document.getElementById("modalReport").addEventListener("click", function () {
+    if (!currentItem) return;
+    var item = currentItem;
+    modal.close();
+    location.hash = "#/contact";
+    setTimeout(function () {
+      var subject = document.getElementById("cSubject");
+      var message = document.getElementById("cMessage");
+      if (subject) subject.value = "Reporting a problem with a listing";
+      if (message && !message.value.trim()) {
+        message.value = "About “" + item.name + "” (" + location.origin + "/b/" + item.id + "):\n\nWhat is wrong? ";
+        message.focus();
+        message.setSelectionRange(message.value.length, message.value.length);
+      }
+    }, 80);
   });
   modal.addEventListener("click", function (e) { if (e.target === modal) modal.close(); });
   modalSave.addEventListener("click", function () {
@@ -3500,7 +3531,16 @@
             '</div>' +
             '<button type="submit" class="btn btn-ghost btn-sm" style="margin-top:8px">Save changes</button>' +
             '<p class="form-status edit-status" role="status"></p>' +
-          '</form>';
+          '</form>' +
+          '<details class="edit-preview" data-business-id="' + b.id + '">' +
+            '<summary>Preview how it looks</summary>' +
+            '<div class="pv-head"><span class="pv-sub">Uses what is typed above, before you save.</span>' +
+              '<div class="seg" role="group" aria-label="Preview view">' +
+                '<button type="button" class="pv-card" aria-pressed="true">Card</button>' +
+                '<button type="button" class="pv-full-btn" aria-pressed="false">Full listing</button>' +
+              '</div></div>' +
+            '<div class="pv-stage"></div>' +
+          '</details>';
       });
 
       var claimRows = claims.map(function (c) {
@@ -3545,6 +3585,27 @@
           }
           input.value = "";
         });
+      });
+
+      el.querySelectorAll(".edit-preview").forEach(function (box) {
+        var form = box.previousElementSibling;
+        var row = form.previousElementSibling;
+        var stage = box.querySelector(".pv-stage");
+        var view = "card";
+        function q(cls) { return form.querySelector("." + cls); }
+        function selText(cls) { var e = q(cls); return e.options[e.selectedIndex].text; }
+        function render() {
+          var photo = row && row.querySelector(".owner-photo-preview");
+          renderListingPreview(stage, view, {
+            name: q("edit-name").value.trim(), cat: selText("edit-cat"), hood: selText("edit-hood"),
+            desc: q("edit-desc").value.trim(), long: q("edit-long").value.trim(), address: q("edit-address").value.trim(),
+            phone: q("edit-phone").value.trim(), website: normalizeWebsite(q("edit-website").value) || "",
+            hours: parseHours(q("edit-hours").value)
+          }, photo && photo.getAttribute("src"));
+        }
+        wirePreviewSwitch(box.querySelector(".pv-card"), box.querySelector(".pv-full-btn"), function (next) { view = next; render(); });
+        box.addEventListener("toggle", function () { if (box.open) render(); });
+        form.addEventListener("input", function () { if (box.open) render(); });
       });
 
       el.querySelectorAll(".owner-edit-form").forEach(function (form) {
@@ -3737,6 +3798,11 @@
           halalStatus: document.getElementById("ownAddHalal").value
         });
         var photoNote = "";
+        var newHours = parseHours(document.getElementById("ownAddHours").value);
+        if (newHours.length && created && created.id) {
+          try { await window.NiccOwner.setHours(created.id, newHours); }
+          catch (hoursErr) { photoNote += " Your hours could not be saved; you can add them from your account."; }
+        }
         if (photoFile && created && created.id) {
           try { await window.NiccOwner.uploadPhoto(created.id, photoFile); }
           catch (photoErr) { photoNote = " Your cover photo could not be uploaded; you can add it from your account."; }
@@ -3753,126 +3819,124 @@
     });
   }
 
-  /* ============ New-listing preview ============ */
-  // Draws the same card and detail layout the public sees, from whatever is
-  // typed in the form so far. The chosen photo is shown from the device
-  // (a data: URL) and is never uploaded until the form is submitted.
+  /* ============ Listing preview ============ */
+  // One renderer for the new-listing form and each listing's edit form. It
+  // draws the same card and detail layout the public sees, from whatever is
+  // in the fields so far. The photo is shown from the device (a data: URL,
+  // which the site's Content-Security-Policy allows; blob: would be blocked).
+  var PV_SAMPLE = {
+    name: "Your business name",
+    desc: "A one-sentence summary shows here.",
+    long: "Your full description shows here. Say what you do and what makes people come back."
+  };
+
+  function pvFullHtml(item) {
+    var phoneDigits = item.phone.replace(/[^\d+]/g, "");
+    var siteUrl = safePhotoUrl(item.website);
+    var html = '<article class="pv-full">' +
+      '<div class="listing-art art-tone-1"><span class="art-badge"><svg class="icon"><use href="#' + item.icon + '"/></svg></span></div>' +
+      '<div class="pv-full-body">' +
+        '<h4>' + escapeAttr(item.name) + '</h4>' +
+        '<p class="listing-meta">' + escapeAttr(item.cat) + ' in ' + escapeAttr(item.hood) + ', Columbus</p>' +
+        '<div class="modal-section"><div class="badges"><span class="badge neutral">New to the directory</span></div></div>' +
+        '<div class="modal-section"><p style="color:var(--ink-2)">' + escapeAttr(item.long) + '</p></div>';
+    if (item.address) {
+      html += '<div class="modal-section"><h3>Location</h3><p style="color:var(--ink-2);display:flex;align-items:center;gap:8px">' +
+        '<svg class="icon" style="color:var(--accent);flex-shrink:0"><use href="#i-pin"/></svg>' + escapeAttr(item.address) + '</p></div>';
+    }
+    if (siteUrl || phoneDigits) {
+      html += '<div class="modal-section"><h3>Contact</h3><div class="hours-list">' +
+        (phoneDigits ? '<div class="hours-row"><span>Phone</span><span>' + escapeAttr(item.phone) + '</span></div>' : "") +
+        (siteUrl ? '<div class="hours-row"><span>Website</span><span>' + escapeAttr(item.website.replace(/^https?:\/\//, "").replace(/\/$/, "")) + '</span></div>' : "") +
+        '</div></div>';
+    }
+    html += '<div class="modal-section"><h3>Hours</h3>' +
+      (item.hours.length
+        ? '<div class="hours-list">' + item.hours.map(function (h) { return '<div class="hours-row"><span>' + escapeAttr(h[0]) + '</span><span>' + escapeAttr(h[1]) + '</span></div>'; }).join("") + '</div>'
+        : '<p style="color:var(--muted)">Not yet listed. Check with the business before you visit.</p>') +
+      '</div></div></article>';
+    return html;
+  }
+
+  // d: {name, cat, hood, desc, long, address, phone, website, hours} as typed.
+  // photo: an https: or data: URL, or empty.
+  function renderListingPreview(stage, view, d, photo) {
+    var icons = (window.NiccData && window.NiccData.categoryIcons) || {};
+    var empty = { name: !d.name, desc: !d.desc, long: !d.long };
+    var item = {
+      id: "preview",
+      name: d.name || PV_SAMPLE.name,
+      cat: d.cat,
+      hood: d.hood,
+      icon: icons[d.cat] || "i-storefront",
+      tone: 1,
+      badges: [],
+      rating: null,
+      reviewCount: 0,
+      desc: d.desc || PV_SAMPLE.desc,
+      long: d.long || PV_SAMPLE.long,
+      address: d.address || "",
+      phone: d.phone || "",
+      website: d.website || "",
+      hours: d.hours || []
+    };
+    var html = view === "full"
+      ? pvFullHtml(item)
+      : cardHtml(item).replace(" reveal", "").replace(/<button class="save-btn"[\s\S]*?<\/button>/, "");
+    stage.innerHTML = '<div inert>' + html + '</div>';
+    var title = stage.querySelector(view === "full" ? "h4" : "h3");
+    var body = stage.querySelector(view === "full" ? ".modal-section p" : ".listing-desc");
+    if (empty.name && title) title.classList.add("ghost");
+    if (body && (view === "full" ? empty.long : empty.desc)) body.classList.add("ghost");
+    if (photo && /^(https:|data:image\/)/.test(photo)) {
+      var art = stage.querySelector(".listing-art");
+      var badge = art.querySelector(".art-badge");
+      if (badge) badge.remove();
+      var img = document.createElement("img");
+      img.src = photo;
+      img.alt = "";
+      art.appendChild(img);
+    }
+  }
+
+  // Reads a Card / Full listing switch and keeps `view` for it.
+  function wirePreviewSwitch(cardBtn, fullBtn, onChange) {
+    function set(next) {
+      cardBtn.setAttribute("aria-pressed", next === "card" ? "true" : "false");
+      fullBtn.setAttribute("aria-pressed", next === "full" ? "true" : "false");
+      onChange(next);
+    }
+    cardBtn.addEventListener("click", function () { set("card"); });
+    fullBtn.addEventListener("click", function () { set("full"); });
+  }
+
+  // New-listing form.
   (function () {
     var form = document.getElementById("ownerAddForm");
     var stage = document.getElementById("pvStage");
     if (!form || !stage) return;
-    var cardBtn = document.getElementById("pvCardBtn");
-    var fullBtn = document.getElementById("pvFullBtn");
     var photoInput = document.getElementById("ownAddPhoto");
-    var sample = {
-      name: "Your business name",
-      desc: "A one-sentence summary shows here.",
-      long: "Your full description shows here. Say what you do and what makes people come back."
-    };
     var view = "card", photoUrl = null, queued = false;
 
     function val(id) { return document.getElementById(id).value.trim(); }
-
-    function current() {
-      var icons = (window.NiccData && window.NiccData.categoryIcons) || {};
-      var catSel = document.getElementById("ownAddCategory");
-      var hoodSel = document.getElementById("ownAddHood");
-      var cat = catSel.options[catSel.selectedIndex].text;
-      var site = normalizeWebsite(document.getElementById("ownAddWebsite").value);
-      var empty = { name: !val("ownAddName"), desc: !val("ownAddDesc"), long: !val("ownAddLong") };
-      return {
-        empty: empty,
-        item: {
-          id: "preview",
-          name: val("ownAddName") || sample.name,
-          cat: cat,
-          hood: hoodSel.options[hoodSel.selectedIndex].text,
-          icon: icons[cat] || "i-storefront",
-          tone: 1,
-          badges: [],
-          rating: null,
-          reviewCount: 0,
-          desc: val("ownAddDesc") || sample.desc,
-          long: val("ownAddLong") || sample.long,
-          address: val("ownAddAddress"),
-          phone: val("ownAddPhone"),
-          website: site || ""
-        }
-      };
-    }
-
-    function fullHtml(item) {
-      var phoneDigits = item.phone.replace(/[^\d+]/g, "");
-      var siteUrl = safePhotoUrl(item.website);
-      var html = '<article class="pv-full">' +
-        '<div class="listing-art art-tone-1"><span class="art-badge"><svg class="icon"><use href="#' + item.icon + '"/></svg></span></div>' +
-        '<div class="pv-full-body">' +
-          '<h4>' + escapeAttr(item.name) + '</h4>' +
-          '<p class="listing-meta">' + escapeAttr(item.cat) + ' in ' + escapeAttr(item.hood) + ', Columbus</p>' +
-          '<div class="modal-section"><div class="badges"><span class="badge neutral">New to the directory</span></div></div>' +
-          '<div class="modal-section"><p style="color:var(--ink-2)">' + escapeAttr(item.long) + '</p></div>';
-      if (item.address) {
-        html += '<div class="modal-section"><h3>Location</h3><p style="color:var(--ink-2);display:flex;align-items:center;gap:8px">' +
-          '<svg class="icon" style="color:var(--accent);flex-shrink:0"><use href="#i-pin"/></svg>' + escapeAttr(item.address) + '</p></div>';
-      }
-      if (siteUrl || phoneDigits) {
-        html += '<div class="modal-section"><h3>Contact</h3><div class="hours-list">' +
-          (phoneDigits ? '<div class="hours-row"><span>Phone</span><span>' + escapeAttr(item.phone) + '</span></div>' : "") +
-          (siteUrl ? '<div class="hours-row"><span>Website</span><span>' + escapeAttr(item.website.replace(/^https?:\/\//, "").replace(/\/$/, "")) + '</span></div>' : "") +
-          '</div></div>';
-      }
-      html += '<div class="modal-section"><h3>Hours</h3><p style="color:var(--muted)">You can add your hours from your account after you submit.</p></div>' +
-        '</div></article>';
-      return html;
-    }
+    function selText(id) { var e = document.getElementById(id); return e.options[e.selectedIndex].text; }
 
     function render() {
       queued = false;
-      var cur = current(), item = cur.item;
-      var html;
-      if (view === "card") {
-        html = cardHtml(item)
-          .replace(" reveal", "")
-          .replace(/<button class="save-btn"[\s\S]*?<\/button>/, "");
-      } else {
-        html = fullHtml(item);
-      }
-      stage.innerHTML = '<div inert>' + html + '</div>';
-      if (view === "card") {
-        if (cur.empty.name) stage.querySelector("h3").classList.add("ghost");
-        if (cur.empty.desc) stage.querySelector(".listing-desc").classList.add("ghost");
-      } else {
-        if (cur.empty.name) stage.querySelector("h4").classList.add("ghost");
-        if (cur.empty.long) stage.querySelector(".modal-section p").classList.add("ghost");
-      }
-      if (photoUrl) {
-        var art = stage.querySelector(".listing-art");
-        var badge = art.querySelector(".art-badge");
-        if (badge) badge.remove();
-        var img = document.createElement("img");
-        img.src = photoUrl;
-        img.alt = "";
-        art.appendChild(img);
-      }
+      renderListingPreview(stage, view, {
+        name: val("ownAddName"), cat: selText("ownAddCategory"), hood: selText("ownAddHood"),
+        desc: val("ownAddDesc"), long: val("ownAddLong"), address: val("ownAddAddress"),
+        phone: val("ownAddPhone"), website: normalizeWebsite(document.getElementById("ownAddWebsite").value) || "",
+        hours: parseHours(document.getElementById("ownAddHours").value)
+      }, photoUrl);
     }
-
     function schedule() {
       if (queued) return;
       queued = true;
       setTimeout(render, 30);
     }
+    wirePreviewSwitch(document.getElementById("pvCardBtn"), document.getElementById("pvFullBtn"), function (next) { view = next; render(); });
 
-    function setView(next) {
-      view = next;
-      cardBtn.setAttribute("aria-pressed", next === "card" ? "true" : "false");
-      fullBtn.setAttribute("aria-pressed", next === "full" ? "true" : "false");
-      render();
-    }
-    cardBtn.addEventListener("click", function () { setView("card"); });
-    fullBtn.addEventListener("click", function () { setView("full"); });
-
-    // A data: URL, not a blob: URL: the site's Content-Security-Policy allows
-    // data: images but blocks blob:, so a blob preview would show nothing.
     function setPhoto() {
       photoUrl = null;
       var file = photoInput && photoInput.files && photoInput.files[0];
@@ -3890,10 +3954,7 @@
       if (e.target === photoInput) setPhoto(); else schedule();
     });
     form.addEventListener("reset", function () {
-      setTimeout(function () {
-        photoUrl = null;
-        render();
-      }, 0);
+      setTimeout(function () { photoUrl = null; render(); }, 0);
     });
     render();
   })();
