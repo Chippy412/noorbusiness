@@ -868,8 +868,7 @@
   }
   .faq-q .icon { width: 20px; height: 20px; color: var(--accent); transition: transform 0.3s ease; flex-shrink: 0; }
   .faq-q[aria-expanded="true"] .icon { transform: rotate(45deg); }
-  .faq-a { display: none; padding: 0 4px 24px; color: var(--muted); max-width: 68ch; }
-  .faq-a.open { display: block; }
+  .faq-a { padding: 0 4px; color: var(--muted); max-width: 68ch; }
 
   /* ---------- Timeline / benefits / about ---------- */
   .timeline { border-left: 1px solid var(--hairline); padding-left: 28px; display: flex; flex-direction: column; gap: 30px; margin-top: 8px; }
@@ -1173,12 +1172,64 @@
   .site-nav { transition: box-shadow 0.3s ease, background-color 0.3s ease; }
   .site-nav.is-scrolled { box-shadow: 0 12px 28px -20px rgba(var(--shadow-color) / 0.6); }
 
+
+  /* ---------- Mobile bottom bar + back to top ---------- */
+  .bottom-bar { display: none; }
+  .to-top {
+    position: fixed; right: 18px; bottom: 22px; z-index: 37; width: 46px; height: 46px; border-radius: 999px;
+    border: 1px solid var(--hairline); background: var(--surface); color: var(--accent); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 14px 30px -14px rgba(var(--shadow-color) / 0.55);
+    opacity: 0; visibility: hidden; transform: translateY(12px);
+    transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.16,1,0.3,1), visibility 0s linear 0.3s, border-color 0.2s ease;
+  }
+  .to-top.show { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
+  .to-top:hover { border-color: var(--accent); }
+  .to-top svg { width: 20px; height: 20px; transform: rotate(-90deg); }
+  @media (max-width: 1000px) {
+    .bottom-bar {
+      display: grid; grid-template-columns: repeat(4, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 38;
+      background: var(--nav-bg); backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%);
+      border-top: 1px solid var(--hairline); padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+    }
+    .bottom-bar a, .bottom-bar button {
+      position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 7px 4px;
+      background: none; border: none; border-radius: 12px; font: inherit; font-size: 0.7rem; font-weight: 700;
+      color: var(--muted); cursor: pointer; transition: color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+    }
+    .bottom-bar svg { width: 22px; height: 22px; }
+    .bottom-bar a[aria-current="page"], .bottom-bar a:hover, .bottom-bar button:hover { color: var(--accent); }
+    .bottom-bar a[aria-current="page"] { background: var(--accent-soft); }
+    .bottom-bar a:active, .bottom-bar button:active { transform: scale(0.94); }
+    .bottom-bar .bb-count {
+      position: absolute; top: 2px; left: calc(50% + 6px); min-width: 17px; height: 17px; padding: 0 5px; border-radius: 999px;
+      background: var(--accent); color: var(--accent-ink); font-size: 0.65rem; line-height: 17px; text-align: center;
+    }
+    .bottom-bar .bb-count[hidden] { display: none; }
+    body { padding-bottom: calc(66px + env(safe-area-inset-bottom)); }
+    .toast { bottom: calc(82px + env(safe-area-inset-bottom)); }
+    .to-top { bottom: calc(80px + env(safe-area-inset-bottom)); right: 14px; }
+  }
+
+  /* ---------- FAQ accordion: animate height ---------- */
+  .faq-a { display: block; height: 0; overflow: hidden; padding-bottom: 0; visibility: hidden; transition: height 0.32s cubic-bezier(0.16,1,0.3,1), padding-bottom 0.32s ease, visibility 0s linear 0.32s; }
+  .faq-a.open { padding-bottom: 24px; visibility: visible; transition-delay: 0s; }
+
+  /* Focus rings ease in instead of snapping on. */
+  @keyframes ring-in { from { outline-offset: 0; outline-color: transparent; } }
+  :focus-visible:not(h1) { animation: ring-in 0.18s ease-out; }
+
+  /* One reading width for long prose pages. */
+  .page-head p, .section-head p, .faq-a, .mission p, .value-row p { text-wrap: pretty; }
+  .page-head h1, .section-head h2, .hero h1, .mission h2 { text-wrap: balance; }
+
   @media (prefers-reduced-motion: reduce) {
     .page:not([hidden]), #results .listing, #featuredGrid .listing, dialog.listing-modal[open],
     dialog.listing-modal[open]::backdrop, .hero h1, .hero-sub, .hero .search-card, .hero-trust,
     .hero-visual, .hero-photo img, .hero-float, .save-btn[aria-pressed="true"] svg, .saved-chip,
-    #resultCount, .form-status.show, .empty-state.show, .empty-state.show .e-icon { animation: none !important; }
+    #resultCount, .form-status.show, :focus-visible, .empty-state.show, .empty-state.show .e-icon { animation: none !important; }
     .listing-art img { transition: none; }
+    .faq-a, .to-top, .bottom-bar a, .bottom-bar button { transition: none; }
   }
 </style>
 
@@ -2384,6 +2435,13 @@
   </form>
 </dialog>
 
+<nav class="bottom-bar" id="bottomBar" aria-label="Quick navigation">
+  <a href="#/" data-route="home"><svg class="icon"><use href="#i-home"/></svg>Home</a>
+  <a href="#/explore" data-route="explore"><svg class="icon"><use href="#i-search"/></svg>Explore</a>
+  <button type="button" id="bottomSaved"><svg class="icon"><use href="#i-bookmark"/></svg>Saved<span class="bb-count" id="bottomSavedCount" hidden>0</span></button>
+  <a href="#/list" data-route="list"><svg class="icon"><use href="#i-plus"/></svg>List</a>
+</nav>
+<button type="button" class="to-top" id="toTop" aria-label="Back to top"><svg class="icon"><use href="#i-arrow-right"/></svg></button>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <footer>
@@ -2401,7 +2459,7 @@
         <ul>
           <li><a href="#/explore" data-route="explore">Explore</a></li>
           <li><a href="#/explore" data-route="explore">Restaurants</a></li>
-          <li><a href="#/explore" data-route="explore">Halal grocery</a></li>
+          <li><a href="#/explore" data-route="explore">Grocery</a></li>
           <li><a href="#/list" data-route="list">List your business</a></li>
         </ul>
       </div>
@@ -2541,6 +2599,8 @@
     var el = document.getElementById("savedCount");
     var grew = el && saved.length > Number(el.textContent || 0);
     if (el) el.textContent = String(saved.length);
+    var bb = document.getElementById("bottomSavedCount");
+    if (bb) { bb.textContent = String(saved.length); bb.hidden = saved.length === 0; }
     var chip = document.getElementById("savedChip");
     if (chip) {
       chip.hidden = saved.length === 0;
@@ -3033,6 +3093,10 @@
       var page = document.getElementById("page-" + r);
       if (page) page.hidden = (r !== route);
     });
+    document.querySelectorAll("#bottomBar a[data-route]").forEach(function (a) {
+      if (a.getAttribute("data-route") === route) a.setAttribute("aria-current", "page");
+      else a.removeAttribute("aria-current");
+    });
     document.querySelectorAll(".nav-links a[data-route]").forEach(function (a) {
       if (a.getAttribute("data-route") === route) a.setAttribute("aria-current", "page");
       else a.removeAttribute("aria-current");
@@ -3066,7 +3130,12 @@
   (function () {
     var nav = document.querySelector(".site-nav");
     if (!nav) return;
-    var onScroll = function () { nav.classList.toggle("is-scrolled", window.scrollY > 8); };
+    var toTop = document.getElementById("toTop");
+    if (toTop) toTop.addEventListener("click", function () { window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" }); });
+    var onScroll = function () {
+      nav.classList.toggle("is-scrolled", window.scrollY > 8);
+      if (toTop) toTop.classList.toggle("show", window.scrollY > 900);
+    };
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
   })();
@@ -3589,6 +3658,9 @@
     applyFilters();
   }
 
+  document.getElementById("bottomSaved").addEventListener("click", function () {
+    document.getElementById("savedChip").click();
+  });
   document.getElementById("savedChip").addEventListener("click", function () {
     location.hash = "#/explore";
     setTimeout(function () {
@@ -3602,8 +3674,23 @@
   document.querySelectorAll(".faq-q").forEach(function (btn) {
     btn.addEventListener("click", function () {
       var open = btn.getAttribute("aria-expanded") === "true";
+      var panel = document.getElementById(btn.getAttribute("aria-controls"));
       btn.setAttribute("aria-expanded", open ? "false" : "true");
-      document.getElementById(btn.getAttribute("aria-controls")).classList.toggle("open", !open);
+      panel.classList.toggle("open", !open);
+      if (reduceMotion) { panel.style.height = open ? "0px" : "auto"; return; }
+      if (open) {
+        // Auto -> 0 doesn't animate, so pin the current height first.
+        panel.style.height = panel.scrollHeight + "px";
+        void panel.offsetHeight;
+        panel.style.height = "0px";
+      } else {
+        panel.style.height = panel.scrollHeight + 24 + "px";
+        panel.addEventListener("transitionend", function done(e) {
+          if (e.propertyName !== "height") return;
+          panel.removeEventListener("transitionend", done);
+          if (panel.classList.contains("open")) panel.style.height = "auto";
+        });
+      }
     });
   });
 
