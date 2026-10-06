@@ -962,6 +962,25 @@
   .mod-log .mod-sub { font-size: 0.8rem; margin-top: 2px; }
   .mod-row:has(.mod-history) { grid-template-areas: "main status" "pills save" "hist hist"; }
   .mod-row .mod-history { grid-area: hist; }
+  /* Sponsorship */
+  .sponsored-tag { margin: 0 0 4px; color: var(--muted); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+  .promote { margin: 4px 0 22px; padding: 16px 18px; border: 1px solid var(--hairline); border-radius: 16px; background: var(--surface); }
+  .promote h3 { font-size: 1rem; margin: 0 0 4px; }
+  .promote > p { margin: 0 0 12px; color: var(--muted); font-size: 0.9rem; }
+  .promote-plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+  .promote-plan { display: flex; flex-direction: column; gap: 8px; padding: 14px; border: 1px solid var(--hairline); border-radius: 12px; background: var(--ground); }
+  .promote-plan h4 { margin: 0; font-size: 0.98rem; }
+  .promote-price { font-family: "Bricolage Grotesque", sans-serif; font-size: 1.35rem; font-weight: 700; color: var(--ink); }
+  .promote-price small { font-family: inherit; font-size: 0.8rem; font-weight: 600; color: var(--muted); }
+  .promote-plan ul { margin: 0; padding-left: 18px; color: var(--ink-2); font-size: 0.88rem; }
+  .promote-plan .btn { margin-top: auto; align-self: flex-start; }
+  .promote-active { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; color: var(--ink); }
+  .promote-fine { margin: 10px 0 0 !important; font-size: 0.8rem !important; }
+  .mod-until { display: inline-flex; align-items: center; gap: 6px; margin-left: 6px; color: var(--muted); font-size: 0.84rem; }
+  .mod-until input, .mod-comp input, .mod-comp select { font: inherit; font-size: 0.9rem; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--hairline); background: var(--ground); color: var(--ink); }
+  .mod-comp { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.8fr) minmax(0, 0.9fr); gap: 12px; align-items: end; margin-top: 14px; }
+  .mod-comp-note { grid-column: 1 / 3; }
+  @media (max-width: 860px) { .mod-comp { grid-template-columns: 1fr; } .mod-comp-note { grid-column: auto; } }
   /* Report dialog */
   dialog.report-modal { width: min(520px, calc(100vw - 32px)); }
   .report-reasons { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -1554,7 +1573,7 @@
           <div class="faq-list">
             <div class="faq-item">
               <button class="faq-q" aria-expanded="false" aria-controls="fb1">What does it cost to list?<svg class="icon"><use href="#i-plus"/></svg></button>
-              <div class="faq-a" id="fb1"><p>Listing is free while the directory is growing. If paid features arrive later, existing listings stay free and we will say clearly what changes before anything does.</p></div>
+              <div class="faq-a" id="fb1"><p>Listing is free, and stays free. Owners can optionally sponsor their listing ($19 or $39 a month) to be shown first in search or on the home page; sponsored listings always carry a visible “Sponsored” label, and badges like Halal verified can never be bought.</p></div>
             </div>
             <div class="faq-item">
               <button class="faq-q" aria-expanded="false" aria-controls="fb2">How long does approval take?<svg class="icon"><use href="#i-plus"/></svg></button>
@@ -2055,7 +2074,7 @@
       <div class="wrap-narrow">
         <p style="color:var(--muted)">Last updated September 2026. NICC Business is a community-run directory operated by volunteers. This page explains what information we collect and what we do with it.</p>
         <h2 style="margin-top:28px">What we collect</h2>
-        <p style="color:var(--muted)">If you create an owner account, we store the email address and password you sign up with (through our authentication provider, Supabase) and the business listing details you submit, including any photos you upload. If you use the contact form, we receive the name, email, and message you enter so we can reply, and a one-way hash of your IP address that we use only to limit spam. If you join the email list in the footer, we store your email address. If you save listings while logged in, we store which listings you saved so they follow you between devices. Browsing, searching, filtering, and saving listings do not require an account.</p>
+        <p style="color:var(--muted)">If you create an owner account, we store the email address and password you sign up with (through our authentication provider, Supabase) and the business listing details you submit, including any photos you upload. If you use the contact form, we receive the name, email, and message you enter so we can reply, and a one-way hash of your IP address that we use only to limit spam. If you join the email list in the footer, we store your email address. If you save listings while logged in, we store which listings you saved so they follow you between devices. If you report a problem, we store your report, the email address if you give one, and a one-way hash of your IP address to limit spam. If you sponsor a listing, payment is handled by Stripe: we never see or store your card number, only which plan you chose, when it renews, and Stripe's reference numbers for your subscription. Browsing, searching, filtering, and saving listings do not require an account.</p>
         <h2 style="margin-top:28px">What stays in your browser</h2>
         <p style="color:var(--muted)">Your saved listings and your light/dark theme preference are stored only in your browser's local storage. We do not receive or see this information, and it is never sent to our servers.</p>
         <h2 style="margin-top:28px">Cookies and analytics</h2>
@@ -2085,6 +2104,8 @@
         <p style="color:var(--muted)">NICC Business is a community-run, informational directory of Muslim owned and halal friendly businesses in central Ohio. It is not a certifying authority. The halal verified badge reflects information an owner has provided about their supplier and certifier, not an independent audit by us.</p>
         <h2 style="margin-top:28px">Listings and accounts</h2>
         <p style="color:var(--muted)">Owners are responsible for the accuracy of the information, photos, and claims they submit. New listings and claims are reviewed by community volunteers before publishing. We may edit, decline, or remove a listing or review that is inaccurate, abusive, spam, or otherwise against the spirit of the directory.</p>
+        <h2 style="margin-top:28px">Sponsorship</h2>
+        <p style="color:var(--muted)">Listing is free. Owners may pay a monthly fee to sponsor an approved listing, which shows it with a “Sponsored” label and gives it more prominent placement. Sponsorship never buys a badge, a review, or approval, and a sponsored listing follows the same rules as every other. Payments are processed by Stripe, renew monthly, and can be cancelled at any time from your account; a cancelled sponsorship stays active until the end of the period already paid for. We may end a sponsorship for a listing that is removed under these terms.</p>
         <h2 style="margin-top:28px">Reviews</h2>
         <p style="color:var(--muted)">Reviews should reflect a genuine visit or interaction with the business. Personal attacks, and content that could not plausibly come from a real visit, may be removed. Business owners may reply publicly to reviews on their own listing.</p>
         <h2 style="margin-top:28px">No warranty</h2>
@@ -2412,6 +2433,7 @@
           '</button>' +
         '</div>' +
         '<div class="listing-body">' +
+          (item.sponsored ? '<p class="sponsored-tag" title="This business pays to be promoted. Badges can\u2019t be bought.">Sponsored</p>' : '') +
           '<h3>' + name + '</h3>' +
           '<p class="listing-meta">' + cat + ' in ' + hood + '</p>' +
           '<p class="listing-desc">' + desc + '</p>' +
@@ -2429,9 +2451,20 @@
   var results = document.getElementById("results");
   var featuredGrid = document.getElementById("featuredGrid");
 
+  // "Featured this month": the team's picks first, then listings on the paid
+  // Featured plan in an order that changes daily, so no sponsor is always last.
+  function featuredListings() {
+    var picks = LISTINGS.filter(function (l) { return l.featured; });
+    var day = Math.floor(Date.now() / 86400000);
+    var paid = LISTINGS.filter(function (l) { return !l.featured && l.sponsored && l.sponsorTier === "featured"; });
+    paid.sort(function (a, b) { return a.name.localeCompare(b.name); });
+    var shift = paid.length ? day % paid.length : 0;
+    return picks.concat(paid.slice(shift), paid.slice(0, shift));
+  }
+
   function renderListingCollections() {
     if (featuredGrid) {
-      featuredGrid.innerHTML = LISTINGS.filter(function (l) { return l.featured; }).map(cardHtml).join("");
+      featuredGrid.innerHTML = featuredListings().map(cardHtml).join("");
     }
     if (results) {
       results.innerHTML = LISTINGS.map(cardHtml).join("");
@@ -2486,7 +2519,8 @@
     var ratingBadge = item.rating != null
       ? '<span class="badge neutral"><svg class="icon filled"><use href="#i-star"/></svg> ' + item.rating.toFixed(1) + ' (' + item.reviewCount + ' ' + (item.reviewCount === 1 ? 'review' : 'reviews') + ')</span>'
       : '<span class="badge neutral">New to the directory</span>';
-    html += '<div class="modal-section"><div class="badges">' + item.badges.map(badgeHtml).join("") + ratingBadge + '</div></div>';
+    var sponsorBadge = item.sponsored ? '<span class="badge neutral sponsored-badge" title="This business pays to be promoted. Badges can\u2019t be bought.">Sponsored</span>' : '';
+    html += '<div class="modal-section"><div class="badges">' + item.badges.map(badgeHtml).join("") + ratingBadge + sponsorBadge + '</div></div>';
     html += '<div class="modal-section"><p style="color:var(--ink-2)">' + escapeAttr(item.long) + '</p></div>';
 
     if (item.verify) {
@@ -3540,6 +3574,11 @@
         var link = document.getElementById("adminLink");
         if (link) link.hidden = !(s.state === "ok" || s.state === "need-code" || s.state === "need-2fa");
       }).catch(function () { /* admin tables not set up yet */ });
+      // Back from Stripe Checkout (success_url / cancel_url in api/billing/checkout.js).
+      var billingResult = hashParams().get("billing");
+      if (billingResult === "success") toast("Thank you! Your sponsorship will show within a minute.");
+      if (billingResult === "cancelled") toast("Checkout cancelled. Nothing was charged.");
+      if (billingResult) { try { history.replaceState(null, "", location.pathname + location.search + "#/account"); } catch (e) { /* ignore */ } }
       renderNotices();
       renderMyListings();
       renderMfaPanel();
@@ -3656,6 +3695,11 @@
       var edits = {};
       try { edits = await window.NiccOwner.loadMyPendingEdits(); } catch (e) { /* edits table not set up yet */ }
 
+      var billing = await loadBillingPlans();
+      var sponsorships = {};
+      try { sponsorships = await window.NiccOwner.loadMySponsorships(); } catch (e) { /* not set up yet */ }
+      var me = await window.NiccAuth.getCurrentUser();
+
       var businessBlocks = mine.map(function (live) {
         // Show the owner their own pending edits layered over the live listing.
         var pendingEdit = edits[live.id];
@@ -3666,6 +3710,7 @@
           (pendingEdit
             ? '<p class="help" style="margin:8px 0">Your recent changes are waiting for a volunteer to approve them. The current version stays public until then.</p>'
             : "") +
+          promoteHtml(live, billing, sponsorships[live.id], me && me.id) +
           '<div class="owner-photo-row" style="margin:10px 0 16px;display:flex;align-items:center;gap:14px">' +
             '<img class="owner-photo-preview" src="' + (ownerPhotoUrl || "") + '" alt="" style="width:64px;height:64px;border-radius:12px;object-fit:cover;background:var(--surface-2);' + (ownerPhotoUrl ? "" : "display:none;") + '">' +
             '<label class="btn btn-ghost btn-sm" style="cursor:pointer">Upload photo' +
@@ -3870,6 +3915,82 @@
       el.innerHTML = '<p style="color:var(--muted)">Could not load two-factor authentication settings.</p>';
     }
   }
+
+  /* ---- Sponsorship (owner side). Plans come from /api/billing/plans so the
+     prices shown match api/_lib/plans.js. ---- */
+  var billingPlansPromise = null;
+  function loadBillingPlans() {
+    if (!billingPlansPromise) {
+      billingPlansPromise = fetch("/api/billing/plans")
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .catch(function () { return null; });
+    }
+    return billingPlansPromise;
+  }
+  function promoteHtml(live, billing, sp, myId) {
+    if (!billing || !billing.plans || live.status !== "approved") return "";
+    var fmt = function (iso) { return new Date(iso).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" }); };
+    var planName = function (id) { var p = billing.plans.filter(function (x) { return x.id === id; })[0]; return p ? p.name : id; };
+    var active = live.sponsor_tier && live.sponsored_until && new Date(live.sponsored_until) > new Date();
+    var paidLive = sp && sp.paid_tier && sp.paid_until && new Date(sp.paid_until) > new Date() && ["active", "trialing", "past_due"].indexOf(sp.paid_status) !== -1;
+    var canManage = sp && sp.payer_id && sp.payer_id === myId && sp.has_customer;
+    if (active) {
+      var line = paidLive
+        ? "Sponsored on the " + planName(sp.paid_tier) + " plan. " + (sp.cancel_at_period_end ? "Ends " : "Renews ") + fmt(sp.paid_until) + "."
+        : "A courtesy " + planName(live.sponsor_tier) + " placement from the NICC team, until " + fmt(live.sponsored_until) + ".";
+      if (paidLive && sp.paid_status === "past_due") line += " Your last payment didn't go through; please update your card.";
+      return '<div class="promote"><div class="promote-active"><span>' + escapeAttr(line) + '</span>' +
+        (canManage ? '<button type="button" class="btn btn-ghost btn-sm" data-portal="' + escapeAttr(live.id) + '">Manage billing</button>' : '') +
+        '</div></div>';
+    }
+    return '<div class="promote"><h3>Promote this listing</h3>' +
+      '<p>Optional. Sponsorship supports the directory. Your listing gets a visible \u201cSponsored\u201d label; badges like Halal verified can\u2019t be bought.</p>' +
+      '<div class="promote-plans">' + billing.plans.map(function (p) {
+        return '<div class="promote-plan"><h4>' + escapeAttr(p.name) + '</h4>' +
+          '<span class="promote-price">$' + escapeAttr(String(p.price)) + ' <small>/ month</small></span>' +
+          '<ul>' + p.perks.map(function (x) { return "<li>" + escapeAttr(x) + "</li>"; }).join("") + '</ul>' +
+          (billing.configured
+            ? '<button type="button" class="btn btn-primary btn-sm" data-checkout="' + escapeAttr(p.id) + '" data-business="' + escapeAttr(live.id) + '">Choose ' + escapeAttr(p.name) + '</button>'
+            : '<button type="button" class="btn btn-ghost btn-sm" disabled>Coming soon</button>') +
+          '</div>';
+      }).join("") + '</div>' +
+      '<p class="promote-fine help">Billed monthly through Stripe. Cancel any time; it stays active until the end of the month you paid for.</p></div>';
+  }
+  async function billingRequest(path, payload) {
+    var session = await window.NiccSupabase.auth.getSession();
+    var token = session && session.data && session.data.session && session.data.session.access_token;
+    if (!token) throw new Error("Please log in again.");
+    var r = await fetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+      body: JSON.stringify(payload)
+    });
+    var data = await r.json().catch(function () { return {}; });
+    if (r.ok && data.url) return data.url;
+    var why = {
+      not_configured: "Sponsorship isn't open yet.",
+      already_sponsored: "This listing is already sponsored. Use Manage billing to change plans.",
+      not_approved: "A listing can be sponsored once it's live in the directory.",
+      login_required: "Please log in again."
+    }[data.error];
+    throw new Error(why || "Could not reach the payment page. Please try again.");
+  }
+  document.getElementById("myListings").addEventListener("click", async function (e) {
+    var b = e.target.closest("[data-checkout], [data-portal]");
+    if (!b) return;
+    b.disabled = true;
+    try {
+      var url = b.hasAttribute("data-checkout")
+        ? await billingRequest("/api/billing/checkout", { business_id: b.getAttribute("data-business"), plan: b.getAttribute("data-checkout") })
+        : await billingRequest("/api/billing/portal", { business_id: b.getAttribute("data-portal") });
+      // Only ever hand the browser to Stripe's own pages.
+      if (!/^https:\/\/(checkout|billing)\.stripe\.com\//.test(url)) throw new Error("Unexpected payment page.");
+      window.location.href = url;
+    } catch (err) {
+      toast(err.message);
+      b.disabled = false;
+    }
+  });
 
   // Decisions on the person's listings, claims and reviews, with the
   // volunteer's reason (owner_notices, 2026-10-10-moderation-tools.sql).

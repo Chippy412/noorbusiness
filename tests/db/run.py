@@ -39,6 +39,7 @@ MIGRATIONS = [
     "2026-10-08-review-fixes.sql",
     "2026-10-09-notifications.sql",
     "2026-10-10-moderation-tools.sql",
+    "2026-10-11-sponsorship.sql",
 ]
 
 
@@ -772,6 +773,84 @@ def notice_email_only_for_the_server(t):
     assert t.one("select notice_email(%s)", (nid,)) == "o@x.co"
     t.as_(o)
     t.fails("select notice_email(%s)", (nid,))
+
+
+# ------------------------------------------------------------ sponsorship (10-11)
+BILL = "select billing_apply_subscription(%s, %s, %s, 'cus_1', 'sub_1', %s, now() + interval '30 days', false)"
+
+
+@test
+def only_the_server_can_mark_a_listing_sponsored(t):
+    o = t.user("o@x.co"); b = t.business(o)
+    t.as_(o, aal="aal2")
+    t.fails("insert into businesses (owner_id, name, category, neighborhood, description, long_description, sponsor_tier, sponsored_until)"
+            " values (%s, 'X', 'R', 'D', 's', 'l', 'featured', now() + interval '1 year')", (o,))
+    t.q("select owner_update_business(%s, '{\"sponsor_tier\":\"featured\",\"sponsored_until\":\"2099-01-01\"}'::jsonb)", (b,))
+    t.fails(BILL, (b, o, "featured", "active"))
+    t.fails("insert into sponsorships (business_id, paid_tier, paid_until) values (%s, 'featured', now() + interval '1 year')", (b,))
+    t.as_()
+    t.fails(BILL, (b, o, "featured", "active"))
+    t.admin()
+    assert t.q("select sponsor_tier, sponsored_until from businesses where id = %s", (b,))[0] == (None, None)
+
+
+@test
+def paid_sponsorship_lifecycle(t):
+    o = t.user("o@x.co"); x = t.user("x@x.co"); b = t.business(o, "approved", "Paid Place")
+    t.as_(role="service_role")
+    t.q(BILL, (b, o, "featured", "active"))
+    t.fails(BILL, (b, o, "gold", "active"), contains="plan")
+    t.as_()
+    tier, until = t.q("select sponsor_tier, sponsored_until > now() + interval '32 days' from businesses where id = %s", (b,))[0]
+    assert (tier, until) == ("featured", True), "3-day grace on top of the paid period"
+    t.as_(o)
+    assert t.one("select paid_tier from sponsorships") == "featured"
+    t.as_(x)
+    assert t.q("select * from sponsorships") == []
+    t.as_(role="service_role")
+    t.q(BILL, (b, o, "featured", "active"))  # replayed webhook: no change, no duplicate log line
+    t.q(BILL, (b, o, "featured", "canceled"))
+    t.as_()
+    assert t.q("select sponsor_tier, sponsored_until from businesses where id = %s", (b,))[0] == (None, None)
+    t.admin()
+    assert [r[0] for r in t.q("select detail ->> 'status' from moderation_log where action = 'sponsor.billing' order by id")] == ["active", "canceled"]
+
+
+@test
+def comped_placement_is_moderator_only_and_survives_billing(t):
+    mod, vol = team(t)
+    o = t.user("o@x.co"); b = t.business(o, "approved")
+    t.as_(vol, aal="aal2")
+    t.fails("select admin_set_comp(%s, 'featured', now() + interval '60 days', 'Ramadan bazaar')", (b,), contains="moderator")
+    t.fails("select admin_sponsorships()", contains="moderator")
+    t.as_(mod, aal="aal2")
+    t.fails("select admin_set_comp(%s, 'featured', now() - interval '1 day', null)", (b,), contains="future")
+    t.q("select admin_set_comp(%s, 'featured', now() + interval '60 days', 'Ramadan bazaar')", (b,))
+    t.as_(role="service_role")
+    t.q(BILL, (b, o, "spotlight", "active"))
+    t.as_()
+    assert t.one("select sponsor_tier from businesses where id = %s", (b,)) == "featured", "comp outranks a lower paid plan"
+    t.as_(role="service_role")
+    t.q(BILL, (b, o, "spotlight", "canceled"))
+    t.as_()
+    assert t.one("select sponsor_tier from businesses where id = %s", (b,)) == "featured", "cancelling billing must not end the comp"
+    t.as_(mod, aal="aal2")
+    rows = t.one("select admin_sponsorships()")
+    assert rows[0]["comp_note"] == "Ramadan bazaar" and rows[0]["paid_status"] == "canceled", rows
+    t.q("select admin_set_comp(%s, null, null, null)", (b,))
+    t.as_()
+    assert t.one("select sponsor_tier from businesses where id = %s", (b,)) is None
+
+
+@test
+def featured_can_expire(t):
+    mod, vol = team(t)
+    o = t.user("o@x.co"); b = t.business(o)
+    t.as_(vol, aal="aal2")
+    t.fails("select admin_set_featured_until(%s, now() + interval '7 days')", (b,), contains="moderator")
+    t.as_(mod, aal="aal2")
+    t.q("select admin_set_featured_until(%s, now() + interval '7 days')", (b,))
+    assert [x for x in t.one("select admin_all_businesses()") if x["id"] == str(b)][0]["featured_until"]
 
 
 # ------------------------------------------------------------------- alerts

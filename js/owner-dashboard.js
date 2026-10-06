@@ -177,6 +177,21 @@
     if (result.error) throw result.error;
   }
 
+  // Sponsorship state for the caller's listings (and any they pay for), keyed
+  // by business id. has_customer = there's a Stripe customer to manage.
+  async function loadMySponsorships() {
+    var result = await window.NiccSupabase
+      .from("sponsorships")
+      .select("business_id, payer_id, paid_tier, paid_status, paid_until, cancel_at_period_end, comp_tier, comp_until, stripe_customer_id");
+    if (result.error) throw result.error;
+    var byId = {};
+    result.data.forEach(function (r) {
+      byId[r.business_id] = Object.assign({}, r, { has_customer: !!r.stripe_customer_id });
+      delete byId[r.business_id].stripe_customer_id;
+    });
+    return byId;
+  }
+
   window.NiccOwner = {
     loadMyBusinesses: loadMyBusinesses,
     createBusiness: createBusiness,
@@ -190,6 +205,7 @@
     loadReviewsForMyBusinesses: loadReviewsForMyBusinesses,
     replyToReview: replyToReview,
     loadMyNotices: loadMyNotices,
-    dismissNotice: dismissNotice
+    dismissNotice: dismissNotice,
+    loadMySponsorships: loadMySponsorships
   };
 })();

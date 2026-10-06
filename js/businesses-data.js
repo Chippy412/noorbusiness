@@ -20,6 +20,10 @@
     return (index % 4) + 1;
   }
 
+  function isSponsored(row) {
+    return !!row.sponsor_tier && !!row.sponsored_until && new Date(row.sponsored_until) > new Date();
+  }
+
   function mapRow(row, index) {
     return {
       id: row.id,
@@ -29,7 +33,8 @@
       icon: CATEGORY_ICONS[row.category] || "i-storefront",
       tone: toneFor(index),
       badges: row.badges || [],
-      featured: !!row.featured,
+      // Editorial Featured, which a moderator can give an end date.
+      featured: !!row.featured && (!row.featured_until || new Date(row.featured_until) > new Date()),
       rating: null,
       reviewCount: 0,
       ownerId: row.owner_id || null,
@@ -42,8 +47,10 @@
       verify: null,
       hours: row.hours || [],
       created: row.created_at || null,
-      // Paid placement isn't wired up yet; Recommended sort puts these first.
-      sponsored: false
+      // Paid (or comped) placement, see 2026-10-11-sponsorship.sql. Recommended
+      // sort puts these first; the "featured" plan also joins the home page row.
+      sponsored: isSponsored(row),
+      sponsorTier: isSponsored(row) ? row.sponsor_tier : null
     };
   }
 

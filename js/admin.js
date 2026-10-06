@@ -48,7 +48,10 @@
     resolveClaim: function (id, approve, why) { return rpc("admin_resolve_claim", { p_id: id, p_approve: approve, p_reason: reason(why) }); },
     setReviewStatus: function (id, s, why) { return rpc("admin_set_review_status", { p_id: id, p_status: s, p_reason: reason(why) }); },
     resolveReport: function (id, action, why) { return rpc("admin_resolve_report", { p_id: id, p_action: action, p_reason: reason(why) }); },
-    setMessageHandled: function (id, handled) { return rpc("admin_set_message_handled", { p_id: id, p_handled: handled }); }
+    setMessageHandled: function (id, handled) { return rpc("admin_set_message_handled", { p_id: id, p_handled: handled }); },
+    sponsorships: function () { return rpc("admin_sponsorships"); },
+    setComp: function (id, tier, until, note) { return rpc("admin_set_comp", { p_business: id, p_tier: tier, p_until: until, p_note: reason(note) }); },
+    setFeaturedUntil: function (id, until) { return rpc("admin_set_featured_until", { p_id: id, p_until: until }); }
   };
 
   // Queues that need a decision come first; the rest is reference/management.
@@ -64,6 +67,7 @@
     { id: "published", label: "Published reviews" },
     { id: "all", label: "All listings" },
     { id: "activity", label: "Activity" },
+    { id: "sponsors", label: "Sponsors", modOnly: true },
     { id: "team", label: "Team", modOnly: true }
   ];
   var ROLE_HELP = {
@@ -101,6 +105,8 @@
     "report.hide_review": "hid a reported review of", "report.unpublish": "unpublished after a report:",
     "message.handled": "marked a message handled", "message.reopened": "reopened a message",
     "note": "added a note on",
+    "sponsor.billing": "billing update for", "sponsor.comped": "gave a free placement to", "sponsor.comp_ended": "ended the free placement on",
+    "listing.featured_until": "set when Featured ends on",
     "team.added": "added to the team:", "team.role": "changed the role of", "team.removed": "removed from the team:"
   };
   var PAGE_SIZE = 50;
@@ -111,11 +117,20 @@
     var esc = h.escape;
     var isMod = h.role === "moderator";
     var state = {
-      tab: "new", data: null, all: null, team: null, published: null, log: null,
+      tab: "new", data: null, all: null, team: null, published: null, log: null, sponsors: null,
       allQuery: "", allStatus: "", allFlag: "", allPage: 0, openHistory: {}
     };
 
     function when(iso) { try { return dateFmt.format(new Date(iso)); } catch (e) { return ""; } }
+    function day(iso) { try { return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }); } catch (e) { return ""; } }
+    function future(iso) { return !!iso && new Date(iso) > new Date(); }
+    // <input type=date> value <-> end of that local day as an ISO timestamp.
+    function dateValue(iso) {
+      if (!iso) return "";
+      var d = new Date(iso);
+      return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    }
+    function endOfDay(v) { return v ? new Date(v + "T23:59:59").toISOString() : null; }
     // Items left waiting more than two days get a visible tag.
     function age(iso) {
       var days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
@@ -277,6 +292,7 @@
         if (state.allStatus && b.status !== state.allStatus) return false;
         if (state.allFlag === "no-owner" && b.owner_email) return false;
         if (state.allFlag === "featured" && !b.featured) return false;
+        if (state.allFlag === "sponsored" && !(b.sponsor_tier && future(b.sponsored_until))) return false;
         var hay = [b.name, b.category, b.neighborhood, b.owner_email || ""].join(" ").toLowerCase();
         return words.every(function (w) { return hay.indexOf(w) !== -1; });
       });
@@ -287,11 +303,14 @@
       var hist = state.openHistory[b.id];
       return '<li class="mod-row" data-id="' + esc(b.id) + '" data-name="' + esc(b.name) + '" data-status="' + esc(b.status) + '">' +
         '<div class="mod-row-main"><p class="mod-row-title">' + esc(b.name) + '</p><p class="mod-sub">' + where(b.category, b.neighborhood) +
-        (b.owner_email ? ", owned by " + esc(b.owner_email) : ", no owner") + "</p></div>" +
+        (b.owner_email ? ", owned by " + esc(b.owner_email) : ", no owner") +
+        (b.sponsor_tier && future(b.sponsored_until) ? ' <span class="mod-you">Sponsored until ' + day(b.sponsored_until) + "</span>" : "") + "</p></div>" +
         '<div class="mod-row-status">' + statusSel + "</div>" +
         '<div class="mod-row-pills" role="group" aria-label="Badges for ' + esc(b.name) + '">' +
         BADGES.map(function (p) { return pill('data-badge="' + p[0] + '"', p[1], (b.badges || []).indexOf(p[0]) !== -1); }).join("") +
-        pill('data-field="featured"', "Featured on home page", b.featured, !isMod, isMod ? "" : "Only moderators can change Featured").replace('class="mod-pill', 'class="mod-pill mod-pill-featured') + "</div>" +
+        pill('data-field="featured"', "Featured on home page", b.featured, !isMod, isMod ? "" : "Only moderators can change Featured").replace('class="mod-pill', 'class="mod-pill mod-pill-featured') +
+        (isMod ? '<label class="mod-until">until <input type="date" data-field="featured-until" value="' + dateValue(b.featured_until) + '" aria-label="Featured until (leave empty for no end date)"></label>'
+               : (b.featured_until ? '<span class="mod-sub">until ' + day(b.featured_until) + "</span>" : "")) + "</div>" +
         '<div class="mod-row-save"><button class="btn-link" data-act="history" data-id="' + esc(b.id) + '" aria-expanded="' + (hist ? "true" : "false") + '">Notes and history</button>' +
         '<button class="btn btn-ghost btn-sm" data-act="save-flags" data-id="' + esc(b.id) + '">Save</button></div>' +
         (hist ? historyPanel(b.id, hist) : "") +
@@ -329,7 +348,7 @@
               return '<option value="' + o[0] + '"' + (state.allStatus === o[0] ? " selected" : "") + ">" + o[1] + "</option>";
             }).join("") + "</select></div>" +
           '<div class="field"><label for="modAllFlag">Show</label><select id="modAllFlag">' +
-            [["", "Everything"], ["no-owner", "No owner"], ["featured", "Featured"]].map(function (o) {
+            [["", "Everything"], ["no-owner", "No owner"], ["featured", "Featured"], ["sponsored", "Sponsored"]].map(function (o) {
               return '<option value="' + o[0] + '"' + (state.allFlag === o[0] ? " selected" : "") + ">" + o[1] + "</option>";
             }).join("") + "</select></div>" +
         "</div>" +
@@ -350,6 +369,39 @@
       return '<li><p><strong>' + esc(l.actor_email || "Someone") + "</strong> " + esc(verb) + (l.summary ? " " + esc(l.summary) : "") + "</p>" +
         (extra ? '<p class="mod-log-note">' + esc(extra) + "</p>" : "") +
         '<p class="mod-sub">' + when(l.created_at) + "</p></li>";
+    }
+
+    var PLAN_NAMES = { spotlight: "Spotlight", featured: "Featured" };
+    function sponsorsPanel(rows_) {
+      var live = (state.all || []).filter(function (b) { return b.status === "approved"; });
+      var form = '<section class="mod-sheet mod-sheet-quiet"><h3>Give a free placement</h3>' +
+        '<p class="mod-sub">For a community partner, a prize, or a business you want to thank. It shows with the same \u201cSponsored\u201d label, and never replaces what someone pays for.</p>' +
+        '<form class="mod-comp" id="modCompForm">' +
+          '<div class="field"><label for="compListing">Listing</label><select id="compListing" required><option value="">Choose a live listing</option>' +
+            live.map(function (b) { return '<option value="' + esc(b.id) + '">' + esc(b.name) + "</option>"; }).join("") + "</select></div>" +
+          '<div class="field"><label for="compTier">Plan</label><select id="compTier"><option value="featured">Featured</option><option value="spotlight">Spotlight</option></select></div>' +
+          '<div class="field"><label for="compUntil">Until</label><input type="date" id="compUntil" required></div>' +
+          '<div class="field mod-comp-note"><label for="compNote">Note for the team</label><input type="text" id="compNote" maxlength="500" placeholder="Why (optional)"></div>' +
+          '<button type="submit" class="btn btn-primary btn-sm">Give placement</button>' +
+        "</form></section>";
+      if (!rows_.length) return form + '<div class="mod-empty"><p>No sponsorships yet. They appear here when an owner pays, or when you give one above.</p></div>';
+      return form + '<ul class="mod-list">' + rows_.map(function (r) {
+        var paidLive = r.paid_tier && future(r.paid_until) && ["active", "trialing", "past_due"].indexOf(r.paid_status) !== -1;
+        var bits = [];
+        if (r.paid_tier) bits.push("Paid " + esc(PLAN_NAMES[r.paid_tier]) + ": " + esc(r.paid_status || "unknown") +
+          (paidLive ? (r.cancel_at_period_end ? ", ends " : ", renews ") + day(r.paid_until) : "") + (r.payer_email ? " (" + esc(r.payer_email) + ")" : ""));
+        if (r.comp_tier && future(r.comp_until)) bits.push("Free " + esc(PLAN_NAMES[r.comp_tier]) + " until " + day(r.comp_until) + (r.comp_note ? ": " + esc(r.comp_note) : ""));
+        var showing = r.sponsor_tier && future(r.sponsored_until)
+          ? "Showing as " + esc(PLAN_NAMES[r.sponsor_tier]) + (r.business_status !== "approved" ? ", but the listing isn't live" : "")
+          : "Not showing";
+        return '<li class="mod-row mod-row-team" data-id="' + esc(r.business_id) + '" data-name="' + esc(r.business_name) + '">' +
+          '<div class="mod-row-main"><p class="mod-row-title">' + esc(r.business_name) + '</p><p class="mod-sub">' + showing + "</p>" +
+          bits.map(function (x) { return '<p class="mod-sub">' + x + "</p>"; }).join("") + "</div>" +
+          '<div class="mod-row-status"></div>' +
+          '<div class="mod-row-save">' + (r.comp_tier && future(r.comp_until) ? '<button class="btn-link mod-remove" data-act="comp-end" data-id="' + esc(r.business_id) + '">End free placement</button>' : "") + "</div>" +
+          "</li>";
+      }).join("") + "</ul>" +
+      '<p class="mod-intro" style="margin-top:14px">Refunds and plan changes for paid sponsorships are handled in the Stripe dashboard; changes show up here automatically.</p>';
     }
 
     function teamPanel(members) {
@@ -424,6 +476,8 @@
           : '<div class="mod-empty"><p>Nothing yet. Decisions show up here as the team makes them.</p></div>';
       } else if (state.tab === "team") {
         body = state.team ? teamPanel(state.team) : loading("the team");
+      } else if (state.tab === "sponsors") {
+        body = state.sponsors && state.all ? sponsorsPanel(state.sponsors) : loading("sponsorships");
       } else {
         body = state.all ? allListingsView() : loading("listings");
       }
@@ -437,6 +491,10 @@
       if (state.tab === "published") state.published = await api.recentReviews();
       if (state.tab === "activity") state.log = await api.log();
       if (state.tab === "team" && isMod) state.team = await api.team();
+      if (state.tab === "sponsors" && isMod) {
+        var both = await Promise.all([api.sponsorships(), api.allBusinesses()]);
+        state.sponsors = both[0]; state.all = both[1];
+      }
     }
     async function refresh() {
       state.data = await api.queue();
@@ -497,7 +555,8 @@
         render();
         var focusTarget = root.querySelector('[data-tab="' + state.tab + '"]');
         if (focusTarget) focusTarget.focus();
-        var needs = (state.tab === "all" && !state.all) || state.tab === "published" || state.tab === "activity" || (state.tab === "team" && isMod);
+        var needs = (state.tab === "all" && !state.all) || state.tab === "published" || state.tab === "activity" ||
+          (isMod && (state.tab === "team" || state.tab === "sponsors"));
         if (needs) {
           try { await loadTab(); render(); } catch (e) { h.toast(e.message || "Could not load that."); }
         }
@@ -550,6 +609,11 @@
           }
           msg = (ids.length - failed) + (s === "approved" ? " published." : " rejected.") + (failed ? " " + failed + " could not be changed." : "");
         }
+        else if (act === "comp-end") {
+          if (!window.confirm("End the free placement for " + btn_.closest("[data-name]").getAttribute("data-name") + "? A paid sponsorship, if any, is not affected.")) { btn_.disabled = false; return; }
+          await api.setComp(id, null, null, null);
+          msg = "Free placement ended.";
+        }
         else if (act === "message-handled") {
           await api.setMessageHandled(id, btn_.getAttribute("data-handled") === "1");
           msg = btn_.getAttribute("data-handled") === "1" ? "Marked handled." : "Reopened.";
@@ -562,6 +626,11 @@
           var statusChanged = newStatus !== row.getAttribute("data-status");
           if (statusChanged && newStatus !== "approved" && !window.confirm("This takes " + row.getAttribute("data-name") + " out of the public directory. Continue?")) { btn_.disabled = false; return; }
           await api.setFlags(id, badges, featured);
+          var untilEl = row.querySelector('[data-field="featured-until"]');
+          if (untilEl) {
+            var before = (state.all || []).filter(function (x) { return x.id === id; })[0];
+            if (untilEl.value !== dateValue(before && before.featured_until)) await api.setFeaturedUntil(id, endOfDay(untilEl.value));
+          }
           if (statusChanged) await api.setListingStatus(id, newStatus, null);
           msg = "Saved.";
         }
@@ -607,6 +676,23 @@
         } catch (err) {
           h.toast((err && err.message) || "Could not add the note.");
           nb.disabled = false;
+        }
+        return;
+      }
+      var compForm = ev.target.closest("#modCompForm");
+      if (compForm) {
+        ev.preventDefault();
+        var cb = compForm.querySelector('button[type="submit"]');
+        var listing = document.getElementById("compListing").value, until = document.getElementById("compUntil").value;
+        if (!listing || !until) { h.toast("Choose a listing and an end date."); return; }
+        cb.disabled = true;
+        try {
+          await api.setComp(listing, document.getElementById("compTier").value, endOfDay(until), document.getElementById("compNote").value);
+          await refresh();
+          h.toast("Placement added.");
+        } catch (err) {
+          h.toast((err && err.message) || "Could not add it.");
+          cb.disabled = false;
         }
         return;
       }

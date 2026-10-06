@@ -28,4 +28,4 @@ async function rest(path, opts) {
   return { ok: res.ok, status: res.status, data: data, headers: res.headers };
 }
 
-module.exports = { rest: rest, serviceKey: serviceKey, baseUrl: baseUrl };
+module.exports = { rest: rest, serviceKey: serviceKey, baseUrl: baseUrl, anonKey: anonKey };
