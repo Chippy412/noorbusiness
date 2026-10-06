@@ -658,7 +658,7 @@
   .field.invalid .error { display: block; }
   .field.invalid input, .field.invalid select, .field.invalid textarea { border-color: var(--danger); }
 
-  .filter-panel { background: var(--surface); border: 1px solid var(--hairline); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 18px; }
+  .filter-panel { background: var(--surface); border: 1px solid var(--hairline); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
   .filter-row { display: grid; grid-template-columns: 1.6fr 1fr 1fr 0.8fr; gap: 12px; }
   @media (max-width: 1000px) { .filter-row { grid-template-columns: 1fr 1fr; } }
   .toggle-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
@@ -684,19 +684,25 @@
   .seg label:hover span { color: var(--accent-soft-ink); }
   .seg input:checked + span { background: var(--accent-soft); color: var(--accent-soft-ink); }
   .seg input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: 1px; }
-  .filter-help { font-size: 0.8rem; color: var(--muted); margin-top: -8px; }
-  .distance-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; border-top: 1px solid var(--hairline); padding-top: 16px; }
-  .distance-row .dist-title { flex-basis: 100%; font-size: 0.86rem; font-weight: 700; color: var(--ink-2); margin: 0; }
-  .distance-row .dist-address { flex: 1 1 260px; min-width: 0; }
+  .filter-help { font-size: 0.8rem; color: var(--muted); margin: 0; }
+  .filter-section { display: flex; flex-direction: column; gap: 10px; padding-top: 14px; border-top: 1px solid var(--hairline); }
+  .filter-section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .filter-title { margin: 0; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .filter-head-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .toggle-divider { width: 1px; height: 22px; background: var(--hairline); margin: 0 4px; }
+  .distance-row { display: grid; grid-template-columns: auto minmax(0, 1fr) 170px; gap: 12px; align-items: end; }
+  .distance-row .field-label { font-size: 0.86rem; font-weight: 600; color: var(--ink-2); }
+  .distance-row .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .distance-row .btn { min-height: 46px; white-space: nowrap; }
   .distance-row .dist-address .dist-input { display: flex; gap: 8px; }
   .distance-row .dist-address input { flex: 1; min-width: 0; }
-  .distance-row .dist-within { flex: 0 0 170px; }
-  .distance-status { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 0.84rem; color: var(--ink-2); margin: 0; }
+  .distance-status { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 0.84rem; color: var(--ink-2); margin: 0; }
   .distance-status:empty { display: none; }
   .distance-status .dist-error { color: var(--danger); font-weight: 700; }
   .listing-dist { font-size: 0.84rem; font-weight: 700; color: var(--accent-soft-ink); margin: 0; }
   .listing-dist:empty { display: none; }
-  @media (max-width: 560px) { .distance-row .dist-within { flex: 1 1 100%; } .distance-row > .btn { width: 100%; justify-content: center; } }
+  @media (max-width: 800px) { .distance-row { grid-template-columns: 1fr 1fr; } .distance-row .dist-here, .distance-row .dist-address { grid-column: 1 / -1; } .distance-row .dist-here .btn { width: 100%; justify-content: center; } }
+  @media (max-width: 480px) { .distance-row { grid-template-columns: 1fr; } }
 
   .results-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 30px 0 22px; }
   .results-count { font-size: 0.95rem; color: var(--muted); }
@@ -1405,45 +1411,58 @@
               </select>
             </div>
           </div>
-          <div class="toggle-row" role="group" aria-label="Additional filters">
-            <label class="toggle"><input type="checkbox" data-badge="halal"><svg class="icon"><use href="#i-shield"/></svg> Halal verified</label>
-            <label class="toggle"><input type="checkbox" data-badge="prayer"><svg class="icon"><use href="#i-mosque"/></svg> Prayer space</label>
-            <label class="toggle"><input type="checkbox" data-badge="women"><svg class="icon"><use href="#i-users"/></svg> Women owned</label>
-            <label class="toggle"><input type="checkbox" data-badge="family"><svg class="icon"><use href="#i-home"/></svg> Family run</label>
-            <label class="toggle"><input type="checkbox" data-badge="community"><svg class="icon"><use href="#i-heart"/></svg> Community service</label>
-            <div class="seg" role="radiogroup" aria-labelledby="matchLabel">
-              <span class="seg-label" id="matchLabel">Match badges</span>
-              <label><input type="radio" name="badgeMatch" value="all" checked><span>All</span></label>
-              <label><input type="radio" name="badgeMatch" value="any"><span>Any</span></label>
-            </div>
-            <label class="toggle"><input type="checkbox" id="fOpenNow" aria-describedby="openNowHelp"><svg class="icon"><use href="#i-clock"/></svg> Open now</label>
-            <label class="toggle"><input type="checkbox" id="fSaved"><svg class="icon"><use href="#i-bookmark"/></svg> Saved only</label>
-            <button type="button" class="btn btn-ghost btn-sm" id="resetFilters" style="margin-left:auto">Reset filters</button>
-          </div>
-          <p class="filter-help" id="openNowHelp" hidden>Only shows places whose hours we can read.</p>
-          <div class="distance-row" role="group" aria-labelledby="distTitle">
-            <p class="dist-title" id="distTitle">Distance from</p>
-            <button type="button" class="btn btn-ghost btn-sm" id="useLocation"><svg class="icon"><use href="#i-pin"/></svg> Use my location</button>
-            <div class="field dist-address">
-              <label for="fOriginText">or enter an address or ZIP</label>
-              <div class="dist-input">
-                <input type="text" id="fOriginText" autocomplete="off" spellcheck="false" placeholder="e.g. 43017 or 123 Main St, Dublin OH">
-                <button type="button" class="btn btn-ghost btn-sm" id="setOrigin">Set</button>
+          <div class="filter-section">
+            <div class="filter-section-head">
+              <p class="filter-title" id="badgesTitle">Show only</p>
+              <div class="filter-head-tools">
+                <div class="seg" role="radiogroup" aria-labelledby="matchLabel">
+                  <span class="seg-label" id="matchLabel">Match badges</span>
+                  <label><input type="radio" name="badgeMatch" value="all" checked><span>All</span></label>
+                  <label><input type="radio" name="badgeMatch" value="any"><span>Any</span></label>
+                </div>
+                <button type="button" class="btn btn-ghost btn-sm" id="resetFilters">Reset filters</button>
               </div>
             </div>
-            <div class="field dist-within">
-              <label for="fWithin">Within</label>
-              <select id="fWithin" disabled>
-                <option value="">Any distance</option>
-                <option value="2">2 miles</option>
-                <option value="5">5 miles</option>
-                <option value="10">10 miles</option>
-                <option value="25">25 miles</option>
-              </select>
+            <div class="toggle-row" role="group" aria-labelledby="badgesTitle">
+              <label class="toggle"><input type="checkbox" data-badge="halal"><svg class="icon"><use href="#i-shield"/></svg> Halal verified</label>
+              <label class="toggle"><input type="checkbox" data-badge="prayer"><svg class="icon"><use href="#i-mosque"/></svg> Prayer space</label>
+              <label class="toggle"><input type="checkbox" data-badge="women"><svg class="icon"><use href="#i-users"/></svg> Women owned</label>
+              <label class="toggle"><input type="checkbox" data-badge="family"><svg class="icon"><use href="#i-home"/></svg> Family run</label>
+              <label class="toggle"><input type="checkbox" data-badge="community"><svg class="icon"><use href="#i-heart"/></svg> Community service</label>
+              <span class="toggle-divider" aria-hidden="true"></span>
+              <label class="toggle"><input type="checkbox" id="fOpenNow" aria-describedby="openNowHelp"><svg class="icon"><use href="#i-clock"/></svg> Open now</label>
+              <label class="toggle"><input type="checkbox" id="fSaved"><svg class="icon"><use href="#i-bookmark"/></svg> Saved only</label>
+            </div>
+            <p class="filter-help" id="openNowHelp" hidden>Only shows places whose hours we can read.</p>
+          </div>
+          <div class="filter-section" role="group" aria-labelledby="distTitle">
+            <p class="filter-title" id="distTitle">Distance from</p>
+            <div class="distance-row">
+              <div class="field dist-here">
+                <span class="field-label" aria-hidden="true">Your location</span>
+                <button type="button" class="btn btn-ghost" id="useLocation"><svg class="icon"><use href="#i-pin"/></svg> Use my location</button>
+              </div>
+              <div class="field dist-address">
+                <label for="fOriginText">Or an address or ZIP</label>
+                <div class="dist-input">
+                  <input type="text" id="fOriginText" autocomplete="off" spellcheck="false" placeholder="e.g. 43017 or 123 Main St, Dublin OH">
+                  <button type="button" class="btn btn-ghost" id="setOrigin">Set</button>
+                </div>
+              </div>
+              <div class="field dist-within">
+                <label for="fWithin">Within</label>
+                <select id="fWithin" disabled>
+                  <option value="">Any distance</option>
+                  <option value="2">2 miles</option>
+                  <option value="5">5 miles</option>
+                  <option value="10">10 miles</option>
+                  <option value="25">25 miles</option>
+                </select>
+              </div>
             </div>
             <p class="distance-status" id="originStatus" aria-live="polite"></p>
+            <p class="filter-help" id="withinNote" hidden>Some listings without an address on file are hidden while a distance is set.</p>
           </div>
-          <p class="filter-help" id="withinNote" hidden>Some listings without an address on file are hidden while a distance is set.</p>
         </form>
 
         <div class="results-bar">
