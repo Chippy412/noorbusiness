@@ -685,6 +685,18 @@
   .seg input:checked + span { background: var(--accent-soft); color: var(--accent-soft-ink); }
   .seg input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: 1px; }
   .filter-help { font-size: 0.8rem; color: var(--muted); margin-top: -8px; }
+  .distance-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; border-top: 1px solid var(--hairline); padding-top: 16px; }
+  .distance-row .dist-title { flex-basis: 100%; font-size: 0.86rem; font-weight: 700; color: var(--ink-2); margin: 0; }
+  .distance-row .dist-address { flex: 1 1 260px; min-width: 0; }
+  .distance-row .dist-address .dist-input { display: flex; gap: 8px; }
+  .distance-row .dist-address input { flex: 1; min-width: 0; }
+  .distance-row .dist-within { flex: 0 0 170px; }
+  .distance-status { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 0.84rem; color: var(--ink-2); margin: 0; }
+  .distance-status:empty { display: none; }
+  .distance-status .dist-error { color: var(--danger); font-weight: 700; }
+  .listing-dist { font-size: 0.84rem; font-weight: 700; color: var(--accent-soft-ink); margin: 0; }
+  .listing-dist:empty { display: none; }
+  @media (max-width: 560px) { .distance-row .dist-within { flex: 1 1 100%; } .distance-row > .btn { width: 100%; justify-content: center; } }
 
   .results-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 30px 0 22px; }
   .results-count { font-size: 0.95rem; color: var(--muted); }
@@ -1408,6 +1420,29 @@
             <button type="button" class="btn btn-ghost btn-sm" id="resetFilters" style="margin-left:auto">Reset filters</button>
           </div>
           <p class="filter-help" id="openNowHelp" hidden>Only shows places whose hours we can read.</p>
+          <div class="distance-row" role="group" aria-labelledby="distTitle">
+            <p class="dist-title" id="distTitle">Distance from</p>
+            <button type="button" class="btn btn-ghost btn-sm" id="useLocation"><svg class="icon"><use href="#i-pin"/></svg> Use my location</button>
+            <div class="field dist-address">
+              <label for="fOriginText">or enter an address or ZIP</label>
+              <div class="dist-input">
+                <input type="text" id="fOriginText" autocomplete="off" spellcheck="false" placeholder="e.g. 43017 or 123 Main St, Dublin OH">
+                <button type="button" class="btn btn-ghost btn-sm" id="setOrigin">Set</button>
+              </div>
+            </div>
+            <div class="field dist-within">
+              <label for="fWithin">Within</label>
+              <select id="fWithin" disabled>
+                <option value="">Any distance</option>
+                <option value="2">2 miles</option>
+                <option value="5">5 miles</option>
+                <option value="10">10 miles</option>
+                <option value="25">25 miles</option>
+              </select>
+            </div>
+            <p class="distance-status" id="originStatus" aria-live="polite"></p>
+          </div>
+          <p class="filter-help" id="withinNote" hidden>Some listings without an address on file are hidden while a distance is set.</p>
         </form>
 
         <div class="results-bar">
@@ -1425,6 +1460,7 @@
                 <option value="newest">Newest</option>
                 <option value="name">Name, A to Z</option>
                 <option value="hood">Neighborhood</option>
+                <option value="nearest" id="sortNearest" disabled hidden>Nearest</option>
               </select>
             </div>
           </div>
@@ -2079,7 +2115,7 @@
         <h2 style="margin-top:28px">What we collect</h2>
         <p style="color:var(--muted)">If you create an owner account, we store the email address and password you sign up with (through our authentication provider, Supabase) and the business listing details you submit, including any photos you upload. If you use the contact form, we receive the name, email, and message you enter so we can reply, and a one-way hash of your IP address that we use only to limit spam. If you join the email list in the footer, we store your email address. If you save listings while logged in, we store which listings you saved so they follow you between devices. If you report a problem, we store your report, the email address if you give one, and a one-way hash of your IP address to limit spam. If you sponsor a listing, payment is handled by Stripe: we never see or store your card number, only which plan you chose, when it renews, and Stripe's reference numbers for your subscription. Browsing, searching, filtering, and saving listings do not require an account.</p>
         <h2 style="margin-top:28px">What stays in your browser</h2>
-        <p style="color:var(--muted)">Your saved listings and your light/dark theme preference are stored only in your browser's local storage. We do not receive or see this information, and it is never sent to our servers.</p>
+        <p style="color:var(--muted)">Your saved listings and your light/dark theme preference are stored only in your browser's local storage. We do not receive or see this information, and it is never sent to our servers. If you use "Use my location" to see distances, your location is used only in your browser and is never sent to us. If you type an address or ZIP to measure from, it is sent to our server once to look up its coordinates (using the US Census Bureau's free geocoder) and is not stored.</p>
         <h2 style="margin-top:28px">Cookies and analytics</h2>
         <p style="color:var(--muted)">This site does not use cookies. We use Vercel Web Analytics, a cookieless, privacy-preserving analytics tool that reports aggregate, anonymized traffic patterns (such as which pages are visited) and cannot identify individual visitors.</p>
         <h2 style="margin-top:28px">How data is stored</h2>
@@ -2270,6 +2306,7 @@
 <script src="js/supabase-client.js"></script>
 <script src="js/businesses-data.js"></script>
 <script src="js/hours.js"></script>
+<script src="js/geo.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/owner-dashboard.js"></script>
 <script src="js/admin.js"></script>
@@ -2426,7 +2463,8 @@
       .filter(function (v) { return v; }).join(" ").toLowerCase();
     return '' +
       '<article class="listing reveal" data-id="' + item.id + '" data-name="' + name + '" data-cat="' + cat + '" data-hood="' + hood + '" data-badges="' + escapeAttr(item.badges.join(" ")) + '" data-rating="' + (item.rating != null ? item.rating : "") + '"' +
-        ' data-search="' + escapeAttr(haystack) + '" data-hours="' + escapeAttr(JSON.stringify(item.hours || [])) + '" data-created="' + escapeAttr(item.created || "") + '" data-sponsored="' + (item.sponsored ? 1 : 0) + '">' +
+        ' data-search="' + escapeAttr(haystack) + '" data-hours="' + escapeAttr(JSON.stringify(item.hours || [])) + '" data-created="' + escapeAttr(item.created || "") + '" data-sponsored="' + (item.sponsored ? 1 : 0) + '"' +
+        (typeof item.lat === "number" && typeof item.lng === "number" ? ' data-lat="' + item.lat + '" data-lng="' + item.lng + '"' : '') + '>' +
         '<div class="listing-art art-tone-' + item.tone + '">' +
           (photoUrl
             ? '<img src="' + photoUrl + '" alt="' + name + '" loading="lazy">'
@@ -2439,6 +2477,7 @@
           (item.sponsored ? '<p class="sponsored-tag" title="This business pays to be promoted. Badges can\u2019t be bought.">Sponsored</p>' : '') +
           '<h3>' + name + '</h3>' +
           '<p class="listing-meta">' + cat + ' in ' + hood + '</p>' +
+          '<p class="listing-dist" data-dist></p>' +
           '<p class="listing-desc">' + desc + '</p>' +
           '<div class="badges">' + item.badges.map(badgeHtml).join("") + '</div>' +
           '<div class="listing-foot">' +
@@ -2536,9 +2575,17 @@
 
     if (item.address) {
       var mapsUrl = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(item.name + " " + item.address);
+      var hasCoords = typeof item.lat === "number" && typeof item.lng === "number";
+      var modalDist = hasCoords && origin && window.NiccGeo
+        ? window.NiccGeo.formatMiles(window.NiccGeo.distanceMiles(origin.lat, origin.lng, item.lat, item.lng)) : "";
+      var dirUrl = hasCoords ? "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(item.lat + "," + item.lng) : "";
       html += '<div class="modal-section"><h3>Location</h3><p style="color:var(--ink-2);display:flex;align-items:center;gap:8px">' +
               '<svg class="icon" style="color:var(--accent);flex-shrink:0"><use href="#i-pin"/></svg>' + escapeAttr(item.address) + '</p>' +
-              '<p style="margin-top:8px"><a class="text-link" href="' + escapeAttr(mapsUrl) + '" target="_blank" rel="noopener">Get directions</a></p></div>';
+              (modalDist ? '<p class="modal-dist" style="margin-top:6px;color:var(--accent-soft-ink);font-weight:700">' + escapeAttr(modalDist) + ' away</p>' : '') +
+              '<p style="margin-top:8px">' +
+              (hasCoords ? '<a class="text-link" href="' + escapeAttr(dirUrl) + '" target="_blank" rel="noopener">Directions</a>'
+                         : '<a class="text-link" href="' + escapeAttr(mapsUrl) + '" target="_blank" rel="noopener">Get directions</a>') +
+              '</p></div>';
     }
 
     var siteUrl = safePhotoUrl(item.website); // same rule: escaped, https only
@@ -2974,7 +3021,128 @@
   var openNowHelp = document.getElementById("openNowHelp");
   var ratingSel = document.getElementById("fRating");
   var matchRadios = Array.prototype.slice.call(document.querySelectorAll('input[name="badgeMatch"]'));
-  var SORT_MODES = ["recommended", "rating", "newest", "name", "hood"];
+  var SORT_MODES = ["recommended", "rating", "newest", "name", "hood", "nearest"];
+
+  /* ---- Distance from ----
+     The origin (your location, or a geocoded address) lives only in this
+     browser's localStorage; it is never put in the URL. */
+  var ORIGIN_KEY = "nicc-origin";
+  var withinSel = document.getElementById("fWithin");
+  var withinNote = document.getElementById("withinNote");
+  var originStatus = document.getElementById("originStatus");
+  var originText = document.getElementById("fOriginText");
+  var origin = loadOrigin(); // { lat, lng, label } -- label null means "your location"
+
+  function loadOrigin() {
+    try {
+      var o = JSON.parse(localStorage.getItem(ORIGIN_KEY) || "null");
+      if (o && typeof o.lat === "number" && typeof o.lng === "number" && isFinite(o.lat) && isFinite(o.lng)) {
+        return { lat: o.lat, lng: o.lng, label: typeof o.label === "string" && o.label ? o.label : null };
+      }
+    } catch (e) { /* private mode or bad JSON */ }
+    return null;
+  }
+  function saveOrigin() {
+    try {
+      if (origin) localStorage.setItem(ORIGIN_KEY, JSON.stringify(origin));
+      else localStorage.removeItem(ORIGIN_KEY);
+    } catch (e) { /* private mode */ }
+  }
+  function cardCoords(card) {
+    var la = parseFloat(card.getAttribute("data-lat")), ln = parseFloat(card.getAttribute("data-lng"));
+    return (isNaN(la) || isNaN(ln)) ? null : { lat: la, lng: ln };
+  }
+  function cardMiles(card) {
+    var c = origin && window.NiccGeo ? cardCoords(card) : null;
+    return c ? window.NiccGeo.distanceMiles(origin.lat, origin.lng, c.lat, c.lng) : null;
+  }
+  function setOriginMessage(msg) {
+    // msg: null for the normal "From: ..." line, or a message to show first.
+    if (!originStatus) return;
+    originStatus.textContent = "";
+    if (msg) {
+      var err = document.createElement("span");
+      err.className = "dist-error";
+      err.textContent = msg;
+      originStatus.appendChild(err);
+    }
+    if (origin) {
+      var from = document.createElement("span");
+      from.textContent = "From: " + (origin.label || "your location");
+      originStatus.appendChild(from);
+      var clear = document.createElement("button");
+      clear.type = "button"; clear.className = "btn-link"; clear.textContent = "Clear";
+      clear.setAttribute("aria-label", "Clear distance origin");
+      clear.addEventListener("click", function () { setOrigin(null); });
+      originStatus.appendChild(clear);
+    }
+  }
+  function refreshOriginUi() {
+    var has = !!origin;
+    if (withinSel) { withinSel.disabled = !has; if (!has) withinSel.value = ""; }
+    var opt = document.getElementById("sortNearest");
+    if (opt) { opt.disabled = !has; opt.hidden = !has; }
+    var sortSel = document.getElementById("fSort");
+    if (!has && sortSel.value === "nearest") sortSel.value = "recommended";
+    setOriginMessage(null);
+  }
+  function setOrigin(next) {
+    var first = !origin && !!next;
+    origin = next;
+    saveOrigin();
+    refreshOriginUi();
+    var sortSel = document.getElementById("fSort");
+    if (first && sortSel.value === "recommended") sortSel.value = "nearest";
+    sortResults();
+    applyFilters();
+  }
+  function withinMiles() {
+    var w = withinSel && origin ? parseFloat(withinSel.value) : NaN;
+    return isNaN(w) ? null : w;
+  }
+  function useMyLocation() {
+    if (!navigator.geolocation) { setOriginMessage("Your browser can't share a location. Try typing an address or ZIP instead."); return; }
+    setOriginMessage("Finding your location...");
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      setOrigin({ lat: pos.coords.latitude, lng: pos.coords.longitude, label: null });
+    }, function (err) {
+      setOriginMessage(err && err.code === 1
+        ? "Location is blocked for this site. Allow it in your browser settings, or type an address or ZIP instead."
+        : "We couldn't get your location. Try typing an address or ZIP instead.");
+    }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
+  }
+  var geocodeBusy = false;
+  async function setAddressOrigin() {
+    var q = originText.value.trim();
+    if (!q) { setOriginMessage("Enter an address or ZIP first."); originText.focus(); return; }
+    if (geocodeBusy) return;
+    geocodeBusy = true;
+    var btn = document.getElementById("setOrigin");
+    btn.disabled = true;
+    setOriginMessage("Looking that up...");
+    try {
+      var r = await fetch("/api/geocode?q=" + encodeURIComponent(q), { headers: { "Accept": "application/json" } });
+      var data = null;
+      try { data = await r.json(); } catch (e) { /* non-JSON error page */ }
+      if (r.ok && data && data.ok && typeof data.lat === "number" && typeof data.lng === "number") {
+        originText.value = "";
+        setOrigin({ lat: data.lat, lng: data.lng, label: String(data.label || q).slice(0, 120) });
+      } else if (r.status === 404) {
+        setOriginMessage("We couldn't find that address. Try adding the city and state, or just a ZIP.");
+      } else if (r.status === 400) {
+        setOriginMessage("That doesn't look like an address or ZIP.");
+      } else if (r.status === 429) {
+        setOriginMessage("Too many lookups just now. Wait a minute and try again.");
+      } else {
+        setOriginMessage("We couldn't look that up. Please try again.");
+      }
+    } catch (e) {
+      setOriginMessage("We couldn't look that up. Check your connection and try again.");
+    } finally {
+      geocodeBusy = false;
+      btn.disabled = false;
+    }
+  }
 
   function badgeMatchMode() {
     return matchRadios.some(function (r) { return r.checked && r.value === "any"; }) ? "any" : "all";
@@ -3002,6 +3170,8 @@
     var minRating = ratingSel ? parseFloat(ratingSel.value) : NaN;
     var now = new Date();
     if (openNowHelp) openNowHelp.hidden = !openOnly;
+    var radius = withinMiles();
+    var hiddenNoCoords = false;
 
     var shown = 0;
     Array.prototype.slice.call(results.querySelectorAll(".listing[data-name]")).forEach(function (card) {
@@ -3022,18 +3192,25 @@
       var okRating = isNaN(minRating) || (!isNaN(cRating) && cRating >= minRating); // unrated never passes a minimum
       var okOpen = !openOnly || cardOpenNow(card, now) === true; // unknown hours are hidden too
 
-      var match = okText && okCat && okHood && okBadges && okSaved && okRating && okOpen;
+      var miles = cardMiles(card);
+      var distEl = card.querySelector("[data-dist]");
+      if (distEl) distEl.textContent = miles == null ? "" : window.NiccGeo.formatMiles(miles) + " away";
+      var okWithin = radius == null || (miles != null && miles <= radius); // no coordinates -> hidden when a radius is set
+      if (radius != null && miles == null) hiddenNoCoords = true;
+
+      var match = okText && okCat && okHood && okBadges && okSaved && okRating && okOpen && okWithin;
       card.hidden = !match;
       if (match) shown++;
     });
 
+    if (withinNote) withinNote.hidden = !hiddenNoCoords;
     resultCount.textContent = String(shown);
     emptyState.classList.toggle("show", shown === 0);
     syncUrl();
   }
 
   /* Filters live in the URL
-     (#/explore?q=...&cat=...&hood=...&rating=4&badges=halal,prayer&match=any&now=1&saved=1&sort=name)
+     (#/explore?q=...&cat=...&hood=...&rating=4&badges=halal,prayer&match=any&now=1&saved=1&within=5&sort=name)
      so a filtered view can be shared or bookmarked. "Open now" is now=1
      because open=<id> already means "open this listing". replaceState
      doesn't fire hashchange, so typing in a filter doesn't re-trigger routing. */
@@ -3055,6 +3232,7 @@
     if (openNowBox && openNowBox.checked) p.set("now", "1");
     if (savedBox && savedBox.checked) p.set("saved", "1");
     if (sort !== "recommended") p.set("sort", sort);
+    if (withinMiles() != null) p.set("within", String(withinMiles())); // the radius only; the origin never goes in the URL
     var qs = p.toString();
     var next = "#/explore" + (qs ? "?" + qs : "");
     if (location.hash !== next) {
@@ -3064,7 +3242,7 @@
   // Returns true if the hash carried any filter params (and applied them).
   function applyParamsFromHash() {
     var p = hashParams();
-    var keys = ["q", "cat", "hood", "rating", "badges", "match", "now", "saved", "sort"];
+    var keys = ["q", "cat", "hood", "rating", "badges", "match", "now", "saved", "sort", "within"];
     if (!keys.some(function (k) { return p.has(k); })) return false;
     document.getElementById("fQuery").value = p.get("q") || "";
     document.getElementById("fCategory").value = p.get("cat") || "";
@@ -3078,8 +3256,12 @@
     setBadgeMatchMode(p.get("match"));
     if (openNowBox) openNowBox.checked = p.get("now") === "1";
     if (savedBox) savedBox.checked = p.get("saved") === "1";
+    if (withinSel) {
+      withinSel.value = p.get("within") || "";
+      if (withinSel.value !== (p.get("within") || "")) withinSel.value = ""; // unknown value -> Any
+    }
     var sort = p.get("sort");
-    document.getElementById("fSort").value = SORT_MODES.indexOf(sort) !== -1 ? sort : "recommended";
+    document.getElementById("fSort").value = SORT_MODES.indexOf(sort) !== -1 && (sort !== "nearest" || origin) ? sort : "recommended";
     sortResults();
     applyFilters();
     return true;
@@ -3110,6 +3292,13 @@
         return (tb > ta ? 1 : tb < ta ? -1 : 0) || byName(a, b);
       }
       if (mode === "name") return byName(a, b);
+      if (mode === "nearest") {
+        var da = cardMiles(a), db = cardMiles(b); // listings without coordinates go last
+        if (da == null && db == null) return byName(a, b);
+        if (da == null) return 1;
+        if (db == null) return -1;
+        return (da - db) || byName(a, b);
+      }
       return a.getAttribute("data-hood").localeCompare(b.getAttribute("data-hood")) || byName(a, b);
     });
     cards.forEach(function (c) { results.appendChild(c); });
@@ -3124,6 +3313,7 @@
     setBadgeMatchMode("all");
     if (openNowBox) openNowBox.checked = false;
     if (savedBox) savedBox.checked = false;
+    if (withinSel) withinSel.value = ""; // the origin is kept
     if (!silent) applyFilters();
   }
 
@@ -3139,6 +3329,13 @@
     if (openNowBox) openNowBox.addEventListener("change", applyFilters);
     if (savedBox) savedBox.addEventListener("change", applyFilters);
     document.getElementById("fSort").addEventListener("change", function () { sortResults(); applyFilters(); });
+    withinSel.addEventListener("change", applyFilters);
+    document.getElementById("useLocation").addEventListener("click", useMyLocation);
+    document.getElementById("setOrigin").addEventListener("click", setAddressOrigin);
+    originText.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { e.preventDefault(); setAddressOrigin(); }
+    });
+    refreshOriginUi();
     document.getElementById("resetFilters").addEventListener("click", function () { resetFilters(); });
     document.getElementById("emptyReset").addEventListener("click", function () { resetFilters(); });
 

@@ -43,6 +43,9 @@
       desc: row.description,
       long: row.long_description,
       address: row.address,
+      // Geocoded from the address server-side; null when it couldn't be located.
+      lat: typeof row.lat === "number" ? row.lat : null,
+      lng: typeof row.lng === "number" ? row.lng : null,
       photo: row.photo_url || null,
       verify: null,
       hours: row.hours || [],

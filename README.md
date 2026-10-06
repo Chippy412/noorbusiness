@@ -66,6 +66,7 @@ and isn't something `git clone` gives you.
 | `/api/billing/plans` | Sponsorship plans and prices (defined in `api/_lib/plans.js`), and whether paying is switched on. |
 | `/api/billing/checkout`, `/api/billing/portal` | Opens Stripe Checkout / the Stripe billing portal for a listing's owner. |
 | `/api/billing/webhook` | Stripe tells us when a sponsorship starts, renews, changes or ends. |
+| `/api/geocode` | Address or ZIP to map coordinates (US Census geocoder, then OpenStreetMap). Used for a visitor's "distance from" point, by a database trigger when a listing's address changes, and by the moderators' "Find map locations" button. |
 | `/b/<id>` → `/api/listing` | A crawlable, shareable page for each approved listing (title, Open Graph, schema.org). |
 | `/sitemap.xml` → `/api/sitemap` | Home page plus every approved listing. |
 | `/api/verify-turnstile`, `/api/turnstile-config` | Turnstile helpers. |
@@ -91,7 +92,9 @@ once in the SQL editor; all are safe to re-run):
    secret filled in) on your clipboard to run
 6. `2026-10-05-admin.sql`, `2026-10-06-roles.sql`, `2026-10-07-fixes.sql`,
    `2026-10-08-review-fixes.sql`, `2026-10-09-notifications.sql`,
-   `2026-10-10-moderation-tools.sql`, `2026-10-11-sponsorship.sql`
+   `2026-10-10-moderation-tools.sql`, `2026-10-11-sponsorship.sql`,
+   `2026-10-12-locations.sql`, then on the Moderation page > All listings,
+   click "Find map locations for older listings" until it says all done
 7. Add the first moderator (see Moderation below)
 
 Alerts come from database triggers. Do **not** also create Supabase
@@ -202,3 +205,13 @@ from Moderation > Sponsors.
 Changing prices later: create new prices in Stripe, update the env vars and
 the numbers in `api/_lib/plans.js`. Existing subscribers stay on their old
 price until moved in Stripe.
+
+## Distances
+
+Explore can show how far each business is from the visitor ("Use my
+location", or a typed address/ZIP), filter by radius, and sort by nearest.
+The visitor's own location never leaves their browser; a typed address is
+looked up once through `/api/geocode` and not stored. Listing coordinates
+(`businesses.lat`/`lng`) are filled in by the server whenever an address is
+added or changed. A listing without an address (e.g. online-only) simply
+shows no distance.

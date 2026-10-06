@@ -286,3 +286,61 @@ test("billing: subscriptions map to the plan by price, not just metadata", async
     assert.ok(toRow(newer).p_period_end);
   });
 });
+
+// --------------------------------------------------------------- locations
+function fakeFetch(routes) {
+  const calls = [];
+  const fn = async (url) => {
+    calls.push(url);
+    const hit = Object.keys(routes).find((k) => url.includes(k));
+    return { ok: true, json: async () => (hit ? routes[hit] : {}) };
+  };
+  fn.calls = calls;
+  return fn;
+}
+
+test("geocode: listing addresses get a city and state when they lack one", () => {
+  const { withContext } = require("../api/_lib/geocode");
+  assert.strictEqual(withContext("1 Main St", "Dublin"), "1 Main St, Dublin, OH");
+  assert.strictEqual(withContext("1 Main St", "Short North"), "1 Main St, Columbus, OH");
+  assert.strictEqual(withContext("1 Main St, Columbus, OH 43215", "Dublin"), "1 Main St, Columbus, OH 43215");
+  assert.strictEqual(withContext("1 Main St 43017", "Dublin"), "1 Main St 43017");
+  assert.strictEqual(withContext("  ", "Dublin"), "");
+});
+
+test("geocode: Census first, OpenStreetMap as fallback, ZIPs straight to OpenStreetMap", async () => {
+  const { geocode } = require("../api/_lib/geocode");
+  const census = { result: { addressMatches: [{ matchedAddress: "90 W BROAD ST, COLUMBUS, OH, 43215", coordinates: { x: -83.0, y: 39.96 } }] } };
+  const osm = [{ lat: "40.0886", lon: "-83.1034", display_name: "43017, Columbus, Franklin County, Ohio, United States" }];
+  let f = fakeFetch({ "geocoding.geo.census.gov": census, "nominatim": osm });
+  assert.deepStrictEqual(await geocode("90 W Broad St, Columbus, OH", f), { lat: 39.96, lng: -83.0, label: "90 W BROAD ST, COLUMBUS, OH, 43215" });
+  assert.strictEqual(f.calls.length, 1);
+  f = fakeFetch({ "geocoding.geo.census.gov": { result: { addressMatches: [] } }, "nominatim": osm });
+  assert.strictEqual((await geocode("somewhere vague", f)).label, "43017, Columbus, Franklin County, Ohio");
+  f = fakeFetch({ "nominatim": osm });
+  await geocode("43017", f);
+  assert.ok(f.calls.every((u) => u.includes("nominatim")), "a bare ZIP skips Census");
+  f = fakeFetch({ "nominatim": [{ lat: "999", lon: "0" }] });
+  assert.strictEqual(await geocode("43017", f), null, "nonsense coordinates are rejected");
+});
+
+test("geocode route: validates input and keeps the backfill for moderators", async () => {
+  const handler = require("../api/geocode");
+  let res = mockRes();
+  await handler({ method: "GET", headers: {}, query: { q: "ab" } }, res);
+  assert.strictEqual(res.code, 400);
+  res = mockRes();
+  await handler({ method: "GET", headers: {}, query: { q: "x".repeat(201) } }, res);
+  assert.strictEqual(res.code, 400);
+  await withEnv({ SUPABASE_SERVICE_ROLE_KEY: "svc", NOTIFY_SECRET: "s3cret" }, async () => {
+    res = mockRes();
+    await handler({ method: "POST", headers: {}, body: { backfill: true } }, res);
+    assert.strictEqual(res.code, 403);
+    res = mockRes();
+    await handler({ method: "POST", headers: { authorization: "Bearer s3cret" }, body: { id: "../x", address: "1 Main" } }, res);
+    assert.strictEqual(res.code, 400);
+    res = mockRes();
+    await handler({ method: "POST", headers: { authorization: "Bearer wrong" }, body: { id: "11111111-1111-1111-1111-111111111111", address: "1 Main" } }, res);
+    assert.strictEqual(res.code, 400, "a wrong secret is treated as a (bad) backfill request, never as the trigger");
+  });
+});

@@ -41,6 +41,7 @@ MIGRATIONS = [
     "2026-10-09-notifications.sql",
     "2026-10-10-moderation-tools.sql",
     "2026-10-11-sponsorship.sql",
+    "2026-10-12-locations.sql",
 ]
 
 
@@ -853,6 +854,42 @@ def featured_can_expire(t):
     t.as_(mod, aal="aal2")
     t.q("select admin_set_featured_until(%s, now() + interval '7 days')", (b,))
     assert [x for x in t.one("select admin_all_businesses()") if x["id"] == str(b)][0]["featured_until"]
+
+
+# ------------------------------------------------------------- locations (10-12)
+@test
+def locations_are_server_only_and_follow_the_address(t):
+    mod, vol = team(t)
+    o = t.user("o@x.co"); b = t.business(o, "pending")
+    t.admin(); t.q("delete from net.requests")
+    t.as_(o)
+    t.q("select owner_update_business(%s, '{\"address\":\"90 W Broad St\"}'::jsonb)", (b,))
+    t.admin()
+    reqs = t.q("select url, body ->> 'address' from net.requests where url like '%%/api/geocode'")
+    assert reqs == [("https://nicc-business.vercel.app/api/geocode", "90 W Broad St")], reqs
+    t.as_(o)
+    t.fails("select set_business_location(%s, '90 W Broad St', 1, 2)", (b,))
+    t.fails("insert into businesses (owner_id, name, category, neighborhood, description, long_description, lat, lng)"
+            " values (%s, 'X', 'R', 'D', 's', 'l', 40, -83)", (o,))
+    t.as_(role="service_role")
+    assert t.one("select set_business_location(%s, 'old address', 39.96, -83.0)", (b,)) is False, "stale lookups are ignored"
+    assert t.one("select set_business_location(%s, '90 W Broad St', 39.96, -83.0)", (b,)) is True
+    t.fails("select set_business_location(%s, '90 W Broad St', 200, 0)", (b,))
+    assert b not in [r[0] for r in t.q("select id from unlocated_businesses(50)")]
+    t.as_(o)
+    assert t.q("select lat, lng from businesses where id = %s", (b,))[0] == (39.96, -83.0)
+    t.q("select owner_update_business(%s, '{\"address\":\"1 New Rd\"}'::jsonb)", (b,))
+    assert t.q("select lat, lng from businesses where id = %s", (b,))[0] == (None, None), "a new address clears the old point"
+    t.q("select owner_update_business(%s, '{\"description\":\"no address change\"}'::jsonb)", (b,))
+    t.admin()
+    assert t.one("select count(*) from net.requests where url like '%%/api/geocode'") == 2, "only address changes trigger a lookup"
+    t.as_(role="service_role")
+    t.q("select mark_business_unlocatable(%s, '1 New Rd')", (b,))
+    assert b not in [r[0] for r in t.q("select id from unlocated_businesses(50)")], "a failed lookup isn't retried right away"
+    seeded = t.q("select id from unlocated_businesses(50)")
+    assert len(seeded) >= 1, "seeded listings with addresses still need locating"
+    t.as_()
+    t.fails("select unlocated_businesses(10)")
 
 
 # ------------------------------------------------------------------- alerts

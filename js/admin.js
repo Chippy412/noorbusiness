@@ -341,6 +341,7 @@
     }
     function allListingsView() {
       return '<p class="mod-intro">Every listing in the directory. Badges are set by volunteers and moderators' + (isMod ? "; status and Featured by moderators." : ". Status and Featured are set by moderators.") + "</p>" +
+        (isMod ? '<p class="mod-intro">Listings are placed on the map automatically when their address changes. <button class="btn-link" data-act="locate">Find map locations for older listings</button></p>' : "") +
         '<div class="mod-tools" role="search">' +
           '<div class="field"><label for="modAllQ">Search</label><input type="search" id="modAllQ" value="' + esc(state.allQuery) + '" placeholder="Name, category, area or owner email" autocomplete="off" spellcheck="false"></div>' +
           '<div class="field"><label for="modAllStatus">Status</label><select id="modAllStatus">' +
@@ -590,6 +591,16 @@
       try {
         var msg = "Done.";
         if (act === "refresh") { await refresh(); h.toast("Up to date."); return; }
+        else if (act === "locate") {
+          var session = await window.NiccSupabase.auth.getSession();
+          var token = session && session.data && session.data.session && session.data.session.access_token;
+          var lr = await fetch("/api/geocode", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ backfill: true }) });
+          var ld = await lr.json().catch(function () { return {}; });
+          btn_.disabled = false;
+          if (!lr.ok) { h.toast(ld.error === "moderators_only" ? "Only moderators can do that." : "Couldn't reach the map lookup. Please try again."); return; }
+          h.toast(ld.located + " placed on the map" + (ld.not_found ? ", " + ld.not_found + " addresses not found (check them)" : "") + (ld.more ? ". More left: click again." : ". All done."));
+          return;
+        }
         else if (act === "listing-status") { await api.setListingStatus(id, s, why); msg = s === "approved" ? "Published. It's now in the directory." : "Sent back to the owner."; }
         else if (act === "edit-apply") { await api.applyEdit(id); msg = "Changes applied to the live listing."; }
         else if (act === "edit-reject") { await api.rejectEdit(id, why); msg = "Changes rejected. The live listing is unchanged."; }
