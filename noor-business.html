@@ -659,8 +659,19 @@
   .field.invalid input, .field.invalid select, .field.invalid textarea { border-color: var(--danger); }
 
   .filter-panel { background: var(--surface); border: 1px solid var(--hairline); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
-  .filter-row { display: grid; grid-template-columns: 1.6fr 1fr 1fr 0.8fr; gap: 12px; }
-  @media (max-width: 1000px) { .filter-row { grid-template-columns: 1fr 1fr; } }
+  .filter-bar { display: flex; gap: 10px; align-items: center; }
+  .filter-search { position: relative; flex: 1; min-width: 0; }
+  .filter-search .icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--muted); pointer-events: none; }
+  .filter-search input { padding-left: 44px; }
+  .filter-toggle { flex: none; min-height: 46px; }
+  .filter-toggle .icon { width: 17px; height: 17px; }
+  .filter-toggle[aria-expanded="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-soft-ink); }
+  .filter-count { min-width: 1.5em; padding: 1px 7px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-size: 0.75rem; font-weight: 800; text-align: center; }
+  .filter-count[hidden] { display: none; }
+  .filter-more { display: flex; flex-direction: column; gap: 16px; padding-top: 16px; border-top: 1px solid var(--hairline); }
+  .filter-more[hidden] { display: none; }
+  .filter-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  @media (max-width: 1000px) { .filter-row { grid-template-columns: 1fr 1fr 1fr; } }
   .toggle-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
   .toggle {
     display: inline-flex; align-items: center; gap: 8px; padding: 9px 15px; border-radius: 999px;
@@ -685,7 +696,7 @@
   .seg input:checked + span { background: var(--accent-soft); color: var(--accent-soft-ink); }
   .seg input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: 1px; }
   .filter-help { font-size: 0.8rem; color: var(--muted); margin: 0; }
-  .filter-section { display: flex; flex-direction: column; gap: 10px; padding-top: 14px; border-top: 1px solid var(--hairline); }
+  .filter-section { display: flex; flex-direction: column; gap: 10px; }
   .filter-section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
   .filter-title { margin: 0; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
   .filter-head-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -1072,6 +1083,7 @@
     <path d="M20 20 H80 V80 H20 Z" fill="currentColor" stroke="none"/>
     <path d="M50 8 L92 50 L50 92 L8 50 Z" fill="currentColor" stroke="none"/>
   </symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></symbol>
   <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></symbol>
   <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></symbol>
   <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3 12V5a2 2 0 0 1 2-2h7l9 9-9 9-9-9z"/><circle cx="7.5" cy="7.5" r="1.2"/></symbol>
@@ -1368,11 +1380,18 @@
     <section class="tight">
       <div class="wrap">
         <form class="filter-panel" id="filterPanel">
-          <div class="filter-row">
-            <div class="field">
-              <label for="fQuery">Search</label>
-              <input type="text" id="fQuery" name="q" autocomplete="off" spellcheck="false" placeholder="Business name or keyword…">
+          <div class="filter-bar">
+            <div class="field filter-search">
+              <label class="sr-only" for="fQuery">Search</label>
+              <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
+              <input type="text" id="fQuery" name="q" autocomplete="off" spellcheck="false" placeholder="Search by name or keyword">
             </div>
+            <button type="button" class="btn btn-ghost filter-toggle" id="filterToggle" aria-expanded="false" aria-controls="filterMore">
+              <svg class="icon" aria-hidden="true"><use href="#i-sliders"/></svg> Filters <span class="filter-count" id="filterCount" hidden></span>
+            </button>
+          </div>
+          <div class="filter-more" id="filterMore" hidden>
+          <div class="filter-row">
             <div class="field">
               <label for="fCategory">Category</label>
               <select id="fCategory">
@@ -1462,6 +1481,7 @@
             </div>
             <p class="distance-status" id="originStatus" aria-live="polite"></p>
             <p class="filter-help" id="withinNote" hidden>Some listings without an address on file are hidden while a distance is set.</p>
+          </div>
           </div>
         </form>
 
@@ -3226,8 +3246,37 @@
     if (withinNote) withinNote.hidden = !hiddenNoCoords;
     resultCount.textContent = String(shown);
     emptyState.classList.toggle("show", shown === 0);
+    updateFilterCount();
     syncUrl();
   }
+
+  /* The panel stays closed until asked for; the button says how many
+     filters are active (search text and the distance origin aren't counted:
+     the first is always visible, the second has its own status line). */
+  function updateFilterCount() {
+    var badge = document.getElementById("filterCount");
+    if (!badge) return;
+    var n = 0;
+    if (document.getElementById("fCategory").value) n++;
+    if (document.getElementById("fHood").value) n++;
+    if (document.getElementById("fRating").value) n++;
+    if (document.getElementById("fWithin").value) n++;
+    if (document.getElementById("fOpenNow").checked) n++;
+    if (savedBox && savedBox.checked) n++;
+    n += badgeBoxes.filter(function (b) { return b.checked; }).length;
+    badge.textContent = String(n);
+    badge.hidden = n === 0;
+    document.getElementById("filterToggle").setAttribute("aria-label", n ? "Filters, " + n + " active" : "Filters");
+  }
+  (function () {
+    var toggle = document.getElementById("filterToggle"), more = document.getElementById("filterMore");
+    if (!toggle || !more) return;
+    toggle.addEventListener("click", function () {
+      var open = more.hidden;
+      more.hidden = !open;
+      toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+  })();
 
   /* Filters live in the URL
      (#/explore?q=...&cat=...&hood=...&rating=4&badges=halal,prayer&match=any&now=1&saved=1&within=5&sort=name)
