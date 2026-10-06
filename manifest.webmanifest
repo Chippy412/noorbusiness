@@ -1,0 +1,19 @@
+{
+  "name": "NICC Business",
+  "short_name": "NICC Business",
+  "description": "A community-run directory of Muslim-owned and halal-verified businesses in Columbus, Ohio.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F8F8F2",
+  "theme_color": "#4C5F26",
+  "icons": [
+    { "src": "/images/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/images/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/images/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Explore listings", "url": "/#/explore" },
+    { "name": "List your business", "url": "/#/list" }
+  ]
+}
