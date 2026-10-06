@@ -82,13 +82,13 @@
   async function loadReviews(businessId) {
     var result = await window.NiccSupabase
       .from("reviews")
-      .select("author_name, rating, body, owner_reply, created_at")
+      .select("id, author_name, rating, body, owner_reply, created_at")
       .eq("business_id", businessId)
       .eq("status", "approved")
       .order("created_at", { ascending: false });
     if (result.error) throw result.error;
     return result.data.map(function (r) {
-      return { name: r.author_name, stars: r.rating, text: r.body, reply: r.owner_reply || null };
+      return { id: r.id, name: r.author_name, stars: r.rating, text: r.body, reply: r.owner_reply || null };
     });
   }
 

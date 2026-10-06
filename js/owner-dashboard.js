@@ -161,6 +161,22 @@
     if (result.error) throw result.error;
   }
 
+  // Unread decisions about this person's listings, claims and reviews.
+  async function loadMyNotices() {
+    var result = await window.NiccSupabase
+      .from("owner_notices")
+      .select("id, kind, title, reason, created_at")
+      .is("read_at", null)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (result.error) throw result.error;
+    return result.data;
+  }
+  async function dismissNotice(id) {
+    var result = await window.NiccSupabase.rpc("dismiss_notice", { p_id: id });
+    if (result.error) throw result.error;
+  }
+
   window.NiccOwner = {
     loadMyBusinesses: loadMyBusinesses,
     createBusiness: createBusiness,
@@ -172,6 +188,8 @@
     setHours: setHours,
     submitReview: submitReview,
     loadReviewsForMyBusinesses: loadReviewsForMyBusinesses,
-    replyToReview: replyToReview
+    replyToReview: replyToReview,
+    loadMyNotices: loadMyNotices,
+    dismissNotice: dismissNotice
   };
 })();

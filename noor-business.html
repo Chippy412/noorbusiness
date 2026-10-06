@@ -931,6 +931,60 @@
   .mod-remove { color: var(--muted); }
   .mod-banner { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; padding: 12px 16px; border: 1px solid var(--accent); border-radius: 14px; background: var(--accent-soft); color: var(--accent-soft-ink); }
   .mod-banner p { margin: 0; }
+  .mod-sheet-quiet { background: transparent; }
+  .mod-sheet.is-done { opacity: 0.7; }
+  .mod-age { display: inline-block; margin-top: 4px; padding: 1px 8px; border-radius: 999px; background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); font-size: 0.75rem; font-weight: 700; }
+  .mod-warn { margin: 0 0 18px; padding: 12px 14px; border-radius: 12px; background: color-mix(in srgb, var(--danger) 10%, transparent); color: var(--ink); font-size: 0.92rem; box-shadow: inset 3px 0 0 var(--danger); }
+  .mod-decide-wrap { flex-wrap: wrap; justify-content: flex-start; }
+  .mod-reason { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--hairline); grid-column: 1 / -1; }
+  .mod-reason label { color: var(--ink); font-size: 0.92rem; font-weight: 600; }
+  .mod-reason textarea, .mod-note-form textarea { font: inherit; font-size: 0.92rem; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--hairline); background: var(--ground); color: var(--ink); resize: vertical; }
+  .mod-reason-actions { display: flex; justify-content: flex-end; align-items: center; gap: 14px; }
+  .mod-selectable { position: relative; padding-left: 58px; }
+  .mod-select { position: absolute; left: 22px; top: 28px; }
+  .mod-select input, .mod-select-all input { width: 18px; height: 18px; accent-color: var(--accent); }
+  .mod-bulk { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .mod-select-all { display: inline-flex; align-items: center; gap: 8px; margin-right: auto; color: var(--ink-2); font-weight: 600; font-size: 0.92rem; }
+  .mod-review-ref { display: flex; flex-direction: column; gap: 8px; margin-bottom: 4px; }
+  .mod-reply { margin: 12px 0 0; color: var(--ink-2); font-size: 0.92rem; }
+  .mod-tools { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr); gap: 12px; margin-bottom: 14px; }
+  .mod-count { color: var(--muted); font-size: 0.88rem; margin: 0 0 8px; }
+  .mod-pager { display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 18px; color: var(--muted); font-size: 0.9rem; }
+  .mod-history { grid-column: 1 / -1; padding: 14px 16px; border-radius: 14px; background: var(--surface-2); }
+  .mod-note-form { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 12px; }
+  .mod-note-form textarea { flex: 1; min-width: 0; }
+  .mod-log { list-style: none; margin: 0; padding: 0; }
+  .mod-log li { padding: 10px 0; border-bottom: 1px solid var(--hairline); }
+  .mod-log li:last-child { border-bottom: 0; }
+  .mod-log p { margin: 0; color: var(--ink-2); font-size: 0.92rem; overflow-wrap: anywhere; }
+  .mod-log strong { color: var(--ink); }
+  .mod-log .mod-log-note { margin-top: 4px; padding-left: 10px; border-left: 2px solid var(--sage); white-space: pre-wrap; }
+  .mod-log .mod-sub { font-size: 0.8rem; margin-top: 2px; }
+  .mod-row:has(.mod-history) { grid-template-areas: "main status" "pills save" "hist hist"; }
+  .mod-row .mod-history { grid-area: hist; }
+  /* Report dialog */
+  dialog.report-modal { width: min(520px, calc(100vw - 32px)); }
+  .report-reasons { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .report-reasons legend { font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+  .report-reason { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--hairline); border-radius: 12px; cursor: pointer; color: var(--ink-2); }
+  .report-reason:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-soft-ink); }
+  .report-reason input { accent-color: var(--accent); }
+  .report-reason[hidden] { display: none; }
+  .report-optional { color: var(--muted); font-weight: 500; }
+  .review-head .review-report { margin-left: auto; font-size: 0.8rem; color: var(--muted); }
+  /* Owner notices (account page) */
+  .notice { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 14px 0; border-top: 1px solid var(--hairline); }
+  .notice:first-child { border-top: 0; padding-top: 0; }
+  .notice p { margin: 0; }
+  .notice-title { color: var(--ink); font-weight: 700; }
+  .notice-reason { margin-top: 6px !important; padding-left: 10px; border-left: 2px solid var(--sage); color: var(--ink-2); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .notice-date { margin-top: 4px !important; color: var(--muted); font-size: 0.84rem; }
+  @media (max-width: 860px) {
+    .mod-tools { grid-template-columns: 1fr; }
+    .mod-row:has(.mod-history) { grid-template-areas: "main" "status" "pills" "save" "hist"; }
+    .mod-note-form { flex-direction: column; align-items: stretch; }
+    .mod-bulk { flex-wrap: wrap; }
+  }
   @media (max-width: 860px) {
     .mod { grid-template-columns: 1fr; gap: 22px; }
     .mod-rail { position: static; }
@@ -1847,6 +1901,11 @@
             </p>
           </div>
 
+          <div class="form-card notices-card" id="noticesCard" style="margin-top:24px" hidden>
+            <h2 style="font-size:1.3rem;margin-bottom:12px">Updates from the volunteer team</h2>
+            <div id="myNotices"></div>
+          </div>
+
           <div class="form-card" style="margin-top:24px">
             <h2 style="font-size:1.3rem;margin-bottom:12px">Two-factor authentication</h2>
             <div id="mfaPanel"><p style="color:var(--muted)">Loading…</p></div>
@@ -2088,6 +2147,44 @@
     <button class="btn btn-ghost" type="button" id="modalReport">Report a problem</button>
     <button class="btn btn-ghost" id="modalClaim">Claim this business</button>
   </div>
+</dialog>
+
+<dialog class="listing-modal report-modal" id="reportModal" aria-labelledby="reportTitle">
+  <form id="reportForm" novalidate>
+    <div class="modal-head">
+      <div>
+        <h2 id="reportTitle">Report a problem</h2>
+        <p class="listing-meta" id="reportAbout"></p>
+      </div>
+      <button class="modal-close" type="button" id="reportClose" aria-label="Close"><svg class="icon"><use href="#i-close"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <fieldset class="report-reasons">
+        <legend>What's wrong?</legend>
+        <label class="report-reason" data-for="listing"><input type="radio" name="reportReason" value="closed"> Closed or moved</label>
+        <label class="report-reason" data-for="listing"><input type="radio" name="reportReason" value="wrong_info"> Wrong information (hours, phone, address…)</label>
+        <label class="report-reason"><input type="radio" name="reportReason" value="inappropriate"> Inappropriate or offensive</label>
+        <label class="report-reason"><input type="radio" name="reportReason" value="spam"> Spam or fake</label>
+        <label class="report-reason"><input type="radio" name="reportReason" value="other"> Something else</label>
+      </fieldset>
+      <div class="field full">
+        <label for="reportDetails">Details <span class="report-optional" id="reportDetailsHint">(optional)</span></label>
+        <textarea id="reportDetails" rows="3" maxlength="1000" placeholder="Anything that helps a volunteer check it"></textarea>
+      </div>
+      <div class="field full">
+        <label for="reportEmail">Your email (optional)</label>
+        <input type="email" id="reportEmail" autocomplete="email" spellcheck="false" maxlength="254">
+        <span class="help">Only if you're happy for a volunteer to follow up. Never shown publicly.</span>
+      </div>
+      <div class="honeypot" aria-hidden="true"><label for="reportCompany">Company</label><input type="text" id="reportCompany" tabindex="-1" autocomplete="off"></div>
+      <div id="reportTurnstile"></div>
+      <p class="form-status" id="reportStatus" role="status"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" type="submit">Send report</button>
+      <button class="btn btn-ghost" type="button" id="reportCancel">Cancel</button>
+    </div>
+  </form>
 </dialog>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -2454,7 +2551,8 @@
     if (reviews.length) {
       html += reviews.map(function (r) {
         var block = '<div class="review"><div class="review-head"><span class="name">' + escapeAttr(r.name) +
-          '</span><span class="stars">' + starsHtml(r.stars) + '</span></div><p>' + escapeAttr(r.text) + '</p>';
+          '</span><span class="stars">' + starsHtml(r.stars) + '</span>' +
+          '<button type="button" class="btn-link review-report" data-report-review="' + escapeAttr(r.id) + '" data-author="' + escapeAttr(r.name) + '">Report</button></div><p>' + escapeAttr(r.text) + '</p>';
         if (r.reply) block += '<div class="owner-reply"><strong>Owner reply</strong><p>' + escapeAttr(r.reply) + '</p></div>';
         return block + '</div>';
       }).join("");
@@ -2570,23 +2668,80 @@
       toast(link);
     }
   });
-  // Report a problem: hands off to the contact form with the listing named,
-  // so the report lands in the same inbox volunteers already watch.
-  document.getElementById("modalReport").addEventListener("click", function () {
-    if (!currentItem) return;
-    var item = currentItem;
+  /* ---- Report a problem (a listing, or one review on it) ----
+     Goes to /api/submit, which lands it in the moderation page's Reports
+     queue. Where that route isn't set up yet, falls back to the contact
+     form with the listing named, so a report is never lost. */
+  var reportModal = document.getElementById("reportModal");
+  var reportForm = document.getElementById("reportForm");
+  var reportTarget = null; // { item, reviewId, reviewAuthor }
+  function openReport(item, reviewId, reviewAuthor) {
+    reportTarget = { item: item, reviewId: reviewId || null, reviewAuthor: reviewAuthor || "" };
+    reportForm.reset();
+    document.getElementById("reportStatus").classList.remove("show");
+    document.getElementById("reportTitle").textContent = reviewId ? "Report this review" : "Report a problem";
+    document.getElementById("reportAbout").textContent = reviewId
+      ? "Review by " + reviewAuthor + " on " + item.name
+      : item.name;
+    // Closed / wrong info only make sense for the listing itself.
+    reportForm.querySelectorAll('.report-reason[data-for="listing"]').forEach(function (l) { l.hidden = !!reviewId; });
+    reportModal.showModal();
+    ensureTurnstile("reportTurnstile");
+  }
+  function reportToContactForm(item, details) {
+    reportModal.close();
     modal.close();
     location.hash = "#/contact";
     setTimeout(function () {
       var subject = document.getElementById("cSubject");
       var message = document.getElementById("cMessage");
-      if (subject) subject.value = "Reporting a problem with a listing";
+      if (subject) subject.value = reportTarget && reportTarget.reviewId ? "Reporting a review" : "Reporting a problem with a listing";
       if (message && !message.value.trim()) {
-        message.value = "About “" + item.name + "” (" + location.origin + "/b/" + item.id + "):\n\nWhat is wrong? ";
+        message.value = "About “" + item.name + "” (" + location.origin + "/b/" + item.id + "):\n\n" + (details || "What is wrong? ");
         message.focus();
         message.setSelectionRange(message.value.length, message.value.length);
       }
     }, 80);
+  }
+  document.getElementById("modalReport").addEventListener("click", function () {
+    if (currentItem) openReport(currentItem);
+  });
+  document.getElementById("modalBody").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-report-review]");
+    if (b && currentItem) openReport(currentItem, b.getAttribute("data-report-review"), b.getAttribute("data-author"));
+  });
+  ["reportClose", "reportCancel"].forEach(function (id) {
+    document.getElementById(id).addEventListener("click", function () { reportModal.close(); });
+  });
+  reportModal.addEventListener("click", function (e) { if (e.target === reportModal) reportModal.close(); });
+  reportForm.addEventListener("change", function () {
+    var other = (reportForm.querySelector('input[name="reportReason"]:checked') || {}).value === "other";
+    document.getElementById("reportDetailsHint").textContent = other ? "(required)" : "(optional)";
+  });
+  reportForm.addEventListener("submit", async function (e) {
+    e.preventDefault();
+    var status = document.getElementById("reportStatus");
+    var picked = reportForm.querySelector('input[name="reportReason"]:checked');
+    var details = document.getElementById("reportDetails").value.trim();
+    var email = document.getElementById("reportEmail").value.trim();
+    if (!picked) { setStatus(status, "Please choose what's wrong.", true); return; }
+    if (picked.value === "other" && !details) { setStatus(status, "Please tell us what's wrong.", true); document.getElementById("reportDetails").focus(); return; }
+    if (email && !/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(email)) { setStatus(status, "Please check your email address, or leave it blank.", true); return; }
+    var btn = reportForm.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    var res = await postSubmit({
+      type: "report", business_id: reportTarget.item.id, review_id: reportTarget.reviewId,
+      reason: picked.value, details: details, email: email,
+      token: turnstileToken("reportTurnstile"), company: document.getElementById("reportCompany").value
+    });
+    btn.disabled = false;
+    if (res.status === 200) { reportModal.close(); toast("Thanks. A volunteer will take a look."); return; }
+    resetTurnstile("reportTurnstile");
+    if (res.status === 503 || (res.status === 404 && !(res.data && res.data.error))) { reportToContactForm(reportTarget.item, details); return; }
+    if (res.data && res.data.error === "captcha") { setStatus(status, "Please complete the verification challenge.", true); return; }
+    if (res.status === 429) { setStatus(status, "You've sent several reports recently. Please wait a little while and try again.", true); return; }
+    if (res.status === 404) { setStatus(status, "That isn't in the directory any more.", true); return; }
+    setStatus(status, "Could not send your report. Please try again.", true);
   });
   modal.addEventListener("click", function (e) { if (e.target === modal) modal.close(); });
   modalSave.addEventListener("click", function () {
@@ -3385,6 +3540,7 @@
         var link = document.getElementById("adminLink");
         if (link) link.hidden = !(s.state === "ok" || s.state === "need-code" || s.state === "need-2fa");
       }).catch(function () { /* admin tables not set up yet */ });
+      renderNotices();
       renderMyListings();
       renderMfaPanel();
       renderMyReviews();
@@ -3478,7 +3634,7 @@
     if (!isTeam && badgeTimer) { window.clearInterval(badgeTimer); badgeTimer = null; }
   }
 
-  var STATUS_LABELS = { approved: "Live", pending: "Waiting for review", rejected: "Not approved" };
+  var STATUS_LABELS = { approved: "Live", pending: "Waiting for review", rejected: "Needs changes (edit and save to resubmit)" };
   // <option>s for an owner's edit form, copied from the add-business form so
   // there's one list of categories/neighborhoods. Keeps a value that isn't in
   // the list (an older listing) selectable instead of silently changing it.
@@ -3714,6 +3870,31 @@
       el.innerHTML = '<p style="color:var(--muted)">Could not load two-factor authentication settings.</p>';
     }
   }
+
+  // Decisions on the person's listings, claims and reviews, with the
+  // volunteer's reason (owner_notices, 2026-10-10-moderation-tools.sql).
+  async function renderNotices() {
+    var card = document.getElementById("noticesCard"), el = document.getElementById("myNotices");
+    if (!card || !el) return;
+    var notices = [];
+    try { notices = await window.NiccOwner.loadMyNotices(); } catch (e) { /* table not set up yet */ }
+    card.hidden = !notices.length;
+    el.innerHTML = notices.map(function (n) {
+      var date = new Date(n.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+      return '<div class="notice notice-' + escapeAttr(n.kind) + '">' +
+        '<div><p class="notice-title">' + escapeAttr(n.title) + '</p>' +
+        (n.reason ? '<p class="notice-reason">' + escapeAttr(n.reason) + '</p>' : "") +
+        '<p class="notice-date">' + escapeAttr(date) + '</p></div>' +
+        '<button type="button" class="btn-link" data-dismiss-notice="' + escapeAttr(n.id) + '">Dismiss</button></div>';
+    }).join("");
+  }
+  document.getElementById("myNotices").addEventListener("click", async function (e) {
+    var b = e.target.closest("[data-dismiss-notice]");
+    if (!b) return;
+    b.disabled = true;
+    try { await window.NiccOwner.dismissNotice(b.getAttribute("data-dismiss-notice")); } catch (err) { b.disabled = false; toast("Could not dismiss that. Please try again."); return; }
+    renderNotices();
+  });
 
   async function renderMyReviews() {
     var el = document.getElementById("myReviews");
