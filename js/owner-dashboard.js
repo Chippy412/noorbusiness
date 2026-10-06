@@ -161,6 +161,34 @@
     if (result.error) throw result.error;
   }
 
+  // Unread decisions about this person's listings, claims and reviews.
+  async function loadMyNotices() {
+    var result = await window.NiccSupabase
+      .from("owner_notices")
+      .select("id, kind, title, reason, created_at")
+      .is("read_at", null)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (result.error) throw result.error;
+    return result.data;
+  }
+  async function dismissNotice(id) {
+    var result = await window.NiccSupabase.rpc("dismiss_notice", { p_id: id });
+    if (result.error) throw result.error;
+  }
+
+  // Sponsorship state for the caller's listings (and any they pay for), keyed
+  // by business id. (Stripe ids and the team's notes aren't readable here.)
+  async function loadMySponsorships() {
+    var result = await window.NiccSupabase
+      .from("sponsorships")
+      .select("business_id, payer_id, paid_tier, paid_status, paid_until, paid_period_end, cancel_at_period_end, comp_tier, comp_until");
+    if (result.error) throw result.error;
+    var byId = {};
+    result.data.forEach(function (r) { byId[r.business_id] = r; });
+    return byId;
+  }
+
   window.NiccOwner = {
     loadMyBusinesses: loadMyBusinesses,
     createBusiness: createBusiness,
@@ -172,6 +200,9 @@
     setHours: setHours,
     submitReview: submitReview,
     loadReviewsForMyBusinesses: loadReviewsForMyBusinesses,
-    replyToReview: replyToReview
+    replyToReview: replyToReview,
+    loadMyNotices: loadMyNotices,
+    dismissNotice: dismissNotice,
+    loadMySponsorships: loadMySponsorships
   };
 })();

@@ -20,6 +20,10 @@
     return (index % 4) + 1;
   }
 
+  function isSponsored(row) {
+    return !!row.sponsor_tier && !!row.sponsored_until && new Date(row.sponsored_until) > new Date();
+  }
+
   function mapRow(row, index) {
     return {
       id: row.id,
@@ -29,7 +33,8 @@
       icon: CATEGORY_ICONS[row.category] || "i-storefront",
       tone: toneFor(index),
       badges: row.badges || [],
-      featured: !!row.featured,
+      // Editorial Featured, which a moderator can give an end date.
+      featured: !!row.featured && (!row.featured_until || new Date(row.featured_until) > new Date()),
       rating: null,
       reviewCount: 0,
       ownerId: row.owner_id || null,
@@ -38,9 +43,17 @@
       desc: row.description,
       long: row.long_description,
       address: row.address,
+      // Geocoded from the address server-side; null when it couldn't be located.
+      lat: typeof row.lat === "number" ? row.lat : null,
+      lng: typeof row.lng === "number" ? row.lng : null,
       photo: row.photo_url || null,
       verify: null,
-      hours: row.hours || []
+      hours: row.hours || [],
+      created: row.created_at || null,
+      // Paid (or comped) placement, see 2026-10-11-sponsorship.sql. Recommended
+      // sort puts these first; the "featured" plan also joins the home page row.
+      sponsored: isSponsored(row),
+      sponsorTier: isSponsored(row) ? row.sponsor_tier : null
     };
   }
 
@@ -79,13 +92,13 @@
   async function loadReviews(businessId) {
     var result = await window.NiccSupabase
       .from("reviews")
-      .select("author_name, rating, body, owner_reply, created_at")
+      .select("id, author_name, rating, body, owner_reply, created_at")
       .eq("business_id", businessId)
       .eq("status", "approved")
       .order("created_at", { ascending: false });
     if (result.error) throw result.error;
     return result.data.map(function (r) {
-      return { name: r.author_name, stars: r.rating, text: r.body, reply: r.owner_reply || null };
+      return { id: r.id, name: r.author_name, stars: r.rating, text: r.body, reply: r.owner_reply || null };
     });
   }
 

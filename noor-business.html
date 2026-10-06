@@ -659,7 +659,8 @@
   .field.invalid input, .field.invalid select, .field.invalid textarea { border-color: var(--danger); }
 
   .filter-panel { background: var(--surface); border: 1px solid var(--hairline); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 18px; }
-  .filter-row { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 12px; }
+  .filter-row { display: grid; grid-template-columns: 1.6fr 1fr 1fr 0.8fr; gap: 12px; }
+  @media (max-width: 1000px) { .filter-row { grid-template-columns: 1fr 1fr; } }
   .toggle-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
   .toggle {
     display: inline-flex; align-items: center; gap: 8px; padding: 9px 15px; border-radius: 999px;
@@ -671,6 +672,31 @@
   .toggle:hover { border-color: var(--accent); }
   .toggle:has(input:checked) { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-soft-ink); }
   .toggle:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
+  /* Badge match mode: two radios styled as a segmented control */
+  .seg {
+    display: inline-flex; align-items: center; border: 1px solid var(--hairline); border-radius: 999px;
+    background: var(--ground); padding: 3px; font-size: 0.82rem; font-weight: 600; color: var(--ink-2);
+  }
+  .seg-label { padding: 0 8px 0 10px; color: var(--muted); font-weight: 700; font-size: 0.76rem; }
+  .seg label { position: relative; cursor: pointer; }
+  .seg input { position: absolute; opacity: 0; pointer-events: none; }
+  .seg label span { display: block; padding: 6px 12px; border-radius: 999px; transition: background 0.2s ease, color 0.2s ease; }
+  .seg label:hover span { color: var(--accent-soft-ink); }
+  .seg input:checked + span { background: var(--accent-soft); color: var(--accent-soft-ink); }
+  .seg input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: 1px; }
+  .filter-help { font-size: 0.8rem; color: var(--muted); margin-top: -8px; }
+  .distance-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; border-top: 1px solid var(--hairline); padding-top: 16px; }
+  .distance-row .dist-title { flex-basis: 100%; font-size: 0.86rem; font-weight: 700; color: var(--ink-2); margin: 0; }
+  .distance-row .dist-address { flex: 1 1 260px; min-width: 0; }
+  .distance-row .dist-address .dist-input { display: flex; gap: 8px; }
+  .distance-row .dist-address input { flex: 1; min-width: 0; }
+  .distance-row .dist-within { flex: 0 0 170px; }
+  .distance-status { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 0.84rem; color: var(--ink-2); margin: 0; }
+  .distance-status:empty { display: none; }
+  .distance-status .dist-error { color: var(--danger); font-weight: 700; }
+  .listing-dist { font-size: 0.84rem; font-weight: 700; color: var(--accent-soft-ink); margin: 0; }
+  .listing-dist:empty { display: none; }
+  @media (max-width: 560px) { .distance-row .dist-within { flex: 1 1 100%; } .distance-row > .btn { width: 100%; justify-content: center; } }
 
   .results-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 30px 0 22px; }
   .results-count { font-size: 0.95rem; color: var(--muted); }
@@ -917,6 +943,83 @@
   .mod-remove { color: var(--muted); }
   .mod-banner { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; padding: 12px 16px; border: 1px solid var(--accent); border-radius: 14px; background: var(--accent-soft); color: var(--accent-soft-ink); }
   .mod-banner p { margin: 0; }
+  .mod-sheet-quiet { background: transparent; }
+  .mod-sheet.is-done { opacity: 0.7; }
+  .mod-age { display: inline-block; margin-top: 4px; padding: 1px 8px; border-radius: 999px; background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); font-size: 0.75rem; font-weight: 700; }
+  .mod-warn { margin: 0 0 18px; padding: 12px 14px; border-radius: 12px; background: color-mix(in srgb, var(--danger) 10%, transparent); color: var(--ink); font-size: 0.92rem; box-shadow: inset 3px 0 0 var(--danger); }
+  .mod-decide-wrap { flex-wrap: wrap; justify-content: flex-start; }
+  .mod-reason { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--hairline); grid-column: 1 / -1; }
+  .mod-reason label { color: var(--ink); font-size: 0.92rem; font-weight: 600; }
+  .mod-reason textarea, .mod-note-form textarea { font: inherit; font-size: 0.92rem; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--hairline); background: var(--ground); color: var(--ink); resize: vertical; }
+  .mod-reason-actions { display: flex; justify-content: flex-end; align-items: center; gap: 14px; }
+  .mod-selectable { position: relative; padding-left: 58px; }
+  .mod-select { position: absolute; left: 22px; top: 28px; }
+  .mod-select input, .mod-select-all input { width: 18px; height: 18px; accent-color: var(--accent); }
+  .mod-bulk { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .mod-select-all { display: inline-flex; align-items: center; gap: 8px; margin-right: auto; color: var(--ink-2); font-weight: 600; font-size: 0.92rem; }
+  .mod-review-ref { display: flex; flex-direction: column; gap: 8px; margin-bottom: 4px; }
+  .mod-reply { margin: 12px 0 0; color: var(--ink-2); font-size: 0.92rem; }
+  .mod-tools { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr); gap: 12px; margin-bottom: 14px; }
+  .mod-count { color: var(--muted); font-size: 0.88rem; margin: 0 0 8px; }
+  .mod-pager { display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 18px; color: var(--muted); font-size: 0.9rem; }
+  .mod-history { grid-column: 1 / -1; padding: 14px 16px; border-radius: 14px; background: var(--surface-2); }
+  .mod-note-form { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 12px; }
+  .mod-note-form textarea { flex: 1; min-width: 0; }
+  .mod-log { list-style: none; margin: 0; padding: 0; }
+  .mod-log li { padding: 10px 0; border-bottom: 1px solid var(--hairline); }
+  .mod-log li:last-child { border-bottom: 0; }
+  .mod-log p { margin: 0; color: var(--ink-2); font-size: 0.92rem; overflow-wrap: anywhere; }
+  .mod-log strong { color: var(--ink); }
+  .mod-log .mod-log-note { margin-top: 4px; padding-left: 10px; border-left: 2px solid var(--sage); white-space: pre-wrap; }
+  .mod-log .mod-sub { font-size: 0.8rem; margin-top: 2px; }
+  .mod-row:has(.mod-history) { grid-template-areas: "main status" "pills save" "hist hist"; }
+  .mod-row .mod-history { grid-area: hist; }
+  /* Sponsorship */
+  .sponsored-tag { margin: 0 0 4px; color: var(--muted); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+  .promote { margin: 4px 0 22px; padding: 16px 18px; border: 1px solid var(--hairline); border-radius: 16px; background: var(--surface); }
+  .promote h3 { font-size: 1rem; margin: 0 0 4px; }
+  .promote > p { margin: 0 0 12px; color: var(--muted); font-size: 0.9rem; }
+  .promote-plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+  .promote-plan { display: flex; flex-direction: column; gap: 8px; padding: 14px; border: 1px solid var(--hairline); border-radius: 12px; background: var(--ground); }
+  .promote-plan h4 { margin: 0; font-size: 0.98rem; }
+  .promote-price { font-family: "Bricolage Grotesque", sans-serif; font-size: 1.35rem; font-weight: 700; color: var(--ink); }
+  .promote-price small { font-family: inherit; font-size: 0.8rem; font-weight: 600; color: var(--muted); }
+  .promote-plan ul { margin: 0; padding-left: 18px; color: var(--ink-2); font-size: 0.88rem; }
+  .promote-plan .btn { margin-top: auto; align-self: flex-start; }
+  .promote-active { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; color: var(--ink); }
+  .promote-fine { margin: 10px 0 0 !important; font-size: 0.8rem !important; }
+  .mod-row-pills:not(:has([data-field="featured"]:checked)) .mod-until { display: none; }
+  .mod-flag { color: var(--danger); font-weight: 700; }
+  .mod-until { display: inline-flex; align-items: center; gap: 6px; margin-left: 6px; color: var(--muted); font-size: 0.84rem; }
+  .mod-until input, .mod-comp input, .mod-comp select { font: inherit; font-size: 0.9rem; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--hairline); background: var(--ground); color: var(--ink); }
+  .mod-comp { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.8fr) minmax(0, 0.9fr); gap: 12px; align-items: end; margin-top: 14px; }
+  .mod-comp-note { grid-column: 1 / 3; }
+  @media (max-width: 860px) { .mod-comp { grid-template-columns: 1fr; } .mod-comp-note { grid-column: auto; } }
+  /* Report dialog */
+  dialog.report-modal { width: min(520px, calc(100vw - 32px)); }
+  .report-reasons { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .report-reasons legend { font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+  .report-reason { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--hairline); border-radius: 12px; cursor: pointer; color: var(--ink-2); }
+  .report-reason:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-soft-ink); }
+  .report-reason input { accent-color: var(--accent); }
+  .report-reason[hidden] { display: none; }
+  .report-optional { color: var(--muted); font-weight: 500; }
+  .review-head .review-report { margin-left: auto; font-size: 0.8rem; color: var(--muted); }
+  /* Owner notices (account page) */
+  .notice { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 14px 0; border-top: 1px solid var(--hairline); }
+  .notice:first-child { border-top: 0; padding-top: 0; }
+  .notice p { margin: 0; }
+  .notice-title { color: var(--ink); font-weight: 700; }
+  .notice-reason { margin-top: 6px !important; padding-left: 10px; border-left: 2px solid var(--sage); color: var(--ink-2); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .notice-date { margin-top: 4px !important; color: var(--muted); font-size: 0.84rem; }
+  @media (max-width: 860px) {
+    .mod-tools { grid-template-columns: 1fr; }
+    .mod-row:has(.mod-history) { grid-template-areas: "main" "status" "pills" "save" "hist"; }
+    .mod-note-form { flex-direction: column; align-items: stretch; }
+    .mod-sheet.mod-selectable { padding-left: 50px; }
+    .mod-select { left: 16px; top: 22px; }
+    .mod-bulk { flex-wrap: wrap; }
+  }
   @media (max-width: 860px) {
     .mod { grid-template-columns: 1fr; gap: 22px; }
     .mod-rail { position: static; }
@@ -1292,6 +1395,15 @@
                 <option>Citywide (online)</option>
               </select>
             </div>
+            <div class="field">
+              <label for="fRating">Rating</label>
+              <select id="fRating">
+                <option value="">Any rating</option>
+                <option value="3">3+ stars</option>
+                <option value="4">4+ stars</option>
+                <option value="4.5">4.5+ stars</option>
+              </select>
+            </div>
           </div>
           <div class="toggle-row" role="group" aria-label="Additional filters">
             <label class="toggle"><input type="checkbox" data-badge="halal"><svg class="icon"><use href="#i-shield"/></svg> Halal verified</label>
@@ -1299,9 +1411,39 @@
             <label class="toggle"><input type="checkbox" data-badge="women"><svg class="icon"><use href="#i-users"/></svg> Women owned</label>
             <label class="toggle"><input type="checkbox" data-badge="family"><svg class="icon"><use href="#i-home"/></svg> Family run</label>
             <label class="toggle"><input type="checkbox" data-badge="community"><svg class="icon"><use href="#i-heart"/></svg> Community service</label>
+            <div class="seg" role="radiogroup" aria-labelledby="matchLabel">
+              <span class="seg-label" id="matchLabel">Match badges</span>
+              <label><input type="radio" name="badgeMatch" value="all" checked><span>All</span></label>
+              <label><input type="radio" name="badgeMatch" value="any"><span>Any</span></label>
+            </div>
+            <label class="toggle"><input type="checkbox" id="fOpenNow" aria-describedby="openNowHelp"><svg class="icon"><use href="#i-clock"/></svg> Open now</label>
             <label class="toggle"><input type="checkbox" id="fSaved"><svg class="icon"><use href="#i-bookmark"/></svg> Saved only</label>
             <button type="button" class="btn btn-ghost btn-sm" id="resetFilters" style="margin-left:auto">Reset filters</button>
           </div>
+          <p class="filter-help" id="openNowHelp" hidden>Only shows places whose hours we can read.</p>
+          <div class="distance-row" role="group" aria-labelledby="distTitle">
+            <p class="dist-title" id="distTitle">Distance from</p>
+            <button type="button" class="btn btn-ghost btn-sm" id="useLocation"><svg class="icon"><use href="#i-pin"/></svg> Use my location</button>
+            <div class="field dist-address">
+              <label for="fOriginText">or enter an address or ZIP</label>
+              <div class="dist-input">
+                <input type="text" id="fOriginText" autocomplete="off" spellcheck="false" placeholder="e.g. 43017 or 123 Main St, Dublin OH">
+                <button type="button" class="btn btn-ghost btn-sm" id="setOrigin">Set</button>
+              </div>
+            </div>
+            <div class="field dist-within">
+              <label for="fWithin">Within</label>
+              <select id="fWithin" disabled>
+                <option value="">Any distance</option>
+                <option value="2">2 miles</option>
+                <option value="5">5 miles</option>
+                <option value="10">10 miles</option>
+                <option value="25">25 miles</option>
+              </select>
+            </div>
+            <p class="distance-status" id="originStatus" aria-live="polite"></p>
+          </div>
+          <p class="filter-help" id="withinNote" hidden>Some listings without an address on file are hidden while a distance is set.</p>
         </form>
 
         <div class="results-bar">
@@ -1314,9 +1456,12 @@
             <div class="field" style="max-width:200px">
               <label class="sr-only" for="fSort">Sort results</label>
               <select id="fSort">
+                <option value="recommended">Recommended</option>
                 <option value="rating">Highest rated</option>
+                <option value="newest">Newest</option>
                 <option value="name">Name, A to Z</option>
                 <option value="hood">Neighborhood</option>
+                <option value="nearest" id="sortNearest" disabled hidden>Nearest</option>
               </select>
             </div>
           </div>
@@ -1468,7 +1613,7 @@
           <div class="faq-list">
             <div class="faq-item">
               <button class="faq-q" aria-expanded="false" aria-controls="fb1">What does it cost to list?<svg class="icon"><use href="#i-plus"/></svg></button>
-              <div class="faq-a" id="fb1"><p>Listing is free while the directory is growing. If paid features arrive later, existing listings stay free and we will say clearly what changes before anything does.</p></div>
+              <div class="faq-a" id="fb1"><p>Listing is free, and stays free. Owners can optionally sponsor their listing ($19 or $39 a month) to be shown first in search or on the home page; sponsored listings always carry a visible “Sponsored” label, and badges like Halal verified can never be bought.</p></div>
             </div>
             <div class="faq-item">
               <button class="faq-q" aria-expanded="false" aria-controls="fb2">How long does approval take?<svg class="icon"><use href="#i-plus"/></svg></button>
@@ -1815,6 +1960,11 @@
             </p>
           </div>
 
+          <div class="form-card notices-card" id="noticesCard" style="margin-top:24px" hidden>
+            <h2 style="font-size:1.3rem;margin-bottom:12px">Updates from the volunteer team</h2>
+            <div id="myNotices"></div>
+          </div>
+
           <div class="form-card" style="margin-top:24px">
             <h2 style="font-size:1.3rem;margin-bottom:12px">Two-factor authentication</h2>
             <div id="mfaPanel"><p style="color:var(--muted)">Loading…</p></div>
@@ -1964,9 +2114,9 @@
       <div class="wrap-narrow">
         <p style="color:var(--muted)">Last updated September 2026. NICC Business is a community-run directory operated by volunteers. This page explains what information we collect and what we do with it.</p>
         <h2 style="margin-top:28px">What we collect</h2>
-        <p style="color:var(--muted)">If you create an owner account, we store the email address and password you sign up with (through our authentication provider, Supabase) and the business listing details you submit, including any photos you upload. If you use the contact form, we receive the name, email, and message you enter so we can reply, and a one-way hash of your IP address that we use only to limit spam. If you join the email list in the footer, we store your email address. If you save listings while logged in, we store which listings you saved so they follow you between devices. Browsing, searching, filtering, and saving listings do not require an account.</p>
+        <p style="color:var(--muted)">If you create an owner account, we store the email address and password you sign up with (through our authentication provider, Supabase) and the business listing details you submit, including any photos you upload. If you use the contact form, we receive the name, email, and message you enter so we can reply, and a one-way hash of your IP address that we use only to limit spam. If you join the email list in the footer, we store your email address. If you save listings while logged in, we store which listings you saved so they follow you between devices. If you report a problem, we store your report, the email address if you give one, and a one-way hash of your IP address to limit spam. If you sponsor a listing, payment is handled by Stripe: we never see or store your card number, only which plan you chose, when it renews, and Stripe's reference numbers for your subscription. Browsing, searching, filtering, and saving listings do not require an account.</p>
         <h2 style="margin-top:28px">What stays in your browser</h2>
-        <p style="color:var(--muted)">Your saved listings and your light/dark theme preference are stored only in your browser's local storage. We do not receive or see this information, and it is never sent to our servers.</p>
+        <p style="color:var(--muted)">Your saved listings and your light/dark theme preference are stored only in your browser's local storage. We do not receive or see this information, and it is never sent to our servers. If you use "Use my location" to see distances, your location is used only in your browser and is never sent to us. If you type an address or ZIP to measure from, it is sent to our server once to look up its coordinates (using the US Census Bureau's free geocoder) and is not stored.</p>
         <h2 style="margin-top:28px">Cookies and analytics</h2>
         <p style="color:var(--muted)">This site does not use cookies. We use Vercel Web Analytics, a cookieless, privacy-preserving analytics tool that reports aggregate, anonymized traffic patterns (such as which pages are visited) and cannot identify individual visitors.</p>
         <h2 style="margin-top:28px">How data is stored</h2>
@@ -1994,6 +2144,8 @@
         <p style="color:var(--muted)">NICC Business is a community-run, informational directory of Muslim owned and halal friendly businesses in central Ohio. It is not a certifying authority. The halal verified badge reflects information an owner has provided about their supplier and certifier, not an independent audit by us.</p>
         <h2 style="margin-top:28px">Listings and accounts</h2>
         <p style="color:var(--muted)">Owners are responsible for the accuracy of the information, photos, and claims they submit. New listings and claims are reviewed by community volunteers before publishing. We may edit, decline, or remove a listing or review that is inaccurate, abusive, spam, or otherwise against the spirit of the directory.</p>
+        <h2 style="margin-top:28px">Sponsorship</h2>
+        <p style="color:var(--muted)">Listing is free. Owners may pay a monthly fee to sponsor an approved listing, which shows it with a “Sponsored” label and gives it more prominent placement. Sponsorship never buys a badge, a review, or approval, and a sponsored listing follows the same rules as every other. Payments are processed by Stripe, renew monthly, and can be cancelled at any time from your account; a cancelled sponsorship stays active until the end of the period already paid for. We may end a sponsorship for a listing that is removed under these terms.</p>
         <h2 style="margin-top:28px">Reviews</h2>
         <p style="color:var(--muted)">Reviews should reflect a genuine visit or interaction with the business. Personal attacks, and content that could not plausibly come from a real visit, may be removed. Business owners may reply publicly to reviews on their own listing.</p>
         <h2 style="margin-top:28px">No warranty</h2>
@@ -2011,7 +2163,7 @@
     <div class="page-head">
       <div class="wrap">
         <h1>Moderation</h1>
-        <p>Review new listings, edits, claims and reviews. Volunteers only.</p>
+        <p>Review new listings, edits, claims, reviews and reports. Volunteers only.</p>
       </div>
     </div>
     <section>
@@ -2056,6 +2208,44 @@
     <button class="btn btn-ghost" type="button" id="modalReport">Report a problem</button>
     <button class="btn btn-ghost" id="modalClaim">Claim this business</button>
   </div>
+</dialog>
+
+<dialog class="listing-modal report-modal" id="reportModal" aria-labelledby="reportTitle">
+  <form id="reportForm" novalidate>
+    <div class="modal-head">
+      <div>
+        <h2 id="reportTitle">Report a problem</h2>
+        <p class="listing-meta" id="reportAbout"></p>
+      </div>
+      <button class="modal-close" type="button" id="reportClose" aria-label="Close"><svg class="icon"><use href="#i-close"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <fieldset class="report-reasons">
+        <legend>What's wrong?</legend>
+        <label class="report-reason" data-for="listing"><input type="radio" name="reportReason" value="closed"> Closed or moved</label>
+        <label class="report-reason" data-for="listing"><input type="radio" name="reportReason" value="wrong_info"> Wrong information (hours, phone, address…)</label>
+        <label class="report-reason"><input type="radio" name="reportReason" value="inappropriate"> Inappropriate or offensive</label>
+        <label class="report-reason"><input type="radio" name="reportReason" value="spam"> Spam or fake</label>
+        <label class="report-reason"><input type="radio" name="reportReason" value="other"> Something else</label>
+      </fieldset>
+      <div class="field full">
+        <label for="reportDetails">Details <span class="report-optional" id="reportDetailsHint">(optional)</span></label>
+        <textarea id="reportDetails" rows="3" maxlength="1000" placeholder="Anything that helps a volunteer check it"></textarea>
+      </div>
+      <div class="field full">
+        <label for="reportEmail">Your email (optional)</label>
+        <input type="email" id="reportEmail" autocomplete="email" spellcheck="false" maxlength="254">
+        <span class="help">Only if you're happy for a volunteer to follow up. Never shown publicly.</span>
+      </div>
+      <div class="honeypot" aria-hidden="true"><label for="reportCompany">Company</label><input type="text" id="reportCompany" tabindex="-1" autocomplete="off"></div>
+      <div id="reportTurnstile"></div>
+      <p class="form-status" id="reportStatus" role="status"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" type="submit">Send report</button>
+      <button class="btn btn-ghost" type="button" id="reportCancel">Cancel</button>
+    </div>
+  </form>
 </dialog>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -2116,6 +2306,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase-client.js"></script>
 <script src="js/businesses-data.js"></script>
+<script src="js/hours.js"></script>
+<script src="js/geo.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/owner-dashboard.js"></script>
 <script src="js/admin.js"></script>
@@ -2267,8 +2459,13 @@
   function cardHtml(item) {
     var photoUrl = safePhotoUrl(item.photo);
     var name = escapeAttr(item.name), cat = escapeAttr(item.cat), hood = escapeAttr(item.hood), desc = escapeAttr(item.desc);
+    // Everything the Explore text search looks through, lowercased once here.
+    var haystack = [item.name, item.desc, item.long, item.cat, item.hood, item.address]
+      .filter(function (v) { return v; }).join(" ").toLowerCase();
     return '' +
-      '<article class="listing reveal" data-id="' + item.id + '" data-name="' + name + '" data-cat="' + cat + '" data-hood="' + hood + '" data-badges="' + escapeAttr(item.badges.join(" ")) + '" data-rating="' + (item.rating != null ? item.rating : "") + '">' +
+      '<article class="listing reveal" data-id="' + item.id + '" data-name="' + name + '" data-cat="' + cat + '" data-hood="' + hood + '" data-badges="' + escapeAttr(item.badges.join(" ")) + '" data-rating="' + (item.rating != null ? item.rating : "") + '"' +
+        ' data-search="' + escapeAttr(haystack) + '" data-hours="' + escapeAttr(JSON.stringify(item.hours || [])) + '" data-created="' + escapeAttr(item.created || "") + '" data-sponsored="' + (item.sponsored ? 1 : 0) + '"' +
+        (typeof item.lat === "number" && typeof item.lng === "number" ? ' data-lat="' + item.lat + '" data-lng="' + item.lng + '"' : '') + '>' +
         '<div class="listing-art art-tone-' + item.tone + '">' +
           (photoUrl
             ? '<img src="' + photoUrl + '" alt="' + name + '" loading="lazy">'
@@ -2278,8 +2475,10 @@
           '</button>' +
         '</div>' +
         '<div class="listing-body">' +
+          (item.sponsored ? '<p class="sponsored-tag" title="This business pays to be promoted. Badges can\u2019t be bought.">Sponsored</p>' : '') +
           '<h3>' + name + '</h3>' +
           '<p class="listing-meta">' + cat + ' in ' + hood + '</p>' +
+          '<p class="listing-dist" data-dist></p>' +
           '<p class="listing-desc">' + desc + '</p>' +
           '<div class="badges">' + item.badges.map(badgeHtml).join("") + '</div>' +
           '<div class="listing-foot">' +
@@ -2295,9 +2494,20 @@
   var results = document.getElementById("results");
   var featuredGrid = document.getElementById("featuredGrid");
 
+  // "Featured this month": the team's picks first, then listings on the paid
+  // Featured plan in an order that changes daily, so no sponsor is always last.
+  function featuredListings() {
+    var picks = LISTINGS.filter(function (l) { return l.featured; });
+    var day = Math.floor(Date.now() / 86400000);
+    var paid = LISTINGS.filter(function (l) { return !l.featured && l.sponsored && l.sponsorTier === "featured"; });
+    paid.sort(function (a, b) { return a.name.localeCompare(b.name); });
+    var shift = paid.length ? day % paid.length : 0;
+    return picks.concat(paid.slice(shift), paid.slice(0, shift));
+  }
+
   function renderListingCollections() {
     if (featuredGrid) {
-      featuredGrid.innerHTML = LISTINGS.filter(function (l) { return l.featured; }).map(cardHtml).join("");
+      featuredGrid.innerHTML = featuredListings().map(cardHtml).join("");
     }
     if (results) {
       results.innerHTML = LISTINGS.map(cardHtml).join("");
@@ -2352,7 +2562,8 @@
     var ratingBadge = item.rating != null
       ? '<span class="badge neutral"><svg class="icon filled"><use href="#i-star"/></svg> ' + item.rating.toFixed(1) + ' (' + item.reviewCount + ' ' + (item.reviewCount === 1 ? 'review' : 'reviews') + ')</span>'
       : '<span class="badge neutral">New to the directory</span>';
-    html += '<div class="modal-section"><div class="badges">' + item.badges.map(badgeHtml).join("") + ratingBadge + '</div></div>';
+    var sponsorBadge = item.sponsored ? '<span class="badge neutral sponsored-badge" title="This business pays to be promoted. Badges can\u2019t be bought.">Sponsored</span>' : '';
+    html += '<div class="modal-section"><div class="badges">' + item.badges.map(badgeHtml).join("") + ratingBadge + sponsorBadge + '</div></div>';
     html += '<div class="modal-section"><p style="color:var(--ink-2)">' + escapeAttr(item.long) + '</p></div>';
 
     if (item.verify) {
@@ -2365,9 +2576,17 @@
 
     if (item.address) {
       var mapsUrl = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(item.name + " " + item.address);
+      var hasCoords = typeof item.lat === "number" && typeof item.lng === "number";
+      var modalDist = hasCoords && origin && window.NiccGeo
+        ? window.NiccGeo.formatMiles(window.NiccGeo.distanceMiles(origin.lat, origin.lng, item.lat, item.lng)) : "";
+      var dirUrl = hasCoords ? "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(item.lat + "," + item.lng) : "";
       html += '<div class="modal-section"><h3>Location</h3><p style="color:var(--ink-2);display:flex;align-items:center;gap:8px">' +
               '<svg class="icon" style="color:var(--accent);flex-shrink:0"><use href="#i-pin"/></svg>' + escapeAttr(item.address) + '</p>' +
-              '<p style="margin-top:8px"><a class="text-link" href="' + escapeAttr(mapsUrl) + '" target="_blank" rel="noopener">Get directions</a></p></div>';
+              (modalDist ? '<p class="modal-dist" style="margin-top:6px;color:var(--accent-soft-ink);font-weight:700">' + escapeAttr(modalDist) + ' away</p>' : '') +
+              '<p style="margin-top:8px">' +
+              (hasCoords ? '<a class="text-link" href="' + escapeAttr(dirUrl) + '" target="_blank" rel="noopener">Directions</a>'
+                         : '<a class="text-link" href="' + escapeAttr(mapsUrl) + '" target="_blank" rel="noopener">Get directions</a>') +
+              '</p></div>';
     }
 
     var siteUrl = safePhotoUrl(item.website); // same rule: escaped, https only
@@ -2417,7 +2636,8 @@
     if (reviews.length) {
       html += reviews.map(function (r) {
         var block = '<div class="review"><div class="review-head"><span class="name">' + escapeAttr(r.name) +
-          '</span><span class="stars">' + starsHtml(r.stars) + '</span></div><p>' + escapeAttr(r.text) + '</p>';
+          '</span><span class="stars">' + starsHtml(r.stars) + '</span>' +
+          '<button type="button" class="btn-link review-report" data-report-review="' + escapeAttr(r.id) + '" data-author="' + escapeAttr(r.name) + '">Report</button></div><p>' + escapeAttr(r.text) + '</p>';
         if (r.reply) block += '<div class="owner-reply"><strong>Owner reply</strong><p>' + escapeAttr(r.reply) + '</p></div>';
         return block + '</div>';
       }).join("");
@@ -2533,23 +2753,80 @@
       toast(link);
     }
   });
-  // Report a problem: hands off to the contact form with the listing named,
-  // so the report lands in the same inbox volunteers already watch.
-  document.getElementById("modalReport").addEventListener("click", function () {
-    if (!currentItem) return;
-    var item = currentItem;
+  /* ---- Report a problem (a listing, or one review on it) ----
+     Goes to /api/submit, which lands it in the moderation page's Reports
+     queue. Where that route isn't set up yet, falls back to the contact
+     form with the listing named, so a report is never lost. */
+  var reportModal = document.getElementById("reportModal");
+  var reportForm = document.getElementById("reportForm");
+  var reportTarget = null; // { item, reviewId, reviewAuthor }
+  function openReport(item, reviewId, reviewAuthor) {
+    reportTarget = { item: item, reviewId: reviewId || null, reviewAuthor: reviewAuthor || "" };
+    reportForm.reset();
+    document.getElementById("reportStatus").classList.remove("show");
+    document.getElementById("reportTitle").textContent = reviewId ? "Report this review" : "Report a problem";
+    document.getElementById("reportAbout").textContent = reviewId
+      ? "Review by " + reviewAuthor + " on " + item.name
+      : item.name;
+    // Closed / wrong info only make sense for the listing itself.
+    reportForm.querySelectorAll('.report-reason[data-for="listing"]').forEach(function (l) { l.hidden = !!reviewId; });
+    reportModal.showModal();
+    ensureTurnstile("reportTurnstile");
+  }
+  function reportToContactForm(item, details) {
+    reportModal.close();
     modal.close();
     location.hash = "#/contact";
     setTimeout(function () {
       var subject = document.getElementById("cSubject");
       var message = document.getElementById("cMessage");
-      if (subject) subject.value = "Reporting a problem with a listing";
+      if (subject) subject.value = reportTarget && reportTarget.reviewId ? "Reporting a review" : "Reporting a problem with a listing";
       if (message && !message.value.trim()) {
-        message.value = "About “" + item.name + "” (" + location.origin + "/b/" + item.id + "):\n\nWhat is wrong? ";
+        message.value = "About “" + item.name + "” (" + location.origin + "/b/" + item.id + "):\n\n" + (details || "What is wrong? ");
         message.focus();
         message.setSelectionRange(message.value.length, message.value.length);
       }
     }, 80);
+  }
+  document.getElementById("modalReport").addEventListener("click", function () {
+    if (currentItem) openReport(currentItem);
+  });
+  document.getElementById("modalBody").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-report-review]");
+    if (b && currentItem) openReport(currentItem, b.getAttribute("data-report-review"), b.getAttribute("data-author"));
+  });
+  ["reportClose", "reportCancel"].forEach(function (id) {
+    document.getElementById(id).addEventListener("click", function () { reportModal.close(); });
+  });
+  reportModal.addEventListener("click", function (e) { if (e.target === reportModal) reportModal.close(); });
+  reportForm.addEventListener("change", function () {
+    var other = (reportForm.querySelector('input[name="reportReason"]:checked') || {}).value === "other";
+    document.getElementById("reportDetailsHint").textContent = other ? "(required)" : "(optional)";
+  });
+  reportForm.addEventListener("submit", async function (e) {
+    e.preventDefault();
+    var status = document.getElementById("reportStatus");
+    var picked = reportForm.querySelector('input[name="reportReason"]:checked');
+    var details = document.getElementById("reportDetails").value.trim();
+    var email = document.getElementById("reportEmail").value.trim();
+    if (!picked) { setStatus(status, "Please choose what's wrong.", true); return; }
+    if (picked.value === "other" && !details) { setStatus(status, "Please tell us what's wrong.", true); document.getElementById("reportDetails").focus(); return; }
+    if (email && !/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(email)) { setStatus(status, "Please check your email address, or leave it blank.", true); return; }
+    var btn = reportForm.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    var res = await postSubmit({
+      type: "report", business_id: reportTarget.item.id, review_id: reportTarget.reviewId,
+      reason: picked.value, details: details, email: email,
+      token: turnstileToken("reportTurnstile"), company: document.getElementById("reportCompany").value
+    });
+    btn.disabled = false;
+    if (res.status === 200) { reportModal.close(); toast("Thanks. A volunteer will take a look."); return; }
+    resetTurnstile("reportTurnstile");
+    if (res.status === 503 || (res.status === 404 && !(res.data && res.data.error))) { reportToContactForm(reportTarget.item, details); return; }
+    if (res.data && res.data.error === "captcha") { setStatus(status, "Please complete the verification challenge.", true); return; }
+    if (res.status === 429) { setStatus(status, "You've sent several reports recently. Please wait a little while and try again.", true); return; }
+    if (res.status === 404) { setStatus(status, "That isn't in the directory any more.", true); return; }
+    setStatus(status, "Could not send your report. Please try again.", true);
   });
   modal.addEventListener("click", function (e) { if (e.target === modal) modal.close(); });
   modalSave.addEventListener("click", function () {
@@ -2741,44 +3018,203 @@
   var resultCount = document.getElementById("resultCount");
   var badgeBoxes = Array.prototype.slice.call(document.querySelectorAll(".toggle input[data-badge]"));
   var savedBox = document.getElementById("fSaved");
+  var openNowBox = document.getElementById("fOpenNow");
+  var openNowHelp = document.getElementById("openNowHelp");
+  var ratingSel = document.getElementById("fRating");
+  var matchRadios = Array.prototype.slice.call(document.querySelectorAll('input[name="badgeMatch"]'));
+  var SORT_MODES = ["recommended", "rating", "newest", "name", "hood", "nearest"];
+
+  /* ---- Distance from ----
+     The origin (your location, or a geocoded address) lives only in this
+     browser's localStorage; it is never put in the URL. */
+  var ORIGIN_KEY = "nicc-origin";
+  var withinSel = document.getElementById("fWithin");
+  var withinNote = document.getElementById("withinNote");
+  var originStatus = document.getElementById("originStatus");
+  var originText = document.getElementById("fOriginText");
+  var origin = loadOrigin(); // { lat, lng, label } -- label null means "your location"
+
+  function loadOrigin() {
+    try {
+      var o = JSON.parse(localStorage.getItem(ORIGIN_KEY) || "null");
+      if (o && typeof o.lat === "number" && typeof o.lng === "number" && isFinite(o.lat) && isFinite(o.lng)) {
+        return { lat: o.lat, lng: o.lng, label: typeof o.label === "string" && o.label ? o.label : null };
+      }
+    } catch (e) { /* private mode or bad JSON */ }
+    return null;
+  }
+  function saveOrigin() {
+    try {
+      if (origin) localStorage.setItem(ORIGIN_KEY, JSON.stringify(origin));
+      else localStorage.removeItem(ORIGIN_KEY);
+    } catch (e) { /* private mode */ }
+  }
+  function cardCoords(card) {
+    var la = parseFloat(card.getAttribute("data-lat")), ln = parseFloat(card.getAttribute("data-lng"));
+    return (isNaN(la) || isNaN(ln)) ? null : { lat: la, lng: ln };
+  }
+  function cardMiles(card) {
+    var c = origin && window.NiccGeo ? cardCoords(card) : null;
+    return c ? window.NiccGeo.distanceMiles(origin.lat, origin.lng, c.lat, c.lng) : null;
+  }
+  function setOriginMessage(msg) {
+    // msg: null for the normal "From: ..." line, or a message to show first.
+    if (!originStatus) return;
+    originStatus.textContent = "";
+    if (msg) {
+      var err = document.createElement("span");
+      err.className = "dist-error";
+      err.textContent = msg;
+      originStatus.appendChild(err);
+    }
+    if (origin) {
+      var from = document.createElement("span");
+      from.textContent = "From: " + (origin.label || "your location");
+      originStatus.appendChild(from);
+      var clear = document.createElement("button");
+      clear.type = "button"; clear.className = "btn-link"; clear.textContent = "Clear";
+      clear.setAttribute("aria-label", "Clear distance origin");
+      clear.addEventListener("click", function () { setOrigin(null); });
+      originStatus.appendChild(clear);
+    }
+  }
+  function refreshOriginUi() {
+    var has = !!origin;
+    if (withinSel) { withinSel.disabled = !has; if (!has) withinSel.value = ""; }
+    var opt = document.getElementById("sortNearest");
+    if (opt) { opt.disabled = !has; opt.hidden = !has; }
+    var sortSel = document.getElementById("fSort");
+    if (!has && sortSel.value === "nearest") sortSel.value = "recommended";
+    setOriginMessage(null);
+  }
+  function setOrigin(next) {
+    var first = !origin && !!next;
+    origin = next;
+    saveOrigin();
+    refreshOriginUi();
+    var sortSel = document.getElementById("fSort");
+    if (first && sortSel.value === "recommended") sortSel.value = "nearest";
+    sortResults();
+    applyFilters();
+  }
+  function withinMiles() {
+    var w = withinSel && origin ? parseFloat(withinSel.value) : NaN;
+    return isNaN(w) ? null : w;
+  }
+  function useMyLocation() {
+    if (!navigator.geolocation) { setOriginMessage("Your browser can't share a location. Try typing an address or ZIP instead."); return; }
+    setOriginMessage("Finding your location...");
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      setOrigin({ lat: pos.coords.latitude, lng: pos.coords.longitude, label: null });
+    }, function (err) {
+      setOriginMessage(err && err.code === 1
+        ? "Location is blocked for this site. Allow it in your browser settings, or type an address or ZIP instead."
+        : "We couldn't get your location. Try typing an address or ZIP instead.");
+    }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
+  }
+  var geocodeBusy = false;
+  async function setAddressOrigin() {
+    var q = originText.value.trim();
+    if (!q) { setOriginMessage("Enter an address or ZIP first."); originText.focus(); return; }
+    if (geocodeBusy) return;
+    geocodeBusy = true;
+    var btn = document.getElementById("setOrigin");
+    btn.disabled = true;
+    setOriginMessage("Looking that up...");
+    try {
+      var r = await fetch("/api/geocode?q=" + encodeURIComponent(q), { headers: { "Accept": "application/json" } });
+      var data = null;
+      try { data = await r.json(); } catch (e) { /* non-JSON error page */ }
+      if (r.ok && data && data.ok && typeof data.lat === "number" && typeof data.lng === "number") {
+        originText.value = "";
+        setOrigin({ lat: data.lat, lng: data.lng, label: String(data.label || q).slice(0, 120) });
+      } else if (r.status === 404) {
+        setOriginMessage("We couldn't find that address. Try adding the city and state, or just a ZIP.");
+      } else if (r.status === 400) {
+        setOriginMessage("That doesn't look like an address or ZIP.");
+      } else if (r.status === 429) {
+        setOriginMessage("Too many lookups just now. Wait a minute and try again.");
+      } else {
+        setOriginMessage("We couldn't look that up. Please try again.");
+      }
+    } catch (e) {
+      setOriginMessage("We couldn't look that up. Check your connection and try again.");
+    } finally {
+      geocodeBusy = false;
+      btn.disabled = false;
+    }
+  }
+
+  function badgeMatchMode() {
+    return matchRadios.some(function (r) { return r.checked && r.value === "any"; }) ? "any" : "all";
+  }
+  function setBadgeMatchMode(mode) {
+    matchRadios.forEach(function (r) { r.checked = (r.value === (mode === "any" ? "any" : "all")); });
+  }
+  // Hours come from the card's data-hours JSON; parsed once per card.
+  function cardOpenNow(card, now) {
+    if (card._hours === undefined) {
+      try { card._hours = JSON.parse(card.getAttribute("data-hours") || "[]"); } catch (e) { card._hours = []; }
+    }
+    return window.NiccHours ? window.NiccHours.isOpenNow(card._hours, now) : null;
+  }
 
   function applyFilters() {
     if (!results) return;
-    var q = document.getElementById("fQuery").value.trim().toLowerCase();
+    var words = document.getElementById("fQuery").value.trim().toLowerCase().split(/\s+/).filter(Boolean);
     var cat = document.getElementById("fCategory").value;
     var hood = document.getElementById("fHood").value;
     var wanted = badgeBoxes.filter(function (b) { return b.checked; }).map(function (b) { return b.getAttribute("data-badge"); });
+    var matchAny = badgeMatchMode() === "any";
     var savedOnly = savedBox && savedBox.checked;
+    var openOnly = openNowBox && openNowBox.checked;
+    var minRating = ratingSel ? parseFloat(ratingSel.value) : NaN;
+    var now = new Date();
+    if (openNowHelp) openNowHelp.hidden = !openOnly;
+    var radius = withinMiles();
+    var hiddenNoCoords = false;
 
     var shown = 0;
     Array.prototype.slice.call(results.querySelectorAll(".listing[data-name]")).forEach(function (card) {
-      var name = (card.getAttribute("data-name") || "").toLowerCase();
-      var descEl = card.querySelector(".listing-desc");
-      var desc = descEl ? descEl.textContent.toLowerCase() : "";
+      var haystack = card.getAttribute("data-search") || "";
       var cCat = card.getAttribute("data-cat") || "";
       var cHood = card.getAttribute("data-hood") || "";
       var cBadges = (card.getAttribute("data-badges") || "").split(" ");
+      var cRating = parseFloat(card.getAttribute("data-rating"));
       var id = card.getAttribute("data-id");
+      var hasBadge = function (w) { return cBadges.indexOf(w) !== -1; };
 
-      var okText = !q || name.indexOf(q) !== -1 || desc.indexOf(q) !== -1 || cCat.toLowerCase().indexOf(q) !== -1;
+      // Every word has to appear somewhere (name, descriptions, category, area, address).
+      var okText = words.every(function (w) { return haystack.indexOf(w) !== -1; });
       var okCat = !cat || cCat.replace("&amp;", "&") === cat.replace("&amp;", "&");
       var okHood = !hood || cHood === hood;
-      var okBadges = wanted.every(function (w) { return cBadges.indexOf(w) !== -1; });
+      var okBadges = !wanted.length || (matchAny ? wanted.some(hasBadge) : wanted.every(hasBadge));
       var okSaved = !savedOnly || isSaved(id);
+      var okRating = isNaN(minRating) || (!isNaN(cRating) && cRating >= minRating); // unrated never passes a minimum
+      var okOpen = !openOnly || cardOpenNow(card, now) === true; // unknown hours are hidden too
 
-      var match = okText && okCat && okHood && okBadges && okSaved;
+      var miles = cardMiles(card);
+      var distEl = card.querySelector("[data-dist]");
+      if (distEl) distEl.textContent = miles == null ? "" : window.NiccGeo.formatMiles(miles) + " away";
+      var okWithin = radius == null || (miles != null && miles <= radius); // no coordinates -> hidden when a radius is set
+      if (radius != null && miles == null) hiddenNoCoords = true;
+
+      var match = okText && okCat && okHood && okBadges && okSaved && okRating && okOpen && okWithin;
       card.hidden = !match;
       if (match) shown++;
     });
 
+    if (withinNote) withinNote.hidden = !hiddenNoCoords;
     resultCount.textContent = String(shown);
     emptyState.classList.toggle("show", shown === 0);
     syncUrl();
   }
 
-  /* Filters live in the URL (#/explore?q=...&cat=...&hood=...&badges=halal,prayer&saved=1&sort=name)
-     so a filtered view can be shared or bookmarked. replaceState doesn't fire
-     hashchange, so typing in a filter doesn't re-trigger routing. */
+  /* Filters live in the URL
+     (#/explore?q=...&cat=...&hood=...&rating=4&badges=halal,prayer&match=any&now=1&saved=1&within=5&sort=name)
+     so a filtered view can be shared or bookmarked. "Open now" is now=1
+     because open=<id> already means "open this listing". replaceState
+     doesn't fire hashchange, so typing in a filter doesn't re-trigger routing. */
   var urlSyncReady = false; // stays off until boot has read any filters out of the URL
   function syncUrl() {
     if (!urlSyncReady || currentRoute() !== "explore") return;
@@ -2791,9 +3227,13 @@
     if (q) p.set("q", q);
     if (cat) p.set("cat", cat);
     if (hood) p.set("hood", hood);
+    if (ratingSel && ratingSel.value) p.set("rating", ratingSel.value);
     if (wanted.length) p.set("badges", wanted.join(","));
+    if (badgeMatchMode() === "any") p.set("match", "any");
+    if (openNowBox && openNowBox.checked) p.set("now", "1");
     if (savedBox && savedBox.checked) p.set("saved", "1");
-    if (sort !== "rating") p.set("sort", sort);
+    if (sort !== "recommended") p.set("sort", sort);
+    if (withinMiles() != null) p.set("within", String(withinMiles())); // the radius only; the origin never goes in the URL
     var qs = p.toString();
     var next = "#/explore" + (qs ? "?" + qs : "");
     if (location.hash !== next) {
@@ -2803,17 +3243,26 @@
   // Returns true if the hash carried any filter params (and applied them).
   function applyParamsFromHash() {
     var p = hashParams();
-    var keys = ["q", "cat", "hood", "badges", "saved", "sort"];
+    var keys = ["q", "cat", "hood", "rating", "badges", "match", "now", "saved", "sort", "within"];
     if (!keys.some(function (k) { return p.has(k); })) return false;
     document.getElementById("fQuery").value = p.get("q") || "";
     document.getElementById("fCategory").value = p.get("cat") || "";
     document.getElementById("fHood").value = p.get("hood") || "";
+    if (ratingSel) {
+      ratingSel.value = p.get("rating") || "";
+      if (ratingSel.value !== (p.get("rating") || "")) ratingSel.value = ""; // unknown value -> Any
+    }
     var wanted = (p.get("badges") || "").split(",");
     badgeBoxes.forEach(function (b) { b.checked = wanted.indexOf(b.getAttribute("data-badge")) !== -1; });
+    setBadgeMatchMode(p.get("match"));
+    if (openNowBox) openNowBox.checked = p.get("now") === "1";
     if (savedBox) savedBox.checked = p.get("saved") === "1";
-    var sortEl = document.getElementById("fSort");
-    sortEl.value = p.get("sort") || "rating";
-    if (sortEl.value !== (p.get("sort") || "rating")) sortEl.value = "rating";
+    if (withinSel) {
+      withinSel.value = p.get("within") || "";
+      if (withinSel.value !== (p.get("within") || "")) withinSel.value = ""; // unknown value -> Any
+    }
+    var sort = p.get("sort");
+    document.getElementById("fSort").value = SORT_MODES.indexOf(sort) !== -1 && (sort !== "nearest" || origin) ? sort : "recommended";
     sortResults();
     applyFilters();
     return true;
@@ -2829,10 +3278,29 @@
     if (!results) return;
     var mode = document.getElementById("fSort").value;
     var cards = Array.prototype.slice.call(results.querySelectorAll(".listing[data-name]"));
+    function rating(c) { var r = parseFloat(c.getAttribute("data-rating")); return isNaN(r) ? -1 : r; }
+    function created(c) { var t = Date.parse(c.getAttribute("data-created") || ""); return isNaN(t) ? -Infinity : t; }
+    function byName(a, b) { return a.getAttribute("data-name").localeCompare(b.getAttribute("data-name")); }
+    function byRating(a, b) { return (rating(b) - rating(a)) || byName(a, b); }
     cards.sort(function (a, b) {
-      if (mode === "rating") return (parseFloat(b.getAttribute("data-rating")) || -1) - (parseFloat(a.getAttribute("data-rating")) || -1);
-      if (mode === "name") return a.getAttribute("data-name").localeCompare(b.getAttribute("data-name"));
-      return a.getAttribute("data-hood").localeCompare(b.getAttribute("data-hood"));
+      if (mode === "recommended") {
+        // Sponsored listings first, then the same order as "Highest rated".
+        return (Number(b.getAttribute("data-sponsored") === "1") - Number(a.getAttribute("data-sponsored") === "1")) || byRating(a, b);
+      }
+      if (mode === "rating") return byRating(a, b);
+      if (mode === "newest") {
+        var ta = created(a), tb = created(b);
+        return (tb > ta ? 1 : tb < ta ? -1 : 0) || byName(a, b);
+      }
+      if (mode === "name") return byName(a, b);
+      if (mode === "nearest") {
+        var da = cardMiles(a), db = cardMiles(b); // listings without coordinates go last
+        if (da == null && db == null) return byName(a, b);
+        if (da == null) return 1;
+        if (db == null) return -1;
+        return (da - db) || byName(a, b);
+      }
+      return a.getAttribute("data-hood").localeCompare(b.getAttribute("data-hood")) || byName(a, b);
     });
     cards.forEach(function (c) { results.appendChild(c); });
   }
@@ -2841,21 +3309,34 @@
     document.getElementById("fQuery").value = "";
     document.getElementById("fCategory").value = "";
     document.getElementById("fHood").value = "";
+    if (ratingSel) ratingSel.value = "";
     badgeBoxes.forEach(function (b) { b.checked = false; });
+    setBadgeMatchMode("all");
+    if (openNowBox) openNowBox.checked = false;
     if (savedBox) savedBox.checked = false;
+    if (withinSel) withinSel.value = ""; // the origin is kept
     if (!silent) applyFilters();
   }
 
   if (results) {
     document.getElementById("filterPanel").addEventListener("submit", function (e) { e.preventDefault(); applyFilters(); });
-    ["fQuery", "fCategory", "fHood"].forEach(function (id) {
+    ["fQuery", "fCategory", "fHood", "fRating"].forEach(function (id) {
       var el = document.getElementById(id);
       el.addEventListener("input", applyFilters);
       el.addEventListener("change", applyFilters);
     });
     badgeBoxes.forEach(function (b) { b.addEventListener("change", applyFilters); });
+    matchRadios.forEach(function (r) { r.addEventListener("change", applyFilters); });
+    if (openNowBox) openNowBox.addEventListener("change", applyFilters);
     if (savedBox) savedBox.addEventListener("change", applyFilters);
     document.getElementById("fSort").addEventListener("change", function () { sortResults(); applyFilters(); });
+    withinSel.addEventListener("change", applyFilters);
+    document.getElementById("useLocation").addEventListener("click", useMyLocation);
+    document.getElementById("setOrigin").addEventListener("click", setAddressOrigin);
+    originText.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { e.preventDefault(); setAddressOrigin(); }
+    });
+    refreshOriginUi();
     document.getElementById("resetFilters").addEventListener("click", function () { resetFilters(); });
     document.getElementById("emptyReset").addEventListener("click", function () { resetFilters(); });
 
@@ -3294,6 +3775,12 @@
         var link = document.getElementById("adminLink");
         if (link) link.hidden = !(s.state === "ok" || s.state === "need-code" || s.state === "need-2fa");
       }).catch(function () { /* admin tables not set up yet */ });
+      // Back from Stripe Checkout (success_url / cancel_url in api/billing/checkout.js).
+      var billingResult = hashParams().get("billing");
+      if (billingResult === "success") toast("Thank you! Your sponsorship will show within a minute.");
+      if (billingResult === "cancelled") toast("Checkout cancelled. Nothing was charged.");
+      if (billingResult) { try { history.replaceState(null, "", location.pathname + location.search + "#/account"); } catch (e) { /* ignore */ } }
+      renderNotices();
       renderMyListings();
       renderMfaPanel();
       renderMyReviews();
@@ -3387,7 +3874,7 @@
     if (!isTeam && badgeTimer) { window.clearInterval(badgeTimer); badgeTimer = null; }
   }
 
-  var STATUS_LABELS = { approved: "Live", pending: "Waiting for review", rejected: "Not approved" };
+  var STATUS_LABELS = { approved: "Live", pending: "Waiting for review", rejected: "Needs changes (edit and save to resubmit)" };
   // <option>s for an owner's edit form, copied from the add-business form so
   // there's one list of categories/neighborhoods. Keeps a value that isn't in
   // the list (an older listing) selectable instead of silently changing it.
@@ -3409,6 +3896,11 @@
       var edits = {};
       try { edits = await window.NiccOwner.loadMyPendingEdits(); } catch (e) { /* edits table not set up yet */ }
 
+      var billing = await loadBillingPlans();
+      var sponsorships = {};
+      try { sponsorships = await window.NiccOwner.loadMySponsorships(); } catch (e) { /* not set up yet */ }
+      var me = await window.NiccAuth.getCurrentUser();
+
       var businessBlocks = mine.map(function (live) {
         // Show the owner their own pending edits layered over the live listing.
         var pendingEdit = edits[live.id];
@@ -3419,6 +3911,7 @@
           (pendingEdit
             ? '<p class="help" style="margin:8px 0">Your recent changes are waiting for a volunteer to approve them. The current version stays public until then.</p>'
             : "") +
+          promoteHtml(live, billing, sponsorships[live.id], me && me.id) +
           '<div class="owner-photo-row" style="margin:10px 0 16px;display:flex;align-items:center;gap:14px">' +
             '<img class="owner-photo-preview" src="' + (ownerPhotoUrl || "") + '" alt="" style="width:64px;height:64px;border-radius:12px;object-fit:cover;background:var(--surface-2);' + (ownerPhotoUrl ? "" : "display:none;") + '">' +
             '<label class="btn btn-ghost btn-sm" style="cursor:pointer">Upload photo' +
@@ -3623,6 +4116,108 @@
       el.innerHTML = '<p style="color:var(--muted)">Could not load two-factor authentication settings.</p>';
     }
   }
+
+  /* ---- Sponsorship (owner side). Plans come from /api/billing/plans so the
+     prices shown match api/_lib/plans.js. ---- */
+  var billingPlansPromise = null;
+  function loadBillingPlans() {
+    if (!billingPlansPromise) {
+      billingPlansPromise = fetch("/api/billing/plans")
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .catch(function () { return null; });
+    }
+    return billingPlansPromise;
+  }
+  function promoteHtml(live, billing, sp, myId) {
+    if (!billing || !billing.plans || live.status !== "approved") return "";
+    var fmt = function (iso) { return new Date(iso).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" }); };
+    var planName = function (id) { var p = billing.plans.filter(function (x) { return x.id === id; })[0]; return p ? p.name : id; };
+    var active = live.sponsor_tier && live.sponsored_until && new Date(live.sponsored_until) > new Date();
+    var paidLive = sp && sp.paid_tier && sp.paid_until && new Date(sp.paid_until) > new Date() && ["active", "trialing", "past_due"].indexOf(sp.paid_status) !== -1;
+    // The billing portal is for whoever pays (checked again on the server).
+    var canManage = sp && sp.payer_id && sp.payer_id === myId && sp.paid_tier;
+    if (active) {
+      var line = paidLive
+        ? "Sponsored on the " + planName(sp.paid_tier) + " plan. " + (sp.cancel_at_period_end ? "Ends " : "Renews ") + fmt(sp.paid_period_end || sp.paid_until) + "."
+        : "A courtesy " + planName(live.sponsor_tier) + " placement from the NICC team, until " + fmt(live.sponsored_until) + ".";
+      if (paidLive && sp.paid_status === "past_due") line += " Your last payment didn't go through; please update your card.";
+      return '<div class="promote"><div class="promote-active"><span>' + escapeAttr(line) + '</span>' +
+        (canManage ? '<button type="button" class="btn btn-ghost btn-sm" data-portal="' + escapeAttr(live.id) + '">Manage billing</button>' : '') +
+        '</div></div>';
+    }
+    return '<div class="promote"><h3>Promote this listing</h3>' +
+      '<p>Optional. Sponsorship supports the directory. Your listing gets a visible \u201cSponsored\u201d label; badges like Halal verified can\u2019t be bought.</p>' +
+      '<div class="promote-plans">' + billing.plans.map(function (p) {
+        return '<div class="promote-plan"><h4>' + escapeAttr(p.name) + '</h4>' +
+          '<span class="promote-price">$' + escapeAttr(String(p.price)) + ' <small>/ month</small></span>' +
+          '<ul>' + p.perks.map(function (x) { return "<li>" + escapeAttr(x) + "</li>"; }).join("") + '</ul>' +
+          (billing.configured
+            ? '<button type="button" class="btn btn-primary btn-sm" data-checkout="' + escapeAttr(p.id) + '" data-business="' + escapeAttr(live.id) + '">Choose ' + escapeAttr(p.name) + '</button>'
+            : '<button type="button" class="btn btn-ghost btn-sm" disabled>Coming soon</button>') +
+          '</div>';
+      }).join("") + '</div>' +
+      '<p class="promote-fine help">Billed monthly through Stripe. Cancel any time; it stays active until the end of the month you paid for.</p></div>';
+  }
+  async function billingRequest(path, payload) {
+    var session = await window.NiccSupabase.auth.getSession();
+    var token = session && session.data && session.data.session && session.data.session.access_token;
+    if (!token) throw new Error("Please log in again.");
+    var r = await fetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+      body: JSON.stringify(payload)
+    });
+    var data = await r.json().catch(function () { return {}; });
+    if (r.ok && data.url) return data.url;
+    var why = {
+      not_configured: "Sponsorship isn't open yet.",
+      already_sponsored: "This listing is already sponsored. Use Manage billing to change plans.",
+      not_approved: "A listing can be sponsored once it's live in the directory.",
+      login_required: "Please log in again."
+    }[data.error];
+    throw new Error(why || "Could not reach the payment page. Please try again.");
+  }
+  document.getElementById("myListings").addEventListener("click", async function (e) {
+    var b = e.target.closest("[data-checkout], [data-portal]");
+    if (!b) return;
+    b.disabled = true;
+    try {
+      var url = b.hasAttribute("data-checkout")
+        ? await billingRequest("/api/billing/checkout", { business_id: b.getAttribute("data-business"), plan: b.getAttribute("data-checkout") })
+        : await billingRequest("/api/billing/portal", { business_id: b.getAttribute("data-portal") });
+      // Only ever hand the browser to Stripe's own pages.
+      if (!/^https:\/\/(checkout|billing)\.stripe\.com\//.test(url)) throw new Error("Unexpected payment page.");
+      window.location.href = url;
+    } catch (err) {
+      toast(err.message);
+      b.disabled = false;
+    }
+  });
+
+  // Decisions on the person's listings, claims and reviews, with the
+  // volunteer's reason (owner_notices, 2026-10-10-moderation-tools.sql).
+  async function renderNotices() {
+    var card = document.getElementById("noticesCard"), el = document.getElementById("myNotices");
+    if (!card || !el) return;
+    var notices = [];
+    try { notices = await window.NiccOwner.loadMyNotices(); } catch (e) { /* table not set up yet */ }
+    card.hidden = !notices.length;
+    el.innerHTML = notices.map(function (n) {
+      var date = new Date(n.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+      return '<div class="notice notice-' + escapeAttr(n.kind) + '">' +
+        '<div><p class="notice-title">' + escapeAttr(n.title) + '</p>' +
+        (n.reason ? '<p class="notice-reason">' + escapeAttr(n.reason) + '</p>' : "") +
+        '<p class="notice-date">' + escapeAttr(date) + '</p></div>' +
+        '<button type="button" class="btn-link" data-dismiss-notice="' + escapeAttr(n.id) + '">Dismiss</button></div>';
+    }).join("");
+  }
+  document.getElementById("myNotices").addEventListener("click", async function (e) {
+    var b = e.target.closest("[data-dismiss-notice]");
+    if (!b) return;
+    b.disabled = true;
+    try { await window.NiccOwner.dismissNotice(b.getAttribute("data-dismiss-notice")); } catch (err) { b.disabled = false; toast("Could not dismiss that. Please try again."); return; }
+    renderNotices();
+  });
 
   async function renderMyReviews() {
     var el = document.getElementById("myReviews");

@@ -15,6 +15,7 @@ import sys
 import uuid
 import json
 import traceback
+import datetime
 
 import pgserver
 import psycopg
@@ -38,6 +39,9 @@ MIGRATIONS = [
     "2026-10-07-fixes.sql",
     "2026-10-08-review-fixes.sql",
     "2026-10-09-notifications.sql",
+    "2026-10-10-moderation-tools.sql",
+    "2026-10-11-sponsorship.sql",
+    "2026-10-12-locations.sql",
 ]
 
 
@@ -441,7 +445,7 @@ def admin_needs_list_and_2fa(t):
     t.fails("select admin_queue()", contains="not authorized")
     t.as_(vol, aal="aal2")
     q = t.one("select admin_queue()")
-    assert set(q) == {"new_listings", "edits", "claims", "reviews", "messages"}, q.keys()
+    assert set(q) == {"new_listings", "edits", "claims", "reviews", "reports", "messages"}, q.keys()
 
 
 @test
@@ -586,7 +590,7 @@ def admin_counts_for_badges(t):
     t.as_(c); t.q("insert into claims (business_id, requester_id) values (%s, %s)", (live, c))
     t.as_(vol, aal="aal2")
     counts = t.one("select admin_counts()")
-    assert counts == {"new_listings": 1, "edits": 1, "claims": 1, "reviews": 1, "total": 4}, counts
+    assert counts == {"new_listings": 1, "edits": 1, "claims": 1, "reviews": 1, "reports": 0, "total": 4}, counts
     t.as_(o, aal="aal2")
     t.fails("select admin_counts()", contains="not authorized")
     t.as_()
@@ -602,6 +606,337 @@ def team_emails_only_for_the_server(t):
     t.fails("select notify_recipients()")
     t.as_()
     t.fails("select notify_recipients()")
+
+
+# ---------------------------------------------------- moderation tools (10-10)
+@test
+def decisions_are_logged_and_sent_to_the_owner(t):
+    mod, vol = team(t)
+    o = t.user("o@x.co"); x = t.user("x@x.co"); b = t.business(o, "pending", "Queued Cafe")
+    t.admin(); t.q("delete from net.requests")
+    t.as_(vol, aal="aal2")
+    t.q("select admin_set_listing_status(%s, 'rejected', 'Please add your address')", (b,))
+    t.admin()
+    log = t.q("select actor_id, action, business_id, detail ->> 'reason' from moderation_log")
+    assert log == [(vol, "listing.rejected", b, "Please add your address")], log
+    assert t.one("select count(*) from net.requests where body ->> 'table' = 'owner_notices'") == 1
+    t.as_(o)
+    notes = t.q("select kind, reason, read_at from owner_notices")
+    assert notes == [("listing_rejected", "Please add your address", None)], notes
+    nid = t.one("select id from owner_notices")
+    t.as_(x)
+    assert t.q("select * from owner_notices") == []
+    t.q("select dismiss_notice(%s)", (nid,))  # someone else's: no effect
+    t.fails("insert into owner_notices (user_id, kind, title) values (%s, 'x', 'fake')", (x,))
+    t.as_(o)
+    assert t.one("select read_at from owner_notices") is None
+    t.q("select dismiss_notice(%s)", (nid,))
+    assert t.one("select read_at from owner_notices") is not None
+    t.as_(vol, aal="aal2")
+    t.fails("select admin_set_listing_status(%s, 'rejected', %s)", (b, "x" * 1001), contains="1000")
+
+
+@test
+def activity_log_is_admin_only(t):
+    mod, vol = team(t)
+    o = t.user("o@x.co"); b = t.business(o, "approved")
+    t.as_(vol, aal="aal2")
+    t.q("select admin_add_note(%s, 'Called them, hours confirmed')", (b,))
+    t.fails("select admin_add_note(%s, '   ')", (b,), contains="note")
+    hist = t.one("select admin_listing_history(%s)", (b,))
+    assert hist[0]["action"] == "note" and hist[0]["detail"]["note"] == "Called them, hours confirmed" and hist[0]["actor_email"] == "vol@x.co", hist
+    assert t.one("select admin_log()")[0]["action"] == "note"
+    t.as_(o, aal="aal2")
+    t.fails("select admin_log()", contains="not authorized")
+    t.fails("select admin_listing_history(%s)", (b,), contains="not authorized")
+    sp = "sp_log"; t.conn.execute("savepoint " + sp)
+    try:
+        assert t.q("select * from moderation_log") == []
+    except psycopg.errors.InsufficientPrivilege:
+        t.conn.execute("rollback to savepoint " + sp)
+    t.fails("select _log('x', null, 'y', '{}'::jsonb)")
+    t.fails("select _notice(%s, null, 'x', 'y', null)", (o,))
+
+
+@test
+def edit_and_claim_reasons_reach_the_right_person(t):
+    mod, vol = team(t)
+    o = t.user("o@x.co"); c = t.user("c@x.co"); b = t.business(o, "approved", "Shop")
+    t.as_(o); t.q("select owner_update_business(%s, '{\"name\":\"Shop!!\"}'::jsonb)", (b,))
+    t.as_(c); t.q("insert into claims (business_id, requester_id) values (%s, %s)", (b, c))
+    t.as_(vol, aal="aal2")
+    t.q("select admin_reject_edit(%s, 'Name must match your sign')", (b,))
+    t.fails("select admin_reject_edit(%s)", (b,), contains="no pending edit")
+    cid = t.one("select admin_queue()")["claims"][0]["id"]
+    t.q("select admin_resolve_claim(%s, false, 'We could not verify you')", (cid,))
+    t.as_(o)
+    assert t.q("select kind, reason from owner_notices") == [("edit_rejected", "Name must match your sign")]
+    t.as_(c)
+    assert t.q("select kind, reason from owner_notices") == [("claim_rejected", "We could not verify you")]
+
+
+@test
+def published_reviews_only_removed_by_moderators(t):
+    mod, vol = team(t)
+    o = t.user("o@x.co"); r = t.user("r@x.co"); b = t.business(o)
+    t.as_(r); t.q("insert into reviews (business_id, author_id, author_name, rating, body) values (%s, %s, 'R', 1, 'rude')", (b, r))
+    t.as_(vol, aal="aal2")
+    rid = t.one("select admin_queue()")["reviews"][0]["id"]
+    t.q("select admin_set_review_status(%s, 'approved')", (rid,))
+    assert [x["id"] for x in t.one("select admin_recent_reviews()")] == [rid]
+    t.fails("select admin_set_review_status(%s, 'rejected', 'abusive')", (rid,), contains="moderator")
+    t.as_(mod, aal="aal2")
+    t.q("select admin_set_review_status(%s, 'rejected', 'abusive')", (rid,))
+    t.as_(r)
+    assert t.q("select kind from owner_notices order by created_at") == [("review_published",), ("review_removed",)]
+    t.as_()
+    assert t.one("select count(*) from reviews") == 0
+
+
+@test
+def reports_flow(t):
+    mod, vol = team(t)
+    o = t.user("o@x.co"); r = t.user("r@x.co"); b = t.business(o, "approved", "Reported")
+    t.admin()
+    rid = t.one("insert into reviews (business_id, author_id, author_name, rating, body, status) values (%s,%s,'R',1,'spam link','approved') returning id", (b, r))
+    t.as_()
+    t.fails("insert into reports (business_id, reason) values (%s, 'closed')", (b,))
+    t.as_(r)
+    t.fails("insert into reports (business_id, reason) values (%s, 'closed')", (b,))
+    t.fails("select * from reports")
+    t.admin(); t.q("delete from net.requests")
+    t.as_(role="service_role")
+    t.q("insert into reports (business_id, reason, details) values (%s, 'closed', 'Shut down last month')", (b,))
+    t.q("insert into reports (business_id, review_id, reason) values (%s, %s, 'spam')", (b, rid))
+    t.fails("insert into reports (business_id, reason) values (%s, 'made up')", (b,))
+    t.admin()
+    assert t.one("select count(*) from net.requests where body ->> 'table' = 'reports'") == 2
+    t.as_(vol, aal="aal2")
+    q = t.one("select admin_queue()")["reports"]
+    assert len(q) == 2 and t.one("select admin_counts()")["reports"] == 2
+    closed = [x for x in q if x["reason"] == "closed"][0]
+    spam = [x for x in q if x["reason"] == "spam"][0]
+    assert spam["review_body"] == "spam link" and closed["business_name"] == "Reported", q
+    t.fails("select admin_resolve_report(%s, 'hide_review')", (spam["id"],), contains="moderator")
+    t.fails("select admin_resolve_report(%s, 'hide_review')", (closed["id"],), contains="not about a review")
+    t.fails("select admin_resolve_report(%s, 'unpublish')", (closed["id"],), contains="moderator")
+    t.q("select admin_resolve_report(%s, 'dismiss')", (closed["id"],))
+    t.fails("select admin_resolve_report(%s, 'dismiss')", (closed["id"],), contains="already handled")
+    t.as_(mod, aal="aal2")
+    t.q("select admin_resolve_report(%s, 'hide_review', 'Spam')", (spam["id"],))
+    assert t.one("select admin_counts()")["reports"] == 0
+    t.admin()
+    assert t.one("select status from reviews where id = %s", (rid,)) == "rejected"
+    assert t.q("select status from reports order by created_at") == [("dismissed",), ("resolved",)]
+
+
+@test
+def possible_duplicates_are_flagged(t):
+    mod, vol = team(t)
+    o = t.user("o@x.co"); o2 = t.user("o2@x.co")
+    t.admin()
+    t.q("insert into businesses (owner_id, name, category, neighborhood, description, long_description, phone, status)"
+        " values (%s, 'Al-Noor Market', 'R', 'D', 's', 'l', '(614) 555-0100', 'approved')", (o2,))
+    t.q("insert into businesses (owner_id, name, category, neighborhood, description, long_description, phone, status)"
+        " values (%s, 'Different Name', 'R', 'D', 's', 'l', '614.555.0100', 'pending')", (o,))
+    t.q("insert into businesses (owner_id, name, category, neighborhood, description, long_description, status)"
+        " values (%s, 'al noor market', 'R', 'D', 's', 'l', 'pending')", (o,))
+    t.q("insert into businesses (owner_id, name, category, neighborhood, description, long_description, status)"
+        " values (%s, 'Unique Bakery', 'R', 'D', 's', 'l', 'pending')", (o,))
+    t.as_(vol, aal="aal2")
+    by = {x["name"]: [d["name"] for d in x["possible_duplicates"]] for x in t.one("select admin_queue()")["new_listings"]}
+    assert by["Different Name"] == ["Al-Noor Market"], by
+    assert by["al noor market"] == ["Al-Noor Market"], by
+    assert by["Unique Bakery"] == [], by
+
+
+@test
+def messages_can_be_marked_handled(t):
+    mod, vol = team(t)
+    t.as_(role="service_role")
+    t.q("insert into contact_messages (name, email, message) values ('a', 'a@b.co', 'hi')")
+    t.as_(vol, aal="aal2")
+    m = t.one("select admin_queue()")["messages"][0]
+    assert m["handled_at"] is None
+    t.q("select admin_set_message_handled(%s, true)", (m["id"],))
+    m = t.one("select admin_queue()")["messages"][0]
+    assert m["handled_at"] and m["handled_by_email"] == "vol@x.co", m
+    t.q("select admin_set_message_handled(%s, false)", (m["id"],))
+    assert t.one("select admin_queue()")["messages"][0]["handled_at"] is None
+
+
+@test
+def notice_email_only_for_the_server(t):
+    mod, vol = team(t)
+    o = t.user("o@x.co"); b = t.business(o, "pending")
+    t.as_(vol, aal="aal2"); t.q("select admin_set_listing_status(%s, 'approved')", (b,))
+    t.admin(); nid = t.one("select id from owner_notices")
+    t.as_(role="service_role")
+    assert t.one("select notice_email(%s)", (nid,)) == "o@x.co"
+    t.as_(o)
+    t.fails("select notice_email(%s)", (nid,))
+
+
+# ------------------------------------------------------------ sponsorship (10-11)
+BILL = "select billing_apply_subscription(%s, %s, %s, 'cus_1', 'sub_1', %s, now() + interval '30 days', false)"
+
+
+@test
+def only_the_server_can_mark_a_listing_sponsored(t):
+    o = t.user("o@x.co"); b = t.business(o)
+    t.as_(o, aal="aal2")
+    t.fails("insert into businesses (owner_id, name, category, neighborhood, description, long_description, sponsor_tier, sponsored_until)"
+            " values (%s, 'X', 'R', 'D', 's', 'l', 'featured', now() + interval '1 year')", (o,))
+    t.q("select owner_update_business(%s, '{\"sponsor_tier\":\"featured\",\"sponsored_until\":\"2099-01-01\"}'::jsonb)", (b,))
+    t.fails(BILL, (b, o, "featured", "active"))
+    t.fails("insert into sponsorships (business_id, paid_tier, paid_until) values (%s, 'featured', now() + interval '1 year')", (b,))
+    t.as_()
+    t.fails(BILL, (b, o, "featured", "active"))
+    t.admin()
+    assert t.q("select sponsor_tier, sponsored_until from businesses where id = %s", (b,))[0] == (None, None)
+
+
+@test
+def paid_sponsorship_lifecycle(t):
+    o = t.user("o@x.co"); x = t.user("x@x.co"); b = t.business(o, "approved", "Paid Place")
+    t.as_(role="service_role")
+    t.q(BILL, (b, o, "featured", "active"))
+    t.fails(BILL, (b, o, "gold", "active"), contains="plan")
+    t.as_()
+    tier, until = t.q("select sponsor_tier, sponsored_until > now() + interval '32 days' from businesses where id = %s", (b,))[0]
+    assert (tier, until) == ("featured", True), "3-day grace on top of the paid period"
+    t.as_(o)
+    assert t.one("select paid_tier from sponsorships") == "featured"
+    assert t.one("select paid_until - paid_period_end from sponsorships") == datetime.timedelta(days=3)
+    t.as_(x)
+    assert t.q("select paid_tier from sponsorships") == []
+    t.as_(role="service_role")
+    t.q(BILL, (b, o, "featured", "active"))  # replayed webhook: no change, no duplicate log line
+    t.q(BILL, (b, o, "featured", "canceled"))
+    t.as_()
+    assert t.q("select sponsor_tier, sponsored_until from businesses where id = %s", (b,))[0] == (None, None)
+    t.admin()
+    assert [r[0] for r in t.q("select detail ->> 'status' from moderation_log where action = 'sponsor.billing' order by id")] == ["active", "canceled"]
+
+
+@test
+def billing_events_for_another_subscription_cant_end_a_paid_one(t):
+    o = t.user("o@x.co"); b = t.business(o)
+    t.as_(role="service_role")
+    t.q("select billing_apply_subscription(%s, %s, 'spotlight', 'cus_1', 'sub_old', 'active', now() + interval '30 days', false)", (b, o))
+    t.q("select billing_apply_subscription(%s, %s, 'featured', 'cus_1', 'sub_new', 'active', now() + interval '30 days', false)", (b, o))
+    t.q("select billing_apply_subscription(%s, %s, 'spotlight', 'cus_1', 'sub_old', 'canceled', now() + interval '30 days', false)", (b, o))
+    t.as_()
+    assert t.one("select sponsor_tier from businesses where id = %s", (b,)) == "featured", "a stale event for an old subscription ended the new one"
+    t.as_(role="service_role")
+    t.q("select billing_apply_subscription(%s, %s, 'featured', 'cus_1', 'sub_new', 'canceled', now(), false)", (b, o))
+    t.as_()
+    assert t.one("select sponsor_tier from businesses where id = %s", (b,)) is None
+
+
+@test
+def failed_renewal_does_not_extend_placement(t):
+    o = t.user("o@x.co"); b = t.business(o)
+    t.as_(role="service_role")
+    t.q("select billing_apply_subscription(%s, %s, 'featured', 'cus_1', 'sub_1', 'active', now() + interval '2 days', false)", (b, o))
+    before = t.one("select paid_until from sponsorships where business_id = %s", (b,))
+    # Stripe moves the period forward a month even though the renewal failed.
+    t.q("select billing_apply_subscription(%s, %s, 'featured', 'cus_1', 'sub_1', 'past_due', now() + interval '32 days', false)", (b, o))
+    assert t.one("select paid_until from sponsorships where business_id = %s", (b,)) == before
+    t.q("select billing_apply_subscription(%s, %s, 'featured', 'cus_1', 'sub_1', 'active', now() + interval '32 days', false)", (b, o))
+    assert t.one("select paid_until > %s from sponsorships where business_id = %s", (before, b)) is True, "paying again extends it"
+
+
+@test
+def owners_cant_read_stripe_ids_or_team_notes(t):
+    mod, vol = team(t)
+    o = t.user("o@x.co"); b = t.business(o)
+    t.as_(role="service_role")
+    t.q("select billing_apply_subscription(%s, %s, 'featured', 'cus_1', 'sub_1', 'active', now() + interval '30 days', false)", (b, o))
+    t.as_(mod, aal="aal2")
+    t.q("select admin_set_comp(%s, 'spotlight', now() + interval '9 days', 'internal note')", (b,))
+    t.as_(o)
+    assert t.one("select paid_tier from sponsorships") == "featured"
+    for col in ("stripe_customer_id", "stripe_subscription_id", "comp_note", "*"):
+        t.fails("select " + col + " from sponsorships")
+
+
+@test
+def comped_placement_is_moderator_only_and_survives_billing(t):
+    mod, vol = team(t)
+    o = t.user("o@x.co"); b = t.business(o, "approved")
+    t.as_(vol, aal="aal2")
+    t.fails("select admin_set_comp(%s, 'featured', now() + interval '60 days', 'Ramadan bazaar')", (b,), contains="moderator")
+    t.fails("select admin_sponsorships()", contains="moderator")
+    t.as_(mod, aal="aal2")
+    t.fails("select admin_set_comp(%s, 'featured', now() - interval '1 day', null)", (b,), contains="future")
+    t.q("select admin_set_comp(%s, 'featured', now() + interval '60 days', 'Ramadan bazaar')", (b,))
+    t.as_(role="service_role")
+    t.q(BILL, (b, o, "spotlight", "active"))
+    t.as_()
+    assert t.one("select sponsor_tier from businesses where id = %s", (b,)) == "featured", "comp outranks a lower paid plan"
+    t.as_(role="service_role")
+    t.q(BILL, (b, o, "spotlight", "canceled"))
+    t.as_()
+    assert t.one("select sponsor_tier from businesses where id = %s", (b,)) == "featured", "cancelling billing must not end the comp"
+    t.as_(mod, aal="aal2")
+    rows = t.one("select admin_sponsorships()")
+    assert rows[0]["comp_note"] == "Ramadan bazaar" and rows[0]["paid_status"] == "canceled", rows
+    t.q("select admin_set_comp(%s, null, null, null)", (b,))
+    t.as_()
+    assert t.one("select sponsor_tier from businesses where id = %s", (b,)) is None
+
+
+@test
+def featured_can_expire(t):
+    mod, vol = team(t)
+    o = t.user("o@x.co"); b = t.business(o)
+    t.as_(vol, aal="aal2")
+    t.fails("select admin_set_featured_until(%s, now() + interval '7 days')", (b,), contains="moderator")
+    t.as_(mod, aal="aal2")
+    t.q("select admin_set_featured_until(%s, now() + interval '7 days')", (b,))
+    assert [x for x in t.one("select admin_all_businesses()") if x["id"] == str(b)][0]["featured_until"]
+
+
+# ------------------------------------------------------------- locations (10-12)
+@test
+def locations_are_server_only_and_follow_the_address(t):
+    mod, vol = team(t)
+    o = t.user("o@x.co"); b = t.business(o, "pending")
+    t.admin(); t.q("delete from net.requests")
+    t.as_(o)
+    t.q("select owner_update_business(%s, '{\"address\":\"90 W Broad St\"}'::jsonb)", (b,))
+    t.admin()
+    reqs = t.q("select url, body ->> 'address' from net.requests where url like '%%/api/geocode'")
+    assert reqs == [("https://nicc-business.vercel.app/api/geocode", "90 W Broad St")], reqs
+    t.as_(o)
+    t.fails("select set_business_location(%s, '90 W Broad St', 1, 2)", (b,))
+    t.fails("insert into businesses (owner_id, name, category, neighborhood, description, long_description, lat, lng)"
+            " values (%s, 'X', 'R', 'D', 's', 'l', 40, -83)", (o,))
+    t.as_(role="service_role")
+    assert t.one("select set_business_location(%s, 'old address', 39.96, -83.0)", (b,)) is False, "stale lookups are ignored"
+    assert t.one("select set_business_location(%s, '90 W Broad St', 39.96, -83.0)", (b,)) is True
+    t.fails("select set_business_location(%s, '90 W Broad St', 200, 0)", (b,))
+    assert b not in [r[0] for r in t.q("select id from unlocated_businesses(50)")]
+    t.as_(o)
+    assert t.q("select lat, lng from businesses where id = %s", (b,))[0] == (39.96, -83.0)
+    t.q("select owner_update_business(%s, '{\"address\":\"1 New Rd\"}'::jsonb)", (b,))
+    assert t.q("select lat, lng from businesses where id = %s", (b,))[0] == (None, None), "a new address clears the old point"
+    t.q("select owner_update_business(%s, '{\"description\":\"no address change\"}'::jsonb)", (b,))
+    t.admin()
+    assert t.one("select count(*) from net.requests where url like '%%/api/geocode'") == 2, "only address changes trigger a lookup"
+    t.as_(role="service_role")
+    t.q("select mark_business_unlocatable(%s, '1 New Rd')", (b,))
+    assert b not in [r[0] for r in t.q("select id from unlocated_businesses(50)")], "a failed lookup isn't retried right away"
+    seeded = t.q("select id from unlocated_businesses(50)")
+    assert len(seeded) >= 1, "seeded listings with addresses still need locating"
+    t.as_()
+    t.fails("select unlocated_businesses(10)")
+    t.fails("select geocode_allowed('ip', 2)")
+    t.fails("select * from geocode_requests")
+    t.as_(role="service_role")
+    assert [t.one("select geocode_allowed('ip1', 2)") for _ in range(3)] == [True, True, False]
+    assert t.one("select geocode_allowed('ip2', 2)") is True, "limits are per IP"
 
 
 # ------------------------------------------------------------------- alerts
