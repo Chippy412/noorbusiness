@@ -340,7 +340,7 @@
     margin-top: 34px; background: var(--surface); border: 1px solid var(--hairline);
     border-radius: 18px; padding: 10px;
     box-shadow: 0 24px 48px -24px rgba(var(--shadow-color) / 0.28);
-    display: grid; grid-template-columns: 1fr 1fr auto; grid-template-areas: "q q q" "c h b"; gap: 6px;
+    display: grid; grid-template-columns: 1fr auto; grid-template-areas: "q q" "c b"; gap: 6px;
   }
   .search-field {
     display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px; min-width: 0;
@@ -348,7 +348,6 @@
   }
   .search-field:nth-of-type(1) { grid-area: q; }
   .search-field:nth-of-type(2) { grid-area: c; border-top: 1px solid var(--hairline); }
-  .search-field:nth-of-type(3) { grid-area: h; border-top: 1px solid var(--hairline); border-left: 1px solid var(--hairline); }
   .search-field svg { color: var(--muted); width: 18px; height: 18px; flex-shrink: 0; }
   .search-field input, .search-field select {
     border: none; background: none; font: inherit; color: var(--ink);
@@ -382,7 +381,7 @@
     .hero-float { position: relative; left: auto; bottom: auto; max-width: none; margin-top: 14px; }
   }
   @media (max-width: 560px) {
-    .search-card { grid-template-columns: 1fr; grid-template-areas: "q" "c" "h" "b"; }
+    .search-card { grid-template-columns: 1fr; grid-template-areas: "q" "c" "b"; }
     .search-field:nth-of-type(2), .search-field:nth-of-type(3) { border-left: none; border-top: 1px solid var(--hairline); }
     .search-card .btn { width: 100%; padding: 14px; margin-top: 4px; }
   }
@@ -659,8 +658,12 @@
   .field.invalid input, .field.invalid select, .field.invalid textarea { border-color: var(--danger); }
 
   .filter-panel { background: var(--surface); border: 1px solid var(--hairline); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
-  .filter-row { display: grid; grid-template-columns: 1.6fr 1fr 1fr 0.8fr; gap: 12px; }
-  @media (max-width: 1000px) { .filter-row { grid-template-columns: 1fr 1fr; } }
+  .filter-panel { position: relative; }
+  .filter-bar { display: flex; gap: 10px; align-items: center; }
+  .filter-search { position: relative; flex: 1 1 260px; min-width: 0; }
+  .filter-search .icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--muted); pointer-events: none; }
+  .filter-search input { padding-left: 44px; }
+  .filter-category { flex: 0 0 200px; }
   .toggle-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
   .toggle {
     display: inline-flex; align-items: center; gap: 8px; padding: 9px 15px; border-radius: 999px;
@@ -685,24 +688,60 @@
   .seg input:checked + span { background: var(--accent-soft); color: var(--accent-soft-ink); }
   .seg input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: 1px; }
   .filter-help { font-size: 0.8rem; color: var(--muted); margin: 0; }
-  .filter-section { display: flex; flex-direction: column; gap: 10px; padding-top: 14px; border-top: 1px solid var(--hairline); }
-  .filter-section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-  .filter-title { margin: 0; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
-  .filter-head-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .toggle-divider { width: 1px; height: 22px; background: var(--hairline); margin: 0 4px; }
-  .distance-row { display: grid; grid-template-columns: auto minmax(0, 1fr) 170px; gap: 12px; align-items: end; }
-  .distance-row .field-label { font-size: 0.86rem; font-weight: 600; color: var(--ink-2); }
-  .distance-row .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-  .distance-row .btn { min-height: 46px; white-space: nowrap; }
-  .distance-row .dist-address .dist-input { display: flex; gap: 8px; }
-  .distance-row .dist-address input { flex: 1; min-width: 0; }
+  /* Dropdown buttons ("Show only", "Distance") */
+  .pop { position: relative; flex: none; }
+  .pop-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 46px; padding: 0 16px; border: 1px solid var(--hairline); border-radius: 12px; background: var(--ground); color: var(--ink); font: inherit; font-weight: 600; font-size: 0.95rem; cursor: pointer; white-space: nowrap; max-width: 240px; }
+  .pop-btn:hover { border-color: var(--accent); }
+  .pop-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .pop-btn[aria-expanded="true"] { border-color: var(--accent); }
+  .pop-btn.is-active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-soft-ink); }
+  .pop-btn .icon { width: 16px; height: 16px; flex: none; }
+  .pop-label { overflow: hidden; text-overflow: ellipsis; }
+  .pop-chev { transition: transform 0.2s ease; }
+  .pop-btn[aria-expanded="true"] .pop-chev { transform: rotate(180deg); }
+  .pop-panel { position: absolute; top: calc(100% + 8px); right: 0; z-index: 30; width: 300px; display: flex; flex-direction: column; gap: 12px; padding: 16px; border: 1px solid var(--hairline); border-radius: 16px; background: var(--surface); box-shadow: 0 24px 48px -20px rgba(var(--shadow-color) / 0.45); }
+  .pop-panel[hidden] { display: none; }
+  .pop-panel-near { width: 340px; }
+  .pop-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .pop-title { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .pop-checks { display: flex; flex-direction: column; gap: 2px; }
+  .pop-check { position: relative; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; cursor: pointer; color: var(--ink-2); font-size: 0.95rem; font-weight: 600; }
+  .pop-check:hover { background: var(--surface-2); }
+  .pop-check input { width: 17px; height: 17px; margin: 0; accent-color: var(--accent); flex: none; }
+  .pop-check .icon { width: 16px; height: 16px; color: var(--muted); flex: none; }
+  .pop-check:has(input:checked) { color: var(--accent-soft-ink); background: var(--accent-soft); }
+  .pop-check:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 1px; }
+  .pop-sep { border-top: 1px solid var(--hairline); }
+  .pop-rating { gap: 6px; }
+  .pop-foot { display: flex; justify-content: flex-end; }
+  .pop-panel .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .pop-panel .near-here { justify-content: center; min-height: 44px; }
+  .pop-panel-near .distance-status:empty { display: none; }
+  .pop-panel-near .near-within { display: none; flex-direction: column; gap: 8px; }
+  .pop-panel-near.has-origin .near-within { display: flex; }
+  .pop-panel-near.has-origin .near-here, .pop-panel-near.has-origin .dist-address { display: none; }
+  .pop-panel-near.has-origin .distance-status { font-size: 0.95rem; font-weight: 600; color: var(--ink); justify-content: space-between; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { padding: 7px 13px; border: 1px solid var(--hairline); border-radius: 999px; background: var(--ground); color: var(--ink-2); font: inherit; font-size: 0.88rem; font-weight: 600; cursor: pointer; }
+  .chip:hover { border-color: var(--accent); }
+  .chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-soft-ink); }
+  .chip:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .pop-panel .dist-input { display: flex; gap: 8px; }
+  .pop-panel .dist-input input { flex: 1; min-width: 0; }
   .distance-status { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 0.84rem; color: var(--ink-2); margin: 0; }
   .distance-status:empty { display: none; }
   .distance-status .dist-error { color: var(--danger); font-weight: 700; }
   .listing-dist { font-size: 0.84rem; font-weight: 700; color: var(--accent-soft-ink); margin: 0; }
   .listing-dist:empty { display: none; }
-  @media (max-width: 800px) { .distance-row { grid-template-columns: 1fr 1fr; } .distance-row .dist-here, .distance-row .dist-address { grid-column: 1 / -1; } .distance-row .dist-here .btn { width: 100%; justify-content: center; } }
-  @media (max-width: 480px) { .distance-row { grid-template-columns: 1fr; } }
+  @media (max-width: 800px) {
+    .filter-bar { flex-wrap: wrap; }
+    .filter-search { flex-basis: 100%; }
+    .filter-category { flex: 1 1 100%; }
+    .pop { position: static; flex: 1 1 calc(50% - 5px); min-width: 0; }
+    .pop-btn { width: 100%; min-width: 0; justify-content: space-between; max-width: none; padding: 0 12px; }
+    .pop-label { flex: 1; min-width: 0; white-space: nowrap; text-align: left; }
+    .pop-panel, .pop-panel-near { left: 16px; right: 16px; width: auto; }
+  }
 
   .results-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 30px 0 22px; }
   .results-count { font-size: 0.95rem; color: var(--muted); }
@@ -725,7 +764,6 @@
   .empty-state .e-icon svg { width: 26px; height: 26px; }
   .empty-state h3 { font-size: 1.15rem; }
   .empty-state p { color: var(--muted); margin: 10px 0 20px; }
-  @media (max-width: 800px) { .filter-row { grid-template-columns: 1fr; } }
 
   /* ---------- Listing dialog ---------- */
   dialog.listing-modal {
@@ -1072,6 +1110,8 @@
     <path d="M20 20 H80 V80 H20 Z" fill="currentColor" stroke="none"/>
     <path d="M50 8 L92 50 L50 92 L8 50 Z" fill="currentColor" stroke="none"/>
   </symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></symbol>
   <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></symbol>
   <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></symbol>
   <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3 12V5a2 2 0 0 1 2-2h7l9 9-9 9-9-9z"/><circle cx="7.5" cy="7.5" r="1.2"/></symbol>
@@ -1188,21 +1228,6 @@
                 <option>Education</option>
                 <option>Home &amp; Living</option>
                 <option>Auto &amp; Repair</option>
-              </select>
-            </label>
-            <label class="search-field">
-              <svg class="icon"><use href="#i-pin"/></svg>
-              <span class="sr-only">Neighborhood</span>
-              <select id="heroHood">
-                <option value="">Any neighborhood</option>
-                <option>Short North</option>
-                <option>German Village</option>
-                <option>Clintonville</option>
-                <option>Dublin</option>
-                <option>Westerville</option>
-                <option>Northland</option>
-                <option>Hilliard</option>
-                <option>Citywide (online)</option>
               </select>
             </label>
             <button type="submit" class="btn btn-primary"><svg class="icon"><use href="#i-search"/></svg> Search</button>
@@ -1361,20 +1386,21 @@
     <div class="page-head">
       <div class="wrap">
         <h1>Explore the directory</h1>
-        <p>Filter by category, neighborhood, and the details that matter to your family.</p>
+        <p>Filter by category and the details that matter to your family.</p>
       </div>
     </div>
 
     <section class="tight">
       <div class="wrap">
         <form class="filter-panel" id="filterPanel">
-          <div class="filter-row">
-            <div class="field">
-              <label for="fQuery">Search</label>
-              <input type="text" id="fQuery" name="q" autocomplete="off" spellcheck="false" placeholder="Business name or keyword…">
+          <div class="filter-bar">
+            <div class="field filter-search">
+              <label class="sr-only" for="fQuery">Search</label>
+              <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
+              <input type="text" id="fQuery" name="q" autocomplete="off" spellcheck="false" placeholder="Search by name or keyword">
             </div>
-            <div class="field">
-              <label for="fCategory">Category</label>
+            <div class="field filter-category">
+              <label class="sr-only" for="fCategory">Category</label>
               <select id="fCategory">
                 <option value="">All categories</option>
                 <option>Restaurants</option>
@@ -1387,82 +1413,85 @@
                 <option>Auto &amp; Repair</option>
               </select>
             </div>
-            <div class="field">
-              <label for="fHood">Neighborhood</label>
-              <select id="fHood">
-                <option value="">All neighborhoods</option>
-                <option>Short North</option>
-                <option>German Village</option>
-                <option>Clintonville</option>
-                <option>Dublin</option>
-                <option>Westerville</option>
-                <option>Northland</option>
-                <option>Hilliard</option>
-                <option>Citywide (online)</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="fRating">Rating</label>
-              <select id="fRating">
-                <option value="">Any rating</option>
-                <option value="3">3+ stars</option>
-                <option value="4">4+ stars</option>
-                <option value="4.5">4.5+ stars</option>
-              </select>
-            </div>
-          </div>
-          <div class="filter-section">
-            <div class="filter-section-head">
-              <p class="filter-title" id="badgesTitle">Show only</p>
-              <div class="filter-head-tools">
-                <div class="seg" role="radiogroup" aria-labelledby="matchLabel">
-                  <span class="seg-label" id="matchLabel">Match badges</span>
-                  <label><input type="radio" name="badgeMatch" value="all" checked><span>All</span></label>
-                  <label><input type="radio" name="badgeMatch" value="any"><span>Any</span></label>
+            <div class="pop" id="popShow">
+              <button type="button" class="pop-btn" aria-expanded="false" aria-controls="popShowPanel">
+                <span class="pop-label" id="showLabel">Show only</span>
+                <svg class="icon pop-chev" aria-hidden="true"><use href="#i-chevron-down"/></svg>
+              </button>
+              <div class="pop-panel" id="popShowPanel" role="group" aria-label="Show only" hidden>
+                <div class="pop-head">
+                  <span class="pop-title">Badges</span>
+                  <div class="seg" role="radiogroup" aria-labelledby="matchLabel">
+                    <span class="seg-label sr-only" id="matchLabel">Match badges</span>
+                    <label><input type="radio" name="badgeMatch" value="all" checked><span>All</span></label>
+                    <label><input type="radio" name="badgeMatch" value="any"><span>Any</span></label>
+                  </div>
                 </div>
-                <button type="button" class="btn btn-ghost btn-sm" id="resetFilters">Reset filters</button>
-              </div>
-            </div>
-            <div class="toggle-row" role="group" aria-labelledby="badgesTitle">
-              <label class="toggle"><input type="checkbox" data-badge="halal"><svg class="icon"><use href="#i-shield"/></svg> Halal verified</label>
-              <label class="toggle"><input type="checkbox" data-badge="prayer"><svg class="icon"><use href="#i-mosque"/></svg> Prayer space</label>
-              <label class="toggle"><input type="checkbox" data-badge="women"><svg class="icon"><use href="#i-users"/></svg> Women owned</label>
-              <label class="toggle"><input type="checkbox" data-badge="family"><svg class="icon"><use href="#i-home"/></svg> Family run</label>
-              <label class="toggle"><input type="checkbox" data-badge="community"><svg class="icon"><use href="#i-heart"/></svg> Community service</label>
-              <span class="toggle-divider" aria-hidden="true"></span>
-              <label class="toggle"><input type="checkbox" id="fOpenNow" aria-describedby="openNowHelp"><svg class="icon"><use href="#i-clock"/></svg> Open now</label>
-              <label class="toggle"><input type="checkbox" id="fSaved"><svg class="icon"><use href="#i-bookmark"/></svg> Saved only</label>
-            </div>
-            <p class="filter-help" id="openNowHelp" hidden>Only shows places whose hours we can read.</p>
-          </div>
-          <div class="filter-section" role="group" aria-labelledby="distTitle">
-            <p class="filter-title" id="distTitle">Distance from</p>
-            <div class="distance-row">
-              <div class="field dist-here">
-                <span class="field-label" aria-hidden="true">Your location</span>
-                <button type="button" class="btn btn-ghost" id="useLocation"><svg class="icon"><use href="#i-pin"/></svg> Use my location</button>
-              </div>
-              <div class="field dist-address">
-                <label for="fOriginText">Or an address or ZIP</label>
-                <div class="dist-input">
-                  <input type="text" id="fOriginText" autocomplete="off" spellcheck="false" placeholder="e.g. 43017 or 123 Main St, Dublin OH">
-                  <button type="button" class="btn btn-ghost" id="setOrigin">Set</button>
+                <div class="pop-checks">
+                  <label class="pop-check"><input type="checkbox" data-badge="halal"><svg class="icon"><use href="#i-shield"/></svg> Halal verified</label>
+                  <label class="pop-check"><input type="checkbox" data-badge="prayer"><svg class="icon"><use href="#i-mosque"/></svg> Prayer space</label>
+                  <label class="pop-check"><input type="checkbox" data-badge="women"><svg class="icon"><use href="#i-users"/></svg> Women owned</label>
+                  <label class="pop-check"><input type="checkbox" data-badge="family"><svg class="icon"><use href="#i-home"/></svg> Family run</label>
+                  <label class="pop-check"><input type="checkbox" data-badge="community"><svg class="icon"><use href="#i-heart"/></svg> Community service</label>
                 </div>
-              </div>
-              <div class="field dist-within">
-                <label for="fWithin">Within</label>
-                <select id="fWithin" disabled>
-                  <option value="">Any distance</option>
-                  <option value="2">2 miles</option>
-                  <option value="5">5 miles</option>
-                  <option value="10">10 miles</option>
-                  <option value="25">25 miles</option>
-                </select>
+                <div class="pop-sep"></div>
+                <div class="pop-checks">
+                  <label class="pop-check"><input type="checkbox" id="fOpenNow" aria-describedby="openNowHelp"><svg class="icon"><use href="#i-clock"/></svg> Open now</label>
+                  <label class="pop-check"><input type="checkbox" id="fSaved"><svg class="icon"><use href="#i-bookmark"/></svg> Saved only</label>
+                </div>
+                <p class="filter-help" id="openNowHelp" hidden>Only shows places whose hours we can read.</p>
+                <div class="pop-sep"></div>
+                <div class="field pop-rating">
+                  <label for="fRating">Rating</label>
+                  <select id="fRating">
+                    <option value="">Any rating</option>
+                    <option value="3">3+ stars</option>
+                    <option value="4">4+ stars</option>
+                    <option value="4.5">4.5+ stars</option>
+                  </select>
+                </div>
+                <div class="pop-foot"><button type="button" class="btn-link" id="resetFilters">Reset filters</button></div>
               </div>
             </div>
-            <p class="distance-status" id="originStatus" aria-live="polite"></p>
-            <p class="filter-help" id="withinNote" hidden>Some listings without an address on file are hidden while a distance is set.</p>
+            <div class="pop" id="popNear">
+              <button type="button" class="pop-btn" aria-expanded="false" aria-controls="popNearPanel">
+                <svg class="icon" aria-hidden="true"><use href="#i-pin"/></svg>
+                <span class="pop-label" id="nearLabel">Distance</span>
+                <svg class="icon pop-chev" aria-hidden="true"><use href="#i-chevron-down"/></svg>
+              </button>
+              <div class="pop-panel pop-panel-near" id="popNearPanel" role="group" aria-label="Distance from" hidden>
+                <p class="distance-status" id="originStatus" aria-live="polite"></p>
+                <button type="button" class="btn btn-ghost btn-sm near-here" id="useLocation"><svg class="icon"><use href="#i-pin"/></svg> Use my location</button>
+                <div class="field dist-address">
+                  <label for="fOriginText" class="sr-only">Address or ZIP</label>
+                  <div class="dist-input">
+                    <input type="text" id="fOriginText" autocomplete="off" spellcheck="false" placeholder="Or type a ZIP or address">
+                    <button type="button" class="btn btn-ghost btn-sm" id="setOrigin">Set</button>
+                  </div>
+                </div>
+                <div class="near-within">
+                  <span class="pop-title" id="withinTitle">Within</span>
+                  <div class="chips" role="group" aria-labelledby="withinTitle" id="withinChips">
+                    <button type="button" class="chip" data-within="" aria-pressed="true">Any</button>
+                    <button type="button" class="chip" data-within="2" aria-pressed="false">2 mi</button>
+                    <button type="button" class="chip" data-within="5" aria-pressed="false">5 mi</button>
+                    <button type="button" class="chip" data-within="10" aria-pressed="false">10 mi</button>
+                    <button type="button" class="chip" data-within="25" aria-pressed="false">25 mi</button>
+                  </div>
+                  <label class="sr-only" for="fWithin">Within</label>
+                  <select id="fWithin" hidden disabled>
+                    <option value="">Any distance</option>
+                    <option value="2">2 miles</option>
+                    <option value="5">5 miles</option>
+                    <option value="10">10 miles</option>
+                    <option value="25">25 miles</option>
+                  </select>
+                </div>
+                <p class="filter-help" id="withinNote" hidden>Some listings without an address on file are hidden while a distance is set.</p>
+              </div>
+            </div>
           </div>
+          <select id="fHood" hidden aria-hidden="true" tabindex="-1"><option value=""></option></select>
         </form>
 
         <div class="results-bar">
@@ -3026,7 +3055,6 @@
       e.preventDefault();
       document.getElementById("fQuery").value = document.getElementById("heroQuery").value;
       document.getElementById("fCategory").value = document.getElementById("heroCategory").value;
-      document.getElementById("fHood").value = document.getElementById("heroHood").value;
       location.hash = "#/explore";
       setTimeout(applyFilters, 30);
     });
@@ -3105,6 +3133,7 @@
     var sortSel = document.getElementById("fSort");
     if (!has && sortSel.value === "nearest") sortSel.value = "recommended";
     setOriginMessage(null);
+    if (typeof updateFilterLabels === "function") updateFilterLabels();
   }
   function setOrigin(next) {
     var first = !origin && !!next;
@@ -3226,8 +3255,68 @@
     if (withinNote) withinNote.hidden = !hiddenNoCoords;
     resultCount.textContent = String(shown);
     emptyState.classList.toggle("show", shown === 0);
+    updateFilterLabels();
     syncUrl();
   }
+
+  /* "Show only" and "Distance" are dropdown panels. Their buttons say what is
+     active ("Show only · 2", "Within 5 mi of 43215") so nothing is hidden. */
+  function updateFilterLabels() {
+    var showBtn = document.querySelector("#popShow .pop-btn"), nearBtn = document.querySelector("#popNear .pop-btn");
+    if (!showBtn || !nearBtn) return;
+    var n = 0;
+    if (document.getElementById("fRating").value) n++;
+    if (document.getElementById("fOpenNow").checked) n++;
+    if (savedBox && savedBox.checked) n++;
+    n += badgeBoxes.filter(function (b) { return b.checked; }).length;
+    document.getElementById("showLabel").textContent = n ? "Show only \u00b7 " + n : "Show only";
+    showBtn.classList.toggle("is-active", n > 0);
+    var within = document.getElementById("fWithin").value;
+    var label = "Distance";
+    if (origin) {
+      var place = String(origin.label || "your location").split(",")[0];
+      label = (within ? "Within " + within + " mi of " : "Near ") + place;
+    }
+    document.getElementById("nearLabel").textContent = label;
+    document.getElementById("popNearPanel").classList.toggle("has-origin", !!origin);
+    Array.prototype.forEach.call(document.querySelectorAll("#withinChips .chip"), function (c) {
+      c.setAttribute("aria-pressed", String(c.getAttribute("data-within") === within));
+    });
+    nearBtn.classList.toggle("is-active", !!origin);
+  }
+  document.getElementById("withinChips").addEventListener("click", function (e) {
+    var chip = e.target.closest(".chip");
+    if (!chip) return;
+    var sel = document.getElementById("fWithin");
+    sel.value = chip.getAttribute("data-within");
+    sel.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  (function () {
+    var pops = Array.prototype.slice.call(document.querySelectorAll(".pop"));
+    function close(pop, refocus) {
+      var btn = pop.querySelector(".pop-btn");
+      pop.querySelector(".pop-panel").hidden = true;
+      btn.setAttribute("aria-expanded", "false");
+      if (refocus) btn.focus();
+    }
+    pops.forEach(function (pop) {
+      pop.querySelector(".pop-btn").addEventListener("click", function () {
+        var wasOpen = !pop.querySelector(".pop-panel").hidden;
+        pops.forEach(function (o) { close(o, false); });
+        if (!wasOpen) {
+          pop.querySelector(".pop-panel").hidden = false;
+          pop.querySelector(".pop-btn").setAttribute("aria-expanded", "true");
+        }
+      });
+    });
+    document.addEventListener("click", function (e) {
+      pops.forEach(function (pop) { if (!pop.contains(e.target)) close(pop, false); });
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key !== "Escape") return;
+      pops.forEach(function (pop) { if (!pop.querySelector(".pop-panel").hidden) close(pop, true); });
+    });
+  })();
 
   /* Filters live in the URL
      (#/explore?q=...&cat=...&hood=...&rating=4&badges=halal,prayer&match=any&now=1&saved=1&within=5&sort=name)
