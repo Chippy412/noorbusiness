@@ -108,6 +108,35 @@ create trigger businesses_request_geocode
   after insert or update of address on businesses
   for each row execute function request_geocode();
 
+-- Visitor lookups per (hashed) IP, so /api/geocode can't be used as a free
+-- geocoding proxy. Server-only; rows older than a day are pruned on insert.
+create table if not exists geocode_requests (
+  id bigint generated always as identity primary key,
+  ip_hash text not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists geocode_requests_ip on geocode_requests (ip_hash, created_at);
+alter table geocode_requests enable row level security;
+revoke all on geocode_requests from anon, authenticated;
+
+-- Records one lookup and says whether this IP is still under the limit.
+create or replace function geocode_allowed(p_ip_hash text, p_per_hour int)
+returns boolean as $$
+declare
+  n int;
+begin
+  delete from geocode_requests where created_at < now() - interval '1 day';
+  select count(*) into n from geocode_requests where ip_hash = p_ip_hash and created_at > now() - interval '1 hour';
+  if n >= p_per_hour then
+    return false;
+  end if;
+  insert into geocode_requests (ip_hash) values (p_ip_hash);
+  return true;
+end;
+$$ language plpgsql security definer set search_path = public;
+revoke execute on function geocode_allowed(text, int) from public, anon, authenticated;
+grant execute on function geocode_allowed(text, int) to service_role;
+
 revoke execute on function set_business_location(uuid, text, double precision, double precision),
   unlocated_businesses(int), mark_business_unlocatable(uuid, text), request_geocode(),
   clear_location_on_address_change() from public, anon, authenticated;

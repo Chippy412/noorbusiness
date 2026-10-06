@@ -391,6 +391,8 @@
         var bits = [];
         if (r.paid_tier) bits.push("Paid " + esc(PLAN_NAMES[r.paid_tier]) + ": " + esc(r.paid_status || "unknown") +
           (paidLive ? (r.cancel_at_period_end ? ", ends " : ", renews ") + day(r.paid_period_end || r.paid_until) : "") + (r.payer_email ? " (" + esc(r.payer_email) + ")" : ""));
+        if (paidLive && r.business_status !== "approved") bits.push('<strong class="mod-flag">Still billing while the listing isn\u2019t live. Cancel or refund in Stripe if it won\u2019t be back soon.</strong>');
+        if (paidLive && r.payer_email && r.payer_email !== r.owner_email) bits.push('<strong class="mod-flag">Paid by ' + esc(r.payer_email) + ", but the listing now belongs to " + (r.owner_email ? esc(r.owner_email) : "no one") + ". Sort out billing with them in Stripe.</strong>");
         if (r.comp_tier && future(r.comp_until)) bits.push("Free " + esc(PLAN_NAMES[r.comp_tier]) + " until " + day(r.comp_until) + (r.comp_note ? ": " + esc(r.comp_note) : ""));
         var showing = r.sponsor_tier && future(r.sponsored_until)
           ? "Showing as " + esc(PLAN_NAMES[r.sponsor_tier]) + (r.business_status !== "approved" ? ", but the listing isn't live" : "")

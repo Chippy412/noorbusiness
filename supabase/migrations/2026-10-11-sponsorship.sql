@@ -47,6 +47,10 @@ alter table sponsorships enable row level security;
 
 -- The listing's owner sees its sponsorship (so they know it's sponsored and
 -- by which plan); the person paying sees theirs even after a transfer.
+-- Column-level: owners never see Stripe ids or the team's comp note.
+revoke select on sponsorships from anon, authenticated;
+grant select (business_id, payer_id, paid_tier, paid_status, paid_until, paid_period_end, cancel_at_period_end,
+              comp_tier, comp_until) on sponsorships to authenticated;
 drop policy if exists "Owners and payers can read their sponsorships" on sponsorships;
 create policy "Owners and payers can read their sponsorships"
   on sponsorships for select to authenticated
@@ -86,9 +90,10 @@ create or replace function billing_apply_subscription(
   p_status text, p_period_end timestamptz, p_cancel_at_period_end boolean)
 returns void as $$
 declare
-  live boolean := p_status in ('active', 'trialing', 'past_due');
+  paid boolean := p_status in ('active', 'trialing');
+  cur sponsorships%rowtype;
+  new_until timestamptz;
   bname text;
-  prev text;
 begin
   if p_tier not in ('spotlight', 'featured') then
     raise exception 'Unknown plan' using errcode = '22023';
@@ -97,12 +102,27 @@ begin
   if bname is null then
     raise exception 'Listing not found' using errcode = 'P0002';
   end if;
-  select paid_status into prev from sponsorships where business_id = p_business;
+  select * into cur from sponsorships where business_id = p_business for update;
+  -- One listing, one paid sponsorship. An event about a DIFFERENT
+  -- subscription that isn't paying (a retried event for an old, cancelled
+  -- one; the second of two checkouts being cancelled) must not end the one
+  -- that is.
+  if found and cur.stripe_subscription_id is not null and cur.stripe_subscription_id <> p_subscription
+     and cur.paid_status in ('active', 'trialing', 'past_due') and cur.paid_until > now()
+     and not paid then
+    return;
+  end if;
+  -- Paid up: through the period plus 3 days' grace. A failed renewal
+  -- (past_due) keeps what was already paid for but never extends it.
+  new_until := case
+    when paid then p_period_end + interval '3 days'
+    when p_status = 'past_due' then least(coalesce(case when cur.stripe_subscription_id = p_subscription then cur.paid_until end, now()),
+                                          p_period_end + interval '3 days')
+    else least(p_period_end, now()) end;
   insert into sponsorships (business_id, payer_id, stripe_customer_id, stripe_subscription_id, paid_tier,
                             paid_status, paid_until, paid_period_end, cancel_at_period_end, updated_at)
   values (p_business, p_payer, p_customer, p_subscription, p_tier, p_status,
-          case when live then p_period_end + interval '3 days' else least(p_period_end, now()) end,
-          p_period_end, coalesce(p_cancel_at_period_end, false), now())
+          new_until, p_period_end, coalesce(p_cancel_at_period_end, false), now())
   on conflict (business_id) do update set
     payer_id = coalesce(excluded.payer_id, sponsorships.payer_id),
     stripe_customer_id = excluded.stripe_customer_id,
@@ -114,7 +134,7 @@ begin
     cancel_at_period_end = excluded.cancel_at_period_end,
     updated_at = now();
   perform _sync_sponsorship(p_business);
-  if prev is distinct from p_status then
+  if cur.paid_status is distinct from p_status or cur.stripe_subscription_id is distinct from p_subscription then
     insert into moderation_log (actor_id, action, business_id, summary, detail)
     values (null, 'sponsor.billing', p_business, bname, jsonb_build_object('plan', p_tier, 'status', p_status));
   end if;

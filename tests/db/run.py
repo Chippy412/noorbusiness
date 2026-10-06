@@ -809,7 +809,7 @@ def paid_sponsorship_lifecycle(t):
     assert t.one("select paid_tier from sponsorships") == "featured"
     assert t.one("select paid_until - paid_period_end from sponsorships") == datetime.timedelta(days=3)
     t.as_(x)
-    assert t.q("select * from sponsorships") == []
+    assert t.q("select paid_tier from sponsorships") == []
     t.as_(role="service_role")
     t.q(BILL, (b, o, "featured", "active"))  # replayed webhook: no change, no duplicate log line
     t.q(BILL, (b, o, "featured", "canceled"))
@@ -817,6 +817,48 @@ def paid_sponsorship_lifecycle(t):
     assert t.q("select sponsor_tier, sponsored_until from businesses where id = %s", (b,))[0] == (None, None)
     t.admin()
     assert [r[0] for r in t.q("select detail ->> 'status' from moderation_log where action = 'sponsor.billing' order by id")] == ["active", "canceled"]
+
+
+@test
+def billing_events_for_another_subscription_cant_end_a_paid_one(t):
+    o = t.user("o@x.co"); b = t.business(o)
+    t.as_(role="service_role")
+    t.q("select billing_apply_subscription(%s, %s, 'spotlight', 'cus_1', 'sub_old', 'active', now() + interval '30 days', false)", (b, o))
+    t.q("select billing_apply_subscription(%s, %s, 'featured', 'cus_1', 'sub_new', 'active', now() + interval '30 days', false)", (b, o))
+    t.q("select billing_apply_subscription(%s, %s, 'spotlight', 'cus_1', 'sub_old', 'canceled', now() + interval '30 days', false)", (b, o))
+    t.as_()
+    assert t.one("select sponsor_tier from businesses where id = %s", (b,)) == "featured", "a stale event for an old subscription ended the new one"
+    t.as_(role="service_role")
+    t.q("select billing_apply_subscription(%s, %s, 'featured', 'cus_1', 'sub_new', 'canceled', now(), false)", (b, o))
+    t.as_()
+    assert t.one("select sponsor_tier from businesses where id = %s", (b,)) is None
+
+
+@test
+def failed_renewal_does_not_extend_placement(t):
+    o = t.user("o@x.co"); b = t.business(o)
+    t.as_(role="service_role")
+    t.q("select billing_apply_subscription(%s, %s, 'featured', 'cus_1', 'sub_1', 'active', now() + interval '2 days', false)", (b, o))
+    before = t.one("select paid_until from sponsorships where business_id = %s", (b,))
+    # Stripe moves the period forward a month even though the renewal failed.
+    t.q("select billing_apply_subscription(%s, %s, 'featured', 'cus_1', 'sub_1', 'past_due', now() + interval '32 days', false)", (b, o))
+    assert t.one("select paid_until from sponsorships where business_id = %s", (b,)) == before
+    t.q("select billing_apply_subscription(%s, %s, 'featured', 'cus_1', 'sub_1', 'active', now() + interval '32 days', false)", (b, o))
+    assert t.one("select paid_until > %s from sponsorships where business_id = %s", (before, b)) is True, "paying again extends it"
+
+
+@test
+def owners_cant_read_stripe_ids_or_team_notes(t):
+    mod, vol = team(t)
+    o = t.user("o@x.co"); b = t.business(o)
+    t.as_(role="service_role")
+    t.q("select billing_apply_subscription(%s, %s, 'featured', 'cus_1', 'sub_1', 'active', now() + interval '30 days', false)", (b, o))
+    t.as_(mod, aal="aal2")
+    t.q("select admin_set_comp(%s, 'spotlight', now() + interval '9 days', 'internal note')", (b,))
+    t.as_(o)
+    assert t.one("select paid_tier from sponsorships") == "featured"
+    for col in ("stripe_customer_id", "stripe_subscription_id", "comp_note", "*"):
+        t.fails("select " + col + " from sponsorships")
 
 
 @test
@@ -890,6 +932,11 @@ def locations_are_server_only_and_follow_the_address(t):
     assert len(seeded) >= 1, "seeded listings with addresses still need locating"
     t.as_()
     t.fails("select unlocated_businesses(10)")
+    t.fails("select geocode_allowed('ip', 2)")
+    t.fails("select * from geocode_requests")
+    t.as_(role="service_role")
+    assert [t.one("select geocode_allowed('ip1', 2)") for _ in range(3)] == [True, True, False]
+    assert t.one("select geocode_allowed('ip2', 2)") is True, "limits are per IP"
 
 
 # ------------------------------------------------------------------- alerts

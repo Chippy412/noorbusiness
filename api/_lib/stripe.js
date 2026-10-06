@@ -56,6 +56,11 @@ function verifySignature(rawBody, header, secret, nowSeconds, tolerance) {
   });
 }
 
+function tokenClaims(jwt) {
+  try { return JSON.parse(Buffer.from(String(jwt).split(".")[1], "base64url").toString("utf8")) || {}; }
+  catch (e) { return {}; }
+}
+
 // The signed-in site user, from the Supabase access token the page sends.
 async function currentUser(req) {
   var auth = String(req.headers.authorization || "");
@@ -67,7 +72,13 @@ async function currentUser(req) {
     });
     if (!res.ok) return null;
     var u = await res.json();
-    return u && u.id ? { id: u.id, email: u.email || null } : null;
+    if (!u || !u.id) return null;
+    // Someone who turned on two-factor must have used it for this session,
+    // the same rule the database applies to owner edits. Supabase already
+    // verified the token above, so reading its claims here is safe.
+    var hasFactor = (u.factors || []).some(function (f) { return f.status === "verified"; });
+    if (hasFactor && tokenClaims(m[1]).aal !== "aal2") return null;
+    return { id: u.id, email: u.email || null };
   } catch (e) { return null; }
 }
 
@@ -75,4 +86,4 @@ function siteUrl() {
   return (process.env.SITE_URL || "https://nicc-business.vercel.app").replace(/\/$/, "");
 }
 
-module.exports = { call: call, form: form, verifySignature: verifySignature, currentUser: currentUser, siteUrl: siteUrl, API_VERSION: API_VERSION };
+module.exports = { tokenClaims: tokenClaims, call: call, form: form, verifySignature: verifySignature, currentUser: currentUser, siteUrl: siteUrl, API_VERSION: API_VERSION };

@@ -178,17 +178,14 @@
   }
 
   // Sponsorship state for the caller's listings (and any they pay for), keyed
-  // by business id. has_customer = there's a Stripe customer to manage.
+  // by business id. (Stripe ids and the team's notes aren't readable here.)
   async function loadMySponsorships() {
     var result = await window.NiccSupabase
       .from("sponsorships")
-      .select("business_id, payer_id, paid_tier, paid_status, paid_until, paid_period_end, cancel_at_period_end, comp_tier, comp_until, stripe_customer_id");
+      .select("business_id, payer_id, paid_tier, paid_status, paid_until, paid_period_end, cancel_at_period_end, comp_tier, comp_until");
     if (result.error) throw result.error;
     var byId = {};
-    result.data.forEach(function (r) {
-      byId[r.business_id] = Object.assign({}, r, { has_customer: !!r.stripe_customer_id });
-      delete byId[r.business_id].stripe_customer_id;
-    });
+    result.data.forEach(function (r) { byId[r.business_id] = r; });
     return byId;
   }
 

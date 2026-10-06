@@ -15,7 +15,17 @@ var html = require("./_lib/html");
 var supa = require("./_lib/supa");
 var stripe = require("./_lib/stripe"); // for currentUser()
 
+var crypto = require("crypto");
+
 var BATCH = 6;
+var PER_HOUR = 30; // fresh visitor lookups per IP; cached repeats don't count
+
+function ipHash(req) {
+  var fwd = req.headers["x-forwarded-for"];
+  var ip = fwd ? String(fwd).split(",")[0].trim() : (req.socket && req.socket.remoteAddress) || "";
+  var salt = process.env.IP_HASH_SALT || supa.serviceKey() || "nicc";
+  return crypto.createHash("sha256").update(salt + "|" + ip).digest("hex").slice(0, 32);
+}
 
 function parseBody(req) {
   var b = req.body;
@@ -45,6 +55,10 @@ module.exports = async function handler(req, res) {
   if (req.method === "GET") {
     var q = String((req.query && req.query.q) || "").trim();
     if (q.length < 3 || q.length > 200) { res.status(400).json({ ok: false, error: "invalid" }); return; }
+    if (supa.serviceKey()) {
+      var allowed = await supa.rest("rpc/geocode_allowed", { service: true, method: "POST", body: { p_ip_hash: ipHash(req), p_per_hour: PER_HOUR } });
+      if (allowed.ok && allowed.data === false) { res.status(429).json({ ok: false, error: "rate_limited" }); return; }
+    }
     try {
       var hit = await geo.geocode(q);
       if (!hit) {

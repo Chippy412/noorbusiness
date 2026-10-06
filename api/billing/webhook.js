@@ -70,8 +70,11 @@ async function handler(req, res) {
     var r = await supa.rest("rpc/billing_apply_subscription", { service: true, method: "POST", body: row });
     if (!r.ok) {
       console.error("webhook: database refused", r.status, JSON.stringify(r.data));
-      // A listing that's been deleted will never accept it; anything else, let Stripe retry.
-      res.status(r.status === 400 || r.status === 404 ? 200 : 500).json({ ok: false }); return;
+      // A deleted listing (P0002) or an unknown plan (22023) will never be
+      // accepted: acknowledge. Anything else (e.g. the function isn't there
+      // yet, PostgREST's own 404) must make Stripe retry.
+      var code = r.data && r.data.code;
+      res.status(code === "P0002" || code === "22023" ? 200 : 500).json({ ok: false }); return;
     }
     res.status(200).json({ ok: true });
   } catch (e) {

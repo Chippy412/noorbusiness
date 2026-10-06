@@ -344,3 +344,10 @@ test("geocode route: validates input and keeps the backfill for moderators", asy
     assert.strictEqual(res.code, 400, "a wrong secret is treated as a (bad) backfill request, never as the trigger");
   });
 });
+
+test("stripe: token claims are read from the JWT payload", () => {
+  const { tokenClaims } = require("../api/_lib/stripe");
+  const payload = Buffer.from(JSON.stringify({ sub: "u1", aal: "aal2" })).toString("base64url");
+  assert.strictEqual(tokenClaims("x." + payload + ".sig").aal, "aal2");
+  assert.deepStrictEqual(tokenClaims("garbage"), {});
+});

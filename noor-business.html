@@ -989,6 +989,7 @@
   .promote-active { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; color: var(--ink); }
   .promote-fine { margin: 10px 0 0 !important; font-size: 0.8rem !important; }
   .mod-row-pills:not(:has([data-field="featured"]:checked)) .mod-until { display: none; }
+  .mod-flag { color: var(--danger); font-weight: 700; }
   .mod-until { display: inline-flex; align-items: center; gap: 6px; margin-left: 6px; color: var(--muted); font-size: 0.84rem; }
   .mod-until input, .mod-comp input, .mod-comp select { font: inherit; font-size: 0.9rem; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--hairline); background: var(--ground); color: var(--ink); }
   .mod-comp { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.8fr) minmax(0, 0.9fr); gap: 12px; align-items: end; margin-top: 14px; }
@@ -4133,7 +4134,8 @@
     var planName = function (id) { var p = billing.plans.filter(function (x) { return x.id === id; })[0]; return p ? p.name : id; };
     var active = live.sponsor_tier && live.sponsored_until && new Date(live.sponsored_until) > new Date();
     var paidLive = sp && sp.paid_tier && sp.paid_until && new Date(sp.paid_until) > new Date() && ["active", "trialing", "past_due"].indexOf(sp.paid_status) !== -1;
-    var canManage = sp && sp.payer_id && sp.payer_id === myId && sp.has_customer;
+    // The billing portal is for whoever pays (checked again on the server).
+    var canManage = sp && sp.payer_id && sp.payer_id === myId && sp.paid_tier;
     if (active) {
       var line = paidLive
         ? "Sponsored on the " + planName(sp.paid_tier) + " plan. " + (sp.cancel_at_period_end ? "Ends " : "Renews ") + fmt(sp.paid_period_end || sp.paid_until) + "."
