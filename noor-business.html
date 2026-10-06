@@ -716,6 +716,16 @@
   .pop-foot { display: flex; justify-content: flex-end; }
   .pop-panel .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
   .pop-panel .near-here { justify-content: center; min-height: 44px; }
+  .pop-panel-near .distance-status:empty { display: none; }
+  .pop-panel-near .near-within { display: none; flex-direction: column; gap: 8px; }
+  .pop-panel-near.has-origin .near-within { display: flex; }
+  .pop-panel-near.has-origin .near-here, .pop-panel-near.has-origin .dist-address { display: none; }
+  .pop-panel-near.has-origin .distance-status { font-size: 0.95rem; font-weight: 600; color: var(--ink); justify-content: space-between; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { padding: 7px 13px; border: 1px solid var(--hairline); border-radius: 999px; background: var(--ground); color: var(--ink-2); font: inherit; font-size: 0.88rem; font-weight: 600; cursor: pointer; }
+  .chip:hover { border-color: var(--accent); }
+  .chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-soft-ink); }
+  .chip:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
   .pop-panel .dist-input { display: flex; gap: 8px; }
   .pop-panel .dist-input input { flex: 1; min-width: 0; }
   .distance-status { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 0.84rem; color: var(--ink-2); margin: 0; }
@@ -1450,17 +1460,26 @@
                 <svg class="icon pop-chev" aria-hidden="true"><use href="#i-chevron-down"/></svg>
               </button>
               <div class="pop-panel pop-panel-near" id="popNearPanel" role="group" aria-label="Distance from" hidden>
+                <p class="distance-status" id="originStatus" aria-live="polite"></p>
                 <button type="button" class="btn btn-ghost btn-sm near-here" id="useLocation"><svg class="icon"><use href="#i-pin"/></svg> Use my location</button>
                 <div class="field dist-address">
-                  <label for="fOriginText">Or an address or ZIP</label>
+                  <label for="fOriginText" class="sr-only">Address or ZIP</label>
                   <div class="dist-input">
-                    <input type="text" id="fOriginText" autocomplete="off" spellcheck="false" placeholder="e.g. 43017 or 123 Main St">
+                    <input type="text" id="fOriginText" autocomplete="off" spellcheck="false" placeholder="Or type a ZIP or address">
                     <button type="button" class="btn btn-ghost btn-sm" id="setOrigin">Set</button>
                   </div>
                 </div>
-                <div class="field dist-within">
-                  <label for="fWithin">Within</label>
-                  <select id="fWithin" disabled>
+                <div class="near-within">
+                  <span class="pop-title" id="withinTitle">Within</span>
+                  <div class="chips" role="group" aria-labelledby="withinTitle" id="withinChips">
+                    <button type="button" class="chip" data-within="" aria-pressed="true">Any</button>
+                    <button type="button" class="chip" data-within="2" aria-pressed="false">2 mi</button>
+                    <button type="button" class="chip" data-within="5" aria-pressed="false">5 mi</button>
+                    <button type="button" class="chip" data-within="10" aria-pressed="false">10 mi</button>
+                    <button type="button" class="chip" data-within="25" aria-pressed="false">25 mi</button>
+                  </div>
+                  <label class="sr-only" for="fWithin">Within</label>
+                  <select id="fWithin" hidden disabled>
                     <option value="">Any distance</option>
                     <option value="2">2 miles</option>
                     <option value="5">5 miles</option>
@@ -1468,7 +1487,6 @@
                     <option value="25">25 miles</option>
                   </select>
                 </div>
-                <p class="distance-status" id="originStatus" aria-live="polite"></p>
                 <p class="filter-help" id="withinNote" hidden>Some listings without an address on file are hidden while a distance is set.</p>
               </div>
             </div>
@@ -3260,8 +3278,19 @@
       label = (within ? "Within " + within + " mi of " : "Near ") + place;
     }
     document.getElementById("nearLabel").textContent = label;
+    document.getElementById("popNearPanel").classList.toggle("has-origin", !!origin);
+    Array.prototype.forEach.call(document.querySelectorAll("#withinChips .chip"), function (c) {
+      c.setAttribute("aria-pressed", String(c.getAttribute("data-within") === within));
+    });
     nearBtn.classList.toggle("is-active", !!origin);
   }
+  document.getElementById("withinChips").addEventListener("click", function (e) {
+    var chip = e.target.closest(".chip");
+    if (!chip) return;
+    var sel = document.getElementById("fWithin");
+    sel.value = chip.getAttribute("data-within");
+    sel.dispatchEvent(new Event("change", { bubbles: true }));
+  });
   (function () {
     var pops = Array.prototype.slice.call(document.querySelectorAll(".pop"));
     function close(pop, refocus) {
