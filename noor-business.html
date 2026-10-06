@@ -1233,7 +1233,7 @@
               <select id="heroCategory">
                 <option value="">Any category</option>
                 <option>Restaurants</option>
-                <option>Grocery &amp; Halal Meat</option>
+                <option>Grocery</option>
                 <option>Modest Wear</option>
                 <option>Health &amp; Wellness</option>
                 <option>Professional Services</option>
@@ -1263,7 +1263,7 @@
       <div class="wrap">
         <div class="pill-rail">
           <button class="pill" data-quick-cat="Restaurants"><svg class="icon"><use href="#i-heart"/></svg> Restaurants</button>
-          <button class="pill" data-quick-cat="Grocery &amp; Halal Meat"><svg class="icon"><use href="#i-basket"/></svg> Halal grocery</button>
+          <button class="pill" data-quick-cat="Grocery"><svg class="icon"><use href="#i-basket"/></svg> Grocery</button>
           <button class="pill" data-quick-cat="Modest Wear"><svg class="icon"><use href="#i-shirt"/></svg> Modest wear</button>
           <button class="pill" data-quick-badge="community"><svg class="icon"><use href="#i-mosque"/></svg> Community clinic</button>
           <button class="pill" data-quick-cat="Education"><svg class="icon"><use href="#i-book"/></svg> Quran &amp; tutoring</button>
@@ -1297,7 +1297,7 @@
             <span>Levantine, Somali, Desi, Turkish, and more</span>
           </button>
           <div class="cat-list reveal">
-            <button class="cat-row" data-quick-cat="Grocery &amp; Halal Meat"><span class="cat-icon"><svg class="icon"><use href="#i-basket"/></svg></span><div><h3>Grocery &amp; Halal Meat</h3><span>Butchers and markets</span></div></button>
+            <button class="cat-row" data-quick-cat="Grocery"><span class="cat-icon"><svg class="icon"><use href="#i-basket"/></svg></span><div><h3>Grocery</h3><span>Butchers and markets</span></div></button>
             <button class="cat-row" data-quick-cat="Modest Wear"><span class="cat-icon"><svg class="icon"><use href="#i-shirt"/></svg></span><div><h3>Modest Wear</h3><span>Abayas, thobes, hijabs</span></div></button>
             <button class="cat-row" data-quick-cat="Education"><span class="cat-icon"><svg class="icon"><use href="#i-book"/></svg></span><div><h3>Education</h3><span>Quran, tutoring, weekend school</span></div></button>
             <button class="cat-row" data-quick-cat="Health &amp; Wellness"><span class="cat-icon"><svg class="icon"><use href="#i-heart"/></svg></span><div><h3>Health &amp; Wellness</h3><span>Clinics and dentists</span></div></button>
@@ -1416,7 +1416,7 @@
               <select id="fCategory">
                 <option value="">All categories</option>
                 <option>Restaurants</option>
-                <option>Grocery &amp; Halal Meat</option>
+                <option>Grocery</option>
                 <option>Modest Wear</option>
                 <option>Health &amp; Wellness</option>
                 <option>Professional Services</option>
@@ -1824,7 +1824,7 @@
                 <label for="bCategory">Category</label>
                 <select id="bCategory">
                   <option>Restaurants</option>
-                  <option>Grocery &amp; Halal Meat</option>
+                  <option>Grocery</option>
                   <option>Modest Wear</option>
                   <option>Health &amp; Wellness</option>
                   <option>Professional Services</option>
@@ -2054,7 +2054,7 @@
                   <label for="ownAddCategory">Category</label>
                   <select id="ownAddCategory">
                     <option>Restaurants</option>
-                    <option>Grocery &amp; Halal Meat</option>
+                    <option>Grocery</option>
                     <option>Modest Wear</option>
                     <option>Health &amp; Wellness</option>
                     <option>Professional Services</option>
@@ -2531,7 +2531,7 @@
         '<div class="listing-art art-tone-' + item.tone + '">' +
           (photoUrl
             ? '<img src="' + photoUrl + '" alt="' + name + '" loading="lazy">'
-            : '<span class="art-badge"><svg class="icon"><use href="#' + item.icon + '"/></svg></span><span class="art-cat">' + (item.cat === "Grocery & Halal Meat" ? '<svg class="icon"><use href="#i-shield"/></svg> ' : "") + cat + '</span>') +
+            : '<span class="art-badge"><svg class="icon"><use href="#' + item.icon + '"/></svg></span><span class="art-cat">' + (item.badges.indexOf("halal") !== -1 ? '<svg class="icon"><use href="#i-shield"/></svg> ' : "") + cat + '</span>') +
           '<button class="save-btn" type="button" data-id="' + item.id + '" aria-pressed="' + (isSaved(item.id) ? "true" : "false") + '" aria-label="Save ' + name + '">' +
             '<svg class="icon"><use href="#i-bookmark"/></svg>' +
           '</button>' +
