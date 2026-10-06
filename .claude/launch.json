@@ -7,6 +7,12 @@
       "runtimeArgs": ["-y", "serve", "-l", "8790", "/Users/faraz/Documents/GitHub/nicc-business/.claude/worktrees/business-handoff-checklist-071371"],
       "port": 8790,
       "url": "http://localhost:8790"
+    },
+    {
+      "name": "moderation-review",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["-y", "serve", "-l", "8791", "/Users/faraz/Documents/GitHub/nicc-business/.claude/worktrees/noor-moderation-page-review-1c6aa2"],
+      "port": 8791
     }
   ]
 }

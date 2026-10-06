@@ -389,7 +389,7 @@
         var paidLive = r.paid_tier && future(r.paid_until) && ["active", "trialing", "past_due"].indexOf(r.paid_status) !== -1;
         var bits = [];
         if (r.paid_tier) bits.push("Paid " + esc(PLAN_NAMES[r.paid_tier]) + ": " + esc(r.paid_status || "unknown") +
-          (paidLive ? (r.cancel_at_period_end ? ", ends " : ", renews ") + day(r.paid_until) : "") + (r.payer_email ? " (" + esc(r.payer_email) + ")" : ""));
+          (paidLive ? (r.cancel_at_period_end ? ", ends " : ", renews ") + day(r.paid_period_end || r.paid_until) : "") + (r.payer_email ? " (" + esc(r.payer_email) + ")" : ""));
         if (r.comp_tier && future(r.comp_until)) bits.push("Free " + esc(PLAN_NAMES[r.comp_tier]) + " until " + day(r.comp_until) + (r.comp_note ? ": " + esc(r.comp_note) : ""));
         var showing = r.sponsor_tier && future(r.sponsored_until)
           ? "Showing as " + esc(PLAN_NAMES[r.sponsor_tier]) + (r.business_status !== "approved" ? ", but the listing isn't live" : "")

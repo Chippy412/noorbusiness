@@ -15,6 +15,7 @@ import sys
 import uuid
 import json
 import traceback
+import datetime
 
 import pgserver
 import psycopg
@@ -805,6 +806,7 @@ def paid_sponsorship_lifecycle(t):
     assert (tier, until) == ("featured", True), "3-day grace on top of the paid period"
     t.as_(o)
     assert t.one("select paid_tier from sponsorships") == "featured"
+    assert t.one("select paid_until - paid_period_end from sponsorships") == datetime.timedelta(days=3)
     t.as_(x)
     assert t.q("select * from sponsorships") == []
     t.as_(role="service_role")

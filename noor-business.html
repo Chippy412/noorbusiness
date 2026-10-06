@@ -976,6 +976,7 @@
   .promote-plan .btn { margin-top: auto; align-self: flex-start; }
   .promote-active { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; color: var(--ink); }
   .promote-fine { margin: 10px 0 0 !important; font-size: 0.8rem !important; }
+  .mod-row-pills:not(:has([data-field="featured"]:checked)) .mod-until { display: none; }
   .mod-until { display: inline-flex; align-items: center; gap: 6px; margin-left: 6px; color: var(--muted); font-size: 0.84rem; }
   .mod-until input, .mod-comp input, .mod-comp select { font: inherit; font-size: 0.9rem; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--hairline); background: var(--ground); color: var(--ink); }
   .mod-comp { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.8fr) minmax(0, 0.9fr); gap: 12px; align-items: end; margin-top: 14px; }
@@ -1002,6 +1003,8 @@
     .mod-tools { grid-template-columns: 1fr; }
     .mod-row:has(.mod-history) { grid-template-areas: "main" "status" "pills" "save" "hist"; }
     .mod-note-form { flex-direction: column; align-items: stretch; }
+    .mod-sheet.mod-selectable { padding-left: 50px; }
+    .mod-select { left: 16px; top: 22px; }
     .mod-bulk { flex-wrap: wrap; }
   }
   @media (max-width: 860px) {
@@ -2123,7 +2126,7 @@
     <div class="page-head">
       <div class="wrap">
         <h1>Moderation</h1>
-        <p>Review new listings, edits, claims and reviews. Volunteers only.</p>
+        <p>Review new listings, edits, claims, reviews and reports. Volunteers only.</p>
       </div>
     </div>
     <section>
@@ -3936,7 +3939,7 @@
     var canManage = sp && sp.payer_id && sp.payer_id === myId && sp.has_customer;
     if (active) {
       var line = paidLive
-        ? "Sponsored on the " + planName(sp.paid_tier) + " plan. " + (sp.cancel_at_period_end ? "Ends " : "Renews ") + fmt(sp.paid_until) + "."
+        ? "Sponsored on the " + planName(sp.paid_tier) + " plan. " + (sp.cancel_at_period_end ? "Ends " : "Renews ") + fmt(sp.paid_period_end || sp.paid_until) + "."
         : "A courtesy " + planName(live.sponsor_tier) + " placement from the NICC team, until " + fmt(live.sponsored_until) + ".";
       if (paidLive && sp.paid_status === "past_due") line += " Your last payment didn't go through; please update your card.";
       return '<div class="promote"><div class="promote-active"><span>' + escapeAttr(line) + '</span>' +

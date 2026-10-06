@@ -40,6 +40,9 @@ create table if not exists sponsorships (
   comp_note text check (char_length(comp_note) <= 500),
   updated_at timestamptz not null default now()
 );
+-- paid_until includes the grace period; paid_period_end is Stripe's own date
+-- (what owners see as "renews on").
+alter table sponsorships add column if not exists paid_period_end timestamptz;
 alter table sponsorships enable row level security;
 
 -- The listing's owner sees its sponsorship (so they know it's sponsored and
@@ -96,10 +99,10 @@ begin
   end if;
   select paid_status into prev from sponsorships where business_id = p_business;
   insert into sponsorships (business_id, payer_id, stripe_customer_id, stripe_subscription_id, paid_tier,
-                            paid_status, paid_until, cancel_at_period_end, updated_at)
+                            paid_status, paid_until, paid_period_end, cancel_at_period_end, updated_at)
   values (p_business, p_payer, p_customer, p_subscription, p_tier, p_status,
           case when live then p_period_end + interval '3 days' else least(p_period_end, now()) end,
-          coalesce(p_cancel_at_period_end, false), now())
+          p_period_end, coalesce(p_cancel_at_period_end, false), now())
   on conflict (business_id) do update set
     payer_id = coalesce(excluded.payer_id, sponsorships.payer_id),
     stripe_customer_id = excluded.stripe_customer_id,
@@ -107,6 +110,7 @@ begin
     paid_tier = excluded.paid_tier,
     paid_status = excluded.paid_status,
     paid_until = excluded.paid_until,
+    paid_period_end = excluded.paid_period_end,
     cancel_at_period_end = excluded.cancel_at_period_end,
     updated_at = now();
   perform _sync_sponsorship(p_business);
@@ -154,7 +158,7 @@ begin
   return coalesce((
     select jsonb_agg(to_jsonb(x) order by x.business_name)
       from (select s.business_id, b.name as business_name, b.status as business_status,
-                   b.sponsor_tier, b.sponsored_until, s.paid_tier, s.paid_status, s.paid_until,
+                   b.sponsor_tier, b.sponsored_until, s.paid_tier, s.paid_status, s.paid_until, s.paid_period_end,
                    s.cancel_at_period_end, s.comp_tier, s.comp_until, s.comp_note, s.updated_at,
                    payer.email as payer_email, owner.email as owner_email,
                    s.stripe_subscription_id is not null as has_subscription

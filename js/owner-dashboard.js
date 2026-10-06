@@ -182,7 +182,7 @@
   async function loadMySponsorships() {
     var result = await window.NiccSupabase
       .from("sponsorships")
-      .select("business_id, payer_id, paid_tier, paid_status, paid_until, cancel_at_period_end, comp_tier, comp_until, stripe_customer_id");
+      .select("business_id, payer_id, paid_tier, paid_status, paid_until, paid_period_end, cancel_at_period_end, comp_tier, comp_until, stripe_customer_id");
     if (result.error) throw result.error;
     var byId = {};
     result.data.forEach(function (r) {
