@@ -469,9 +469,11 @@
   }
   .listing-art .art-badge svg { width: 38px; height: 38px; }
   .listing-art .art-cat {
-    position: absolute; left: 14px; bottom: 12px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em;
-    text-transform: uppercase; color: var(--accent-soft-ink); background: color-mix(in srgb, var(--surface) 80%, transparent);
-    padding: 4px 10px; border-radius: 999px;
+    position: absolute; left: 14px; bottom: 12px; font-size: 0.72rem; font-weight: 700;
+    color: var(--accent-soft-ink); background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--surface);
+    padding: 5px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 5px;
+  }
+  .listing-art .art-cat svg { width: 13px; height: 13px;
   }
   .listing-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; transition: transform 0.4s ease; }
   .skeleton-card { pointer-events: none; }
@@ -2529,7 +2531,7 @@
         '<div class="listing-art art-tone-' + item.tone + '">' +
           (photoUrl
             ? '<img src="' + photoUrl + '" alt="' + name + '" loading="lazy">'
-            : '<span class="art-badge"><svg class="icon"><use href="#' + item.icon + '"/></svg></span><span class="art-cat">' + cat + '</span>') +
+            : '<span class="art-badge"><svg class="icon"><use href="#' + item.icon + '"/></svg></span><span class="art-cat">' + (item.cat === "Grocery & Halal Meat" ? '<svg class="icon"><use href="#i-shield"/></svg> ' : "") + cat + '</span>') +
           '<button class="save-btn" type="button" data-id="' + item.id + '" aria-pressed="' + (isSaved(item.id) ? "true" : "false") + '" aria-label="Save ' + name + '">' +
             '<svg class="icon"><use href="#i-bookmark"/></svg>' +
           '</button>' +
