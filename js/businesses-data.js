@@ -40,7 +40,10 @@
       address: row.address,
       photo: row.photo_url || null,
       verify: null,
-      hours: row.hours || []
+      hours: row.hours || [],
+      created: row.created_at || null,
+      // Paid placement isn't wired up yet; Recommended sort puts these first.
+      sponsored: false
     };
   }
 

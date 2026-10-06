@@ -653,7 +653,8 @@
   .field.invalid input, .field.invalid select, .field.invalid textarea { border-color: var(--danger); }
 
   .filter-panel { background: var(--surface); border: 1px solid var(--hairline); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 18px; }
-  .filter-row { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 12px; }
+  .filter-row { display: grid; grid-template-columns: 1.6fr 1fr 1fr 0.8fr; gap: 12px; }
+  @media (max-width: 1000px) { .filter-row { grid-template-columns: 1fr 1fr; } }
   .toggle-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
   .toggle {
     display: inline-flex; align-items: center; gap: 8px; padding: 9px 15px; border-radius: 999px;
@@ -665,6 +666,19 @@
   .toggle:hover { border-color: var(--accent); }
   .toggle:has(input:checked) { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-soft-ink); }
   .toggle:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
+  /* Badge match mode: two radios styled as a segmented control */
+  .seg {
+    display: inline-flex; align-items: center; border: 1px solid var(--hairline); border-radius: 999px;
+    background: var(--ground); padding: 3px; font-size: 0.82rem; font-weight: 600; color: var(--ink-2);
+  }
+  .seg-label { padding: 0 8px 0 10px; color: var(--muted); font-weight: 700; font-size: 0.76rem; }
+  .seg label { position: relative; cursor: pointer; }
+  .seg input { position: absolute; opacity: 0; pointer-events: none; }
+  .seg label span { display: block; padding: 6px 12px; border-radius: 999px; transition: background 0.2s ease, color 0.2s ease; }
+  .seg label:hover span { color: var(--accent-soft-ink); }
+  .seg input:checked + span { background: var(--accent-soft); color: var(--accent-soft-ink); }
+  .seg input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: 1px; }
+  .filter-help { font-size: 0.8rem; color: var(--muted); margin-top: -8px; }
 
   .results-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 30px 0 22px; }
   .results-count { font-size: 0.95rem; color: var(--muted); }
@@ -1286,6 +1300,15 @@
                 <option>Citywide (online)</option>
               </select>
             </div>
+            <div class="field">
+              <label for="fRating">Rating</label>
+              <select id="fRating">
+                <option value="">Any rating</option>
+                <option value="3">3+ stars</option>
+                <option value="4">4+ stars</option>
+                <option value="4.5">4.5+ stars</option>
+              </select>
+            </div>
           </div>
           <div class="toggle-row" role="group" aria-label="Additional filters">
             <label class="toggle"><input type="checkbox" data-badge="halal"><svg class="icon"><use href="#i-shield"/></svg> Halal verified</label>
@@ -1293,9 +1316,16 @@
             <label class="toggle"><input type="checkbox" data-badge="women"><svg class="icon"><use href="#i-users"/></svg> Women owned</label>
             <label class="toggle"><input type="checkbox" data-badge="family"><svg class="icon"><use href="#i-home"/></svg> Family run</label>
             <label class="toggle"><input type="checkbox" data-badge="community"><svg class="icon"><use href="#i-heart"/></svg> Community service</label>
+            <div class="seg" role="radiogroup" aria-labelledby="matchLabel">
+              <span class="seg-label" id="matchLabel">Match badges</span>
+              <label><input type="radio" name="badgeMatch" value="all" checked><span>All</span></label>
+              <label><input type="radio" name="badgeMatch" value="any"><span>Any</span></label>
+            </div>
+            <label class="toggle"><input type="checkbox" id="fOpenNow" aria-describedby="openNowHelp"><svg class="icon"><use href="#i-clock"/></svg> Open now</label>
             <label class="toggle"><input type="checkbox" id="fSaved"><svg class="icon"><use href="#i-bookmark"/></svg> Saved only</label>
             <button type="button" class="btn btn-ghost btn-sm" id="resetFilters" style="margin-left:auto">Reset filters</button>
           </div>
+          <p class="filter-help" id="openNowHelp" hidden>Only shows places whose hours we can read.</p>
         </form>
 
         <div class="results-bar">
@@ -1308,7 +1338,9 @@
             <div class="field" style="max-width:200px">
               <label class="sr-only" for="fSort">Sort results</label>
               <select id="fSort">
+                <option value="recommended">Recommended</option>
                 <option value="rating">Highest rated</option>
+                <option value="newest">Newest</option>
                 <option value="name">Name, A to Z</option>
                 <option value="hood">Neighborhood</option>
               </select>
@@ -2103,6 +2135,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase-client.js"></script>
 <script src="js/businesses-data.js"></script>
+<script src="js/hours.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/owner-dashboard.js"></script>
 <script src="js/admin.js"></script>
@@ -2254,8 +2287,12 @@
   function cardHtml(item) {
     var photoUrl = safePhotoUrl(item.photo);
     var name = escapeAttr(item.name), cat = escapeAttr(item.cat), hood = escapeAttr(item.hood), desc = escapeAttr(item.desc);
+    // Everything the Explore text search looks through, lowercased once here.
+    var haystack = [item.name, item.desc, item.long, item.cat, item.hood, item.address]
+      .filter(function (v) { return v; }).join(" ").toLowerCase();
     return '' +
-      '<article class="listing reveal" data-id="' + item.id + '" data-name="' + name + '" data-cat="' + cat + '" data-hood="' + hood + '" data-badges="' + escapeAttr(item.badges.join(" ")) + '" data-rating="' + (item.rating != null ? item.rating : "") + '">' +
+      '<article class="listing reveal" data-id="' + item.id + '" data-name="' + name + '" data-cat="' + cat + '" data-hood="' + hood + '" data-badges="' + escapeAttr(item.badges.join(" ")) + '" data-rating="' + (item.rating != null ? item.rating : "") + '"' +
+        ' data-search="' + escapeAttr(haystack) + '" data-hours="' + escapeAttr(JSON.stringify(item.hours || [])) + '" data-created="' + escapeAttr(item.created || "") + '" data-sponsored="' + (item.sponsored ? 1 : 0) + '">' +
         '<div class="listing-art art-tone-' + item.tone + '">' +
           (photoUrl
             ? '<img src="' + photoUrl + '" alt="' + name + '" loading="lazy">'
@@ -2710,32 +2747,59 @@
   var resultCount = document.getElementById("resultCount");
   var badgeBoxes = Array.prototype.slice.call(document.querySelectorAll(".toggle input[data-badge]"));
   var savedBox = document.getElementById("fSaved");
+  var openNowBox = document.getElementById("fOpenNow");
+  var openNowHelp = document.getElementById("openNowHelp");
+  var ratingSel = document.getElementById("fRating");
+  var matchRadios = Array.prototype.slice.call(document.querySelectorAll('input[name="badgeMatch"]'));
+  var SORT_MODES = ["recommended", "rating", "newest", "name", "hood"];
+
+  function badgeMatchMode() {
+    return matchRadios.some(function (r) { return r.checked && r.value === "any"; }) ? "any" : "all";
+  }
+  function setBadgeMatchMode(mode) {
+    matchRadios.forEach(function (r) { r.checked = (r.value === (mode === "any" ? "any" : "all")); });
+  }
+  // Hours come from the card's data-hours JSON; parsed once per card.
+  function cardOpenNow(card, now) {
+    if (card._hours === undefined) {
+      try { card._hours = JSON.parse(card.getAttribute("data-hours") || "[]"); } catch (e) { card._hours = []; }
+    }
+    return window.NiccHours ? window.NiccHours.isOpenNow(card._hours, now) : null;
+  }
 
   function applyFilters() {
     if (!results) return;
-    var q = document.getElementById("fQuery").value.trim().toLowerCase();
+    var words = document.getElementById("fQuery").value.trim().toLowerCase().split(/\s+/).filter(Boolean);
     var cat = document.getElementById("fCategory").value;
     var hood = document.getElementById("fHood").value;
     var wanted = badgeBoxes.filter(function (b) { return b.checked; }).map(function (b) { return b.getAttribute("data-badge"); });
+    var matchAny = badgeMatchMode() === "any";
     var savedOnly = savedBox && savedBox.checked;
+    var openOnly = openNowBox && openNowBox.checked;
+    var minRating = ratingSel ? parseFloat(ratingSel.value) : NaN;
+    var now = new Date();
+    if (openNowHelp) openNowHelp.hidden = !openOnly;
 
     var shown = 0;
     Array.prototype.slice.call(results.querySelectorAll(".listing[data-name]")).forEach(function (card) {
-      var name = (card.getAttribute("data-name") || "").toLowerCase();
-      var descEl = card.querySelector(".listing-desc");
-      var desc = descEl ? descEl.textContent.toLowerCase() : "";
+      var haystack = card.getAttribute("data-search") || "";
       var cCat = card.getAttribute("data-cat") || "";
       var cHood = card.getAttribute("data-hood") || "";
       var cBadges = (card.getAttribute("data-badges") || "").split(" ");
+      var cRating = parseFloat(card.getAttribute("data-rating"));
       var id = card.getAttribute("data-id");
+      var hasBadge = function (w) { return cBadges.indexOf(w) !== -1; };
 
-      var okText = !q || name.indexOf(q) !== -1 || desc.indexOf(q) !== -1 || cCat.toLowerCase().indexOf(q) !== -1;
+      // Every word has to appear somewhere (name, descriptions, category, area, address).
+      var okText = words.every(function (w) { return haystack.indexOf(w) !== -1; });
       var okCat = !cat || cCat.replace("&amp;", "&") === cat.replace("&amp;", "&");
       var okHood = !hood || cHood === hood;
-      var okBadges = wanted.every(function (w) { return cBadges.indexOf(w) !== -1; });
+      var okBadges = !wanted.length || (matchAny ? wanted.some(hasBadge) : wanted.every(hasBadge));
       var okSaved = !savedOnly || isSaved(id);
+      var okRating = isNaN(minRating) || (!isNaN(cRating) && cRating >= minRating); // unrated never passes a minimum
+      var okOpen = !openOnly || cardOpenNow(card, now) === true; // unknown hours are hidden too
 
-      var match = okText && okCat && okHood && okBadges && okSaved;
+      var match = okText && okCat && okHood && okBadges && okSaved && okRating && okOpen;
       card.hidden = !match;
       if (match) shown++;
     });
@@ -2745,9 +2809,11 @@
     syncUrl();
   }
 
-  /* Filters live in the URL (#/explore?q=...&cat=...&hood=...&badges=halal,prayer&saved=1&sort=name)
-     so a filtered view can be shared or bookmarked. replaceState doesn't fire
-     hashchange, so typing in a filter doesn't re-trigger routing. */
+  /* Filters live in the URL
+     (#/explore?q=...&cat=...&hood=...&rating=4&badges=halal,prayer&match=any&now=1&saved=1&sort=name)
+     so a filtered view can be shared or bookmarked. "Open now" is now=1
+     because open=<id> already means "open this listing". replaceState
+     doesn't fire hashchange, so typing in a filter doesn't re-trigger routing. */
   var urlSyncReady = false; // stays off until boot has read any filters out of the URL
   function syncUrl() {
     if (!urlSyncReady || currentRoute() !== "explore") return;
@@ -2760,9 +2826,12 @@
     if (q) p.set("q", q);
     if (cat) p.set("cat", cat);
     if (hood) p.set("hood", hood);
+    if (ratingSel && ratingSel.value) p.set("rating", ratingSel.value);
     if (wanted.length) p.set("badges", wanted.join(","));
+    if (badgeMatchMode() === "any") p.set("match", "any");
+    if (openNowBox && openNowBox.checked) p.set("now", "1");
     if (savedBox && savedBox.checked) p.set("saved", "1");
-    if (sort !== "rating") p.set("sort", sort);
+    if (sort !== "recommended") p.set("sort", sort);
     var qs = p.toString();
     var next = "#/explore" + (qs ? "?" + qs : "");
     if (location.hash !== next) {
@@ -2772,17 +2841,22 @@
   // Returns true if the hash carried any filter params (and applied them).
   function applyParamsFromHash() {
     var p = hashParams();
-    var keys = ["q", "cat", "hood", "badges", "saved", "sort"];
+    var keys = ["q", "cat", "hood", "rating", "badges", "match", "now", "saved", "sort"];
     if (!keys.some(function (k) { return p.has(k); })) return false;
     document.getElementById("fQuery").value = p.get("q") || "";
     document.getElementById("fCategory").value = p.get("cat") || "";
     document.getElementById("fHood").value = p.get("hood") || "";
+    if (ratingSel) {
+      ratingSel.value = p.get("rating") || "";
+      if (ratingSel.value !== (p.get("rating") || "")) ratingSel.value = ""; // unknown value -> Any
+    }
     var wanted = (p.get("badges") || "").split(",");
     badgeBoxes.forEach(function (b) { b.checked = wanted.indexOf(b.getAttribute("data-badge")) !== -1; });
+    setBadgeMatchMode(p.get("match"));
+    if (openNowBox) openNowBox.checked = p.get("now") === "1";
     if (savedBox) savedBox.checked = p.get("saved") === "1";
-    var sortEl = document.getElementById("fSort");
-    sortEl.value = p.get("sort") || "rating";
-    if (sortEl.value !== (p.get("sort") || "rating")) sortEl.value = "rating";
+    var sort = p.get("sort");
+    document.getElementById("fSort").value = SORT_MODES.indexOf(sort) !== -1 ? sort : "recommended";
     sortResults();
     applyFilters();
     return true;
@@ -2798,10 +2872,22 @@
     if (!results) return;
     var mode = document.getElementById("fSort").value;
     var cards = Array.prototype.slice.call(results.querySelectorAll(".listing[data-name]"));
+    function rating(c) { var r = parseFloat(c.getAttribute("data-rating")); return isNaN(r) ? -1 : r; }
+    function created(c) { var t = Date.parse(c.getAttribute("data-created") || ""); return isNaN(t) ? -Infinity : t; }
+    function byName(a, b) { return a.getAttribute("data-name").localeCompare(b.getAttribute("data-name")); }
+    function byRating(a, b) { return (rating(b) - rating(a)) || byName(a, b); }
     cards.sort(function (a, b) {
-      if (mode === "rating") return (parseFloat(b.getAttribute("data-rating")) || -1) - (parseFloat(a.getAttribute("data-rating")) || -1);
-      if (mode === "name") return a.getAttribute("data-name").localeCompare(b.getAttribute("data-name"));
-      return a.getAttribute("data-hood").localeCompare(b.getAttribute("data-hood"));
+      if (mode === "recommended") {
+        // Sponsored listings first, then the same order as "Highest rated".
+        return (Number(b.getAttribute("data-sponsored") === "1") - Number(a.getAttribute("data-sponsored") === "1")) || byRating(a, b);
+      }
+      if (mode === "rating") return byRating(a, b);
+      if (mode === "newest") {
+        var ta = created(a), tb = created(b);
+        return (tb > ta ? 1 : tb < ta ? -1 : 0) || byName(a, b);
+      }
+      if (mode === "name") return byName(a, b);
+      return a.getAttribute("data-hood").localeCompare(b.getAttribute("data-hood")) || byName(a, b);
     });
     cards.forEach(function (c) { results.appendChild(c); });
   }
@@ -2810,19 +2896,24 @@
     document.getElementById("fQuery").value = "";
     document.getElementById("fCategory").value = "";
     document.getElementById("fHood").value = "";
+    if (ratingSel) ratingSel.value = "";
     badgeBoxes.forEach(function (b) { b.checked = false; });
+    setBadgeMatchMode("all");
+    if (openNowBox) openNowBox.checked = false;
     if (savedBox) savedBox.checked = false;
     if (!silent) applyFilters();
   }
 
   if (results) {
     document.getElementById("filterPanel").addEventListener("submit", function (e) { e.preventDefault(); applyFilters(); });
-    ["fQuery", "fCategory", "fHood"].forEach(function (id) {
+    ["fQuery", "fCategory", "fHood", "fRating"].forEach(function (id) {
       var el = document.getElementById(id);
       el.addEventListener("input", applyFilters);
       el.addEventListener("change", applyFilters);
     });
     badgeBoxes.forEach(function (b) { b.addEventListener("change", applyFilters); });
+    matchRadios.forEach(function (r) { r.addEventListener("change", applyFilters); });
+    if (openNowBox) openNowBox.addEventListener("change", applyFilters);
     if (savedBox) savedBox.addEventListener("change", applyFilters);
     document.getElementById("fSort").addEventListener("change", function () { sortResults(); applyFilters(); });
     document.getElementById("resetFilters").addEventListener("click", function () { resetFilters(); });
