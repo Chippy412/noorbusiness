@@ -16,14 +16,14 @@ values
     '[]'::jsonb, '{}'::text[], true, 'approved'
   ),
   (
-    'Supreme Fresh Halal Meat & Grocery', 'Grocery & Halal Meat', 'Northland',
+    'Supreme Fresh Halal Meat & Grocery', 'Grocery', 'Northland',
     'Fresh halal meat and Indian grocery staples near Polaris.',
     'A halal meat and grocery shop on Sancus Boulevard carrying goat, chicken, and fish alongside a curated selection of Indian pantry staples and spices.',
     '8635 Sancus Blvd, Columbus, OH 43240',
     '[]'::jsonb, '{}'::text[], true, 'approved'
   ),
   (
-    'We-Got-Meat', 'Grocery & Halal Meat', 'Dublin',
+    'We-Got-Meat', 'Grocery', 'Dublin',
     'Halal meat market and delivery service on Sawmill Road.',
     'Part of a regional halal meat delivery service, with a Dublin location on Sawmill Road for in-person shopping alongside online ordering.',
     '5833 Sawmill Rd, Dublin, OH 43017',

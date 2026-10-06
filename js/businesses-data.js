@@ -7,7 +7,7 @@
   // follows its category without storing a redundant column in the DB.
   var CATEGORY_ICONS = {
     "Restaurants": "i-heart",
-    "Grocery & Halal Meat": "i-basket",
+    "Grocery": "i-basket",
     "Modest Wear": "i-shirt",
     "Education": "i-book",
     "Health & Wellness": "i-heart",
@@ -24,7 +24,14 @@
     return !!row.sponsor_tier && !!row.sponsored_until && new Date(row.sponsored_until) > new Date();
   }
 
+  // The category used to be "Grocery & Halal Meat"; rows saved before the
+  // rename still carry it until 2026-10-13-grocery-category.sql has run.
+  function normalizeCategory(cat) {
+    return cat === "Grocery & Halal Meat" ? "Grocery" : cat;
+  }
+
   function mapRow(row, index) {
+    row = Object.assign({}, row, { category: normalizeCategory(row.category) });
     return {
       id: row.id,
       name: row.name,
