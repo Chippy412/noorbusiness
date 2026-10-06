@@ -1,6 +1,6 @@
 // api/submit.js
-// Server-side entry point for the two public, no-login forms: the contact
-// form and the footer newsletter signup. The old flow inserted from the
+// Server-side entry point for the public, no-login forms: the contact form,
+// the footer newsletter signup, and "Report a problem" on a listing or review. The old flow inserted from the
 // browser with the public anon key, so a bot could skip Turnstile, the
 // honeypot and every other client-side check by calling Supabase directly.
 // Here the Turnstile token is verified on the server and writes use the
@@ -16,6 +16,8 @@ var supa = require("./_lib/supa");
 // a mailto: link or HTML (? & = < > " ' etc.), since volunteers reply to
 // these addresses from the moderation page.
 var EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+var UUID_RE = require("./_lib/html").UUID_RE;
+var REPORT_REASONS = ["closed", "wrong_info", "inappropriate", "spam", "other"];
 
 function clientIp(req) {
   var fwd = req.headers["x-forwarded-for"];
@@ -95,6 +97,29 @@ module.exports = async function handler(req, res) {
     });
     // 409 = already subscribed (unique index). Treat as success; don't reveal who's on the list.
     if (!sub.ok && sub.status !== 409) { res.status(502).json({ ok: false, error: "store_failed" }); return; }
+    res.status(200).json({ ok: true }); return;
+  }
+
+  if (body.type === "report") {
+    var businessId = str(body.business_id, 40), reviewId = str(body.review_id, 40);
+    var reason = str(body.reason, 40), details = str(body.details, 1000), reporter = str(body.email, 254);
+    if (!UUID_RE.test(businessId) || (reviewId && !UUID_RE.test(reviewId)) || REPORT_REASONS.indexOf(reason) === -1 ||
+        (reporter && !EMAIL_RE.test(reporter)) || (reason === "other" && !details)) {
+      res.status(400).json({ ok: false, error: "invalid" }); return;
+    }
+    var rts = await verifyTurnstile(body.token, ip);
+    if (!rts.ok) { res.status(400).json({ ok: false, error: "captcha", codes: rts.codes }); return; }
+    if ((await recentCount("reports", "&ip_hash=eq." + ipHash)) >= 5) { res.status(429).json({ ok: false, error: "rate_limited" }); return; }
+    // Only things the public can actually see can be reported.
+    var target = reviewId
+      ? await supa.rest("reviews?select=id&id=eq." + reviewId + "&business_id=eq." + businessId + "&status=eq.approved", { service: true })
+      : await supa.rest("businesses?select=id&id=eq." + businessId + "&status=eq.approved", { service: true });
+    if (!target.ok || !Array.isArray(target.data) || !target.data.length) { res.status(404).json({ ok: false, error: "not_found" }); return; }
+    var rep = await supa.rest("reports", {
+      service: true, method: "POST", headers: { Prefer: "return=minimal" },
+      body: { business_id: businessId, review_id: reviewId || null, reason: reason, details: details || null, reporter_email: reporter || null, ip_hash: ipHash }
+    });
+    if (!rep.ok) { res.status(502).json({ ok: false, error: "store_failed" }); return; }
     res.status(200).json({ ok: true }); return;
   }
 

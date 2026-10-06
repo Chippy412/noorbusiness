@@ -25,21 +25,30 @@
     return { state: aal.data.nextLevel === "aal2" ? "need-code" : "need-2fa" };
   }
 
+  // Reasons are optional; an empty one is sent as null.
+  function reason(r) { r = (r || "").trim(); return r || null; }
+
   var api = {
     status: status,
     queue: function () { return rpc("admin_queue"); },
     counts: function () { return rpc("admin_counts"); },
     allBusinesses: function () { return rpc("admin_all_businesses"); },
+    recentReviews: function () { return rpc("admin_recent_reviews"); },
+    log: function () { return rpc("admin_log"); },
+    history: function (id) { return rpc("admin_listing_history", { p_business: id }); },
+    addNote: function (id, note) { return rpc("admin_add_note", { p_business: id, p_note: note }); },
     team: function () { return rpc("admin_team"); },
     addMember: function (email, role) { return rpc("admin_add_member", { p_email: email, p_role: role }); },
     setMemberRole: function (userId, role) { return rpc("admin_set_member_role", { p_user: userId, p_role: role }); },
     removeMember: function (userId) { return rpc("admin_remove_member", { p_user: userId }); },
-    setListingStatus: function (id, s) { return rpc("admin_set_listing_status", { p_id: id, p_status: s }); },
+    setListingStatus: function (id, s, why) { return rpc("admin_set_listing_status", { p_id: id, p_status: s, p_reason: reason(why) }); },
     setFlags: function (id, badges, featured) { return rpc("admin_set_listing_flags", { p_id: id, p_badges: badges, p_featured: featured }); },
     applyEdit: function (id) { return rpc("admin_apply_edit", { p_id: id }); },
-    rejectEdit: function (id) { return rpc("admin_reject_edit", { p_id: id }); },
-    resolveClaim: function (id, approve) { return rpc("admin_resolve_claim", { p_id: id, p_approve: approve }); },
-    setReviewStatus: function (id, s) { return rpc("admin_set_review_status", { p_id: id, p_status: s }); }
+    rejectEdit: function (id, why) { return rpc("admin_reject_edit", { p_id: id, p_reason: reason(why) }); },
+    resolveClaim: function (id, approve, why) { return rpc("admin_resolve_claim", { p_id: id, p_approve: approve, p_reason: reason(why) }); },
+    setReviewStatus: function (id, s, why) { return rpc("admin_set_review_status", { p_id: id, p_status: s, p_reason: reason(why) }); },
+    resolveReport: function (id, action, why) { return rpc("admin_resolve_report", { p_id: id, p_action: action, p_reason: reason(why) }); },
+    setMessageHandled: function (id, handled) { return rpc("admin_set_message_handled", { p_id: id, p_handled: handled }); }
   };
 
   // Queues that need a decision come first; the rest is reference/management.
@@ -47,16 +56,19 @@
     { id: "new", label: "New listings", key: "new_listings", empty: "No new listings to review." },
     { id: "edits", label: "Edits", key: "edits", empty: "No edits waiting." },
     { id: "claims", label: "Claims", key: "claims", empty: "No claims waiting." },
-    { id: "reviews", label: "Reviews", key: "reviews", empty: "No reviews waiting." }
+    { id: "reviews", label: "Reviews", key: "reviews", empty: "No reviews waiting." },
+    { id: "reports", label: "Reports", key: "reports", empty: "No open reports." }
   ];
   var SECTIONS = [
     { id: "messages", label: "Messages" },
+    { id: "published", label: "Published reviews" },
     { id: "all", label: "All listings" },
+    { id: "activity", label: "Activity" },
     { id: "team", label: "Team", modOnly: true }
   ];
   var ROLE_HELP = {
-    moderator: "Full control, including Featured, taking listings down, and managing the team.",
-    volunteer: "Reviews new listings, edits, claims and reviews, and sets badges."
+    moderator: "Full control, including Featured, taking listings or published reviews down, and managing the team.",
+    volunteer: "Reviews new listings, edits, claims, reviews and reports, and sets badges."
   };
   var FIELD_LABELS = {
     name: "Name", category: "Category", neighborhood: "Neighborhood",
@@ -73,16 +85,42 @@
     some: "Some halal options",
     na: "Not applicable"
   };
+  var REPORT_REASONS = {
+    closed: "Closed or moved", wrong_info: "Wrong information", inappropriate: "Inappropriate",
+    spam: "Spam or fake", other: "Something else"
+  };
   var STATUS_LABELS = { approved: "Live", pending: "Waiting for review", rejected: "Not approved" };
+  // Activity log wording: "<who> <verb> <summary>".
+  var ACTIONS = {
+    "listing.approved": "approved", "listing.rejected": "turned down", "listing.pending": "moved back to waiting:",
+    "listing.badges": "changed badges on", "listing.featured": "featured", "listing.unfeatured": "un-featured",
+    "edit.applied": "applied changes to", "edit.rejected": "rejected changes to",
+    "claim.approved": "approved a claim on", "claim.rejected": "rejected a claim on",
+    "review.approved": "published a review of", "review.rejected": "rejected a review of", "review.removed": "removed a published review of",
+    "report.dismiss": "dismissed a report on", "report.resolve": "resolved a report on",
+    "report.hide_review": "hid a reported review of", "report.unpublish": "unpublished after a report:",
+    "message.handled": "marked a message handled", "message.reopened": "reopened a message",
+    "note": "added a note on",
+    "team.added": "added to the team:", "team.role": "changed the role of", "team.removed": "removed from the team:"
+  };
+  var PAGE_SIZE = 50;
   var dateFmt = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
   // root: container element. h: { escape, safeUrl, toast, role, userId, onChange } from the page.
   function mount(root, h) {
     var esc = h.escape;
     var isMod = h.role === "moderator";
-    var state = { tab: "new", data: null, all: null, team: null };
+    var state = {
+      tab: "new", data: null, all: null, team: null, published: null, log: null,
+      allQuery: "", allStatus: "", allFlag: "", allPage: 0, openHistory: {}
+    };
 
     function when(iso) { try { return dateFmt.format(new Date(iso)); } catch (e) { return ""; } }
+    // Items left waiting more than two days get a visible tag.
+    function age(iso) {
+      var days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+      return days >= 2 ? ' <span class="mod-age">Waiting ' + days + " days</span>" : "";
+    }
     function queueItems(id) {
       var q = QUEUES.filter(function (x) { return x.id === id; })[0];
       return q && state.data ? state.data[q.key] || [] : [];
@@ -91,6 +129,11 @@
     function val(v) { return v == null || v === "" ? none() : esc(v); }
     function where(cat, hood) { return esc(cat) + " in " + esc(hood); }
     function star(filled) { return '<svg class="icon' + (filled ? " filled" : "") + '" aria-hidden="true"><use href="#i-star"/></svg>'; }
+    function stars(n) {
+      var rating = Math.min(5, Math.max(0, Number(n) | 0)), s = ""; // always a plain 0-5 integer
+      for (var i = 1; i <= 5; i++) s += star(i <= rating);
+      return '<span class="mod-stars" aria-label="' + rating + ' out of 5">' + s + "</span>";
+    }
     function fieldVal(field, v) {
       if (field === "photo_url") {
         var u = h.safeUrl(v);
@@ -107,14 +150,22 @@
     function btn(kind, act, id, label, extra) {
       return '<button class="btn ' + (kind === "primary" ? "btn-primary" : "btn-ghost") + ' btn-sm" data-act="' + act + '" data-id="' + esc(id) + '"' + (extra || "") + ">" + label + "</button>";
     }
+    // A button that first asks for a reason. prompt: what to tell the moderator;
+    // confirm: label on the button that actually sends it.
+    function askBtn(act, id, label, prompt, confirm, extra) {
+      return btn("ghost", act, id, label, ' data-ask="' + esc(prompt) + '" data-confirm-label="' + esc(confirm) + '"' + (extra || ""));
+    }
 
     /* ---------- one sheet per item ---------- */
     function listingSheet(l) {
       var photo = h.safeUrl(l.photo_url);
       var hours = (l.hours || []).map(function (r) { return esc(r[0]) + " " + esc(r[1]); }).join("<br>");
+      var dupes = l.possible_duplicates || [];
       return '<article class="mod-sheet">' +
         '<header class="mod-sheet-head"><div><h3>' + esc(l.name) + '</h3><p class="mod-sub">' + where(l.category, l.neighborhood) + "</p></div>" +
-        '<p class="mod-when">Submitted ' + when(l.created_at) + "<br>by " + val(l.owner_email) + "</p></header>" +
+        '<p class="mod-when">Submitted ' + when(l.created_at) + age(l.created_at) + "<br>by " + val(l.owner_email) + "</p></header>" +
+        (dupes.length ? '<div class="mod-warn" role="note"><strong>Possibly a duplicate.</strong> Same name or phone as: ' +
+          dupes.map(function (d) { return esc(d.name) + " (" + esc(STATUS_LABELS[d.status] || d.status) + ")"; }).join(", ") + "</div>" : "") +
         (photo ? '<img src="' + photo + '" alt="" class="mod-photo">' : "") +
         '<p class="mod-lede">' + esc(l.description) + '</p><p class="mod-prose">' + esc(l.long_description) + "</p>" +
         rows([
@@ -122,7 +173,9 @@
           ["Address", val(l.address)], ["Phone", val(l.phone)], ["Website", val(l.website)],
           ["Hours", hours || none()]
         ]) +
-        decision(btn("ghost", "listing-status", l.id, "Reject", ' data-status="rejected"'),
+        decision(askBtn("listing-status", l.id, "Send back for changes",
+                        "What should the owner fix? They'll see this on their account page and by email. When they edit the listing it comes back here.",
+                        "Send back", ' data-status="rejected"'),
                  btn("primary", "listing-status", l.id, "Approve and publish", ' data-status="approved"')) +
         "</article>";
     }
@@ -132,13 +185,14 @@
       return '<article class="mod-sheet">' +
         '<header class="mod-sheet-head"><div><h3>' + esc(e.business_name) + '</h3><p class="mod-sub">' +
         changed.length + (changed.length === 1 ? " change" : " changes") + " proposed. The live listing stays as it is until you apply them.</p></div>" +
-        '<p class="mod-when">Edited ' + when(e.submitted_at) + "<br>by " + val(e.owner_email) + "</p></header>" +
+        '<p class="mod-when">Edited ' + when(e.submitted_at) + age(e.submitted_at) + "<br>by " + val(e.owner_email) + "</p></header>" +
         '<div class="mod-diff">' + changed.map(function (k) {
           return '<div class="mod-diff-row"><p class="mod-diff-field">' + esc(FIELD_LABELS[k] || k) + "</p>" +
             '<div class="mod-diff-old"><span class="mod-diff-tag">Now</span>' + fieldVal(k, e.live[k]) + "</div>" +
             '<div class="mod-diff-new"><span class="mod-diff-tag">Proposed</span>' + fieldVal(k, e.changes[k]) + "</div></div>";
         }).join("") + "</div>" +
-        decision(btn("ghost", "edit-reject", e.business_id, "Reject changes"), btn("primary", "edit-apply", e.business_id, "Apply changes")) +
+        decision(askBtn("edit-reject", e.business_id, "Reject changes", "Why aren't these changes being applied? The owner will see this.", "Reject changes"),
+                 btn("primary", "edit-apply", e.business_id, "Apply changes")) +
         "</article>";
     }
 
@@ -146,32 +200,70 @@
       return '<article class="mod-sheet">' +
         '<header class="mod-sheet-head"><div><h3>' + esc(c.business_name) + '</h3><p class="mod-sub">' +
         (c.current_owner_email ? "Already has an owner. Approving moves the listing to the person claiming it." : "No owner yet.") + "</p></div>" +
-        '<p class="mod-when">Requested ' + when(c.created_at) + "</p></header>" +
+        '<p class="mod-when">Requested ' + when(c.created_at) + age(c.created_at) + "</p></header>" +
         rows([["Claimed by", val(c.requester_email)], ["Current owner", c.current_owner_email ? esc(c.current_owner_email) : none("No one")], ["Their note", val(c.note)]]) +
-        decision(btn("ghost", "claim-reject", c.id, "Reject"),
+        decision(askBtn("claim-reject", c.id, "Reject", "Why isn't this claim approved? The person claiming it will see this.", "Reject claim"),
                  btn("primary", "claim-approve", c.id, "Approve and transfer", ' data-has-owner="' + (c.current_owner_email ? "1" : "") + '"')) +
         "</article>";
     }
 
     function reviewSheet(r) {
-      var rating = Math.min(5, Math.max(0, Number(r.rating) | 0)); // always a plain 0-5 integer
-      var stars = "";
-      for (var i = 1; i <= 5; i++) stars += star(i <= rating);
-      return '<article class="mod-sheet">' +
-        '<header class="mod-sheet-head"><div><h3>' + esc(r.business_name) + '</h3><p class="mod-sub mod-stars" aria-label="' + rating + ' out of 5">' + stars + "</p></div>" +
-        '<p class="mod-when">' + when(r.created_at) + "<br>by " + esc(r.author_name) + "</p></header>" +
+      return '<article class="mod-sheet mod-selectable">' +
+        '<label class="mod-select"><input type="checkbox" data-bulk value="' + esc(r.id) + '"><span class="sr-only">Select this review</span></label>' +
+        '<header class="mod-sheet-head"><div><h3>' + esc(r.business_name) + '</h3><p class="mod-sub">' + stars(r.rating) + "</p></div>" +
+        '<p class="mod-when">' + when(r.created_at) + age(r.created_at) + "<br>by " + esc(r.author_name) + "</p></header>" +
         '<blockquote class="mod-quote">' + esc(r.body) + "</blockquote>" +
-        decision(btn("ghost", "review-status", r.id, "Reject", ' data-status="rejected"'), btn("primary", "review-status", r.id, "Publish review", ' data-status="approved"')) +
+        decision(askBtn("review-status", r.id, "Reject", "Why isn't this review being published? The author will see this.", "Reject review", ' data-status="rejected"'),
+                 btn("primary", "review-status", r.id, "Publish review", ' data-status="approved"')) +
+        "</article>";
+    }
+
+    function reportSheet(p) {
+      var about = p.review_id
+        ? '<p class="mod-sub">About a review by ' + esc(p.review_author || "someone") + (p.review_status && p.review_status !== "approved" ? " (already hidden)" : "") + "</p>"
+        : '<p class="mod-sub">About the listing' + (p.business_status !== "approved" ? " (no longer public)" : "") + "</p>";
+      var actions = btn("ghost", "report", p.id, "Dismiss", ' data-action="dismiss"') +
+        btn("ghost", "report", p.id, "Mark fixed", ' data-action="resolve" title="You fixed it some other way, e.g. edited the listing or contacted the owner"');
+      if (p.review_id && p.review_status === "approved") {
+        actions += isMod
+          ? askBtn("report", p.id, "Hide the review", "Why is the review being hidden? The author will see this.", "Hide review", ' data-action="hide_review"')
+          : '<span class="mod-sub">A moderator can hide the review.</span>';
+      } else if (!p.review_id && p.business_status === "approved") {
+        actions += isMod
+          ? askBtn("report", p.id, "Take the listing down", "Why is the listing being taken down? The owner will see this.", "Take down", ' data-action="unpublish"')
+          : '<span class="mod-sub">A moderator can take the listing down.</span>';
+      }
+      return '<article class="mod-sheet">' +
+        '<header class="mod-sheet-head"><div><h3>' + esc(p.business_name) + '</h3>' + about + "</div>" +
+        '<p class="mod-when">Reported ' + when(p.created_at) + age(p.created_at) + "<br>" + (p.reporter_email ? esc(p.reporter_email) : "anonymously") + "</p></header>" +
+        (p.review_id ? '<div class="mod-review-ref">' + stars(p.review_rating) + '<blockquote class="mod-quote">' + esc(p.review_body || "") + "</blockquote></div>" : "") +
+        rows([["Reason", esc(REPORT_REASONS[p.reason] || p.reason)], ["Details", val(p.details)]]) +
+        '<div class="mod-decide mod-decide-wrap">' + actions + "</div>" +
         "</article>";
     }
 
     function messageSheet(m) {
       var subject = "Re: " + (m.subject || "your message to NICC Business");
-      return '<article class="mod-sheet mod-sheet-quiet">' +
+      return '<article class="mod-sheet mod-sheet-quiet' + (m.handled_at ? " is-done" : "") + '">' +
         '<header class="mod-sheet-head"><div><h3>' + esc(m.name) + '</h3><p class="mod-sub">' + esc(m.subject || "No subject") + "</p></div>" +
         '<p class="mod-when">' + when(m.created_at) + "<br>" + esc(m.email) + "</p></header>" +
         '<p class="mod-prose">' + esc(m.message) + "</p>" +
-        '<div class="mod-decide"><span></span><a class="btn btn-ghost btn-sm" href="mailto:' + esc(encodeURIComponent(m.email)) + "?subject=" + encodeURIComponent(subject) + '">Reply by email</a></div>' +
+        '<div class="mod-decide">' +
+          (m.handled_at
+            ? '<span class="mod-sub">Handled ' + when(m.handled_at) + (m.handled_by_email ? " by " + esc(m.handled_by_email) : "") + ' · <button class="btn-link" data-act="message-handled" data-id="' + esc(m.id) + '" data-handled="0">Reopen</button></span>'
+            : btn("ghost", "message-handled", m.id, "Mark handled", ' data-handled="1"')) +
+          '<a class="btn btn-ghost btn-sm" href="mailto:' + esc(encodeURIComponent(m.email)) + "?subject=" + encodeURIComponent(subject) + '">Reply by email</a></div>' +
+        "</article>";
+    }
+
+    function publishedReview(r) {
+      return '<article class="mod-sheet mod-sheet-quiet">' +
+        '<header class="mod-sheet-head"><div><h3>' + esc(r.business_name) + '</h3><p class="mod-sub">' + stars(r.rating) + "</p></div>" +
+        '<p class="mod-when">' + when(r.created_at) + "<br>by " + esc(r.author_name) + "</p></header>" +
+        '<blockquote class="mod-quote">' + esc(r.body) + "</blockquote>" +
+        (r.owner_reply ? '<p class="mod-reply"><strong>Owner replied:</strong> ' + esc(r.owner_reply) + "</p>" : "") +
+        (isMod ? '<div class="mod-decide"><span></span>' +
+          askBtn("review-status", r.id, "Remove review", "Why is this review being removed? The author will see this.", "Remove review", ' data-status="rejected"') + "</div>" : "") +
         "</article>";
     }
 
@@ -179,21 +271,85 @@
     function pill(attrs, label, on, disabled, title) {
       return '<label class="mod-pill' + (disabled ? " is-locked" : "") + '"' + (title ? ' title="' + esc(title) + '"' : "") + '><input type="checkbox" ' + attrs + (on ? " checked" : "") + (disabled ? " disabled" : "") + "><span>" + label + "</span></label>";
     }
-    function allListings(rows_) {
+    function filteredListings() {
+      var words = state.allQuery.toLowerCase().split(/\s+/).filter(Boolean);
+      return (state.all || []).filter(function (b) {
+        if (state.allStatus && b.status !== state.allStatus) return false;
+        if (state.allFlag === "no-owner" && b.owner_email) return false;
+        if (state.allFlag === "featured" && !b.featured) return false;
+        var hay = [b.name, b.category, b.neighborhood, b.owner_email || ""].join(" ").toLowerCase();
+        return words.every(function (w) { return hay.indexOf(w) !== -1; });
+      });
+    }
+    function listingRow(b) {
+      var statusSel = '<select data-field="status" aria-label="Status for ' + esc(b.name) + '"' + (isMod ? "" : " disabled") + ">" +
+        ["approved", "pending", "rejected"].map(function (s) { return '<option value="' + s + '"' + (b.status === s ? " selected" : "") + ">" + STATUS_LABELS[s] + "</option>"; }).join("") + "</select>";
+      var hist = state.openHistory[b.id];
+      return '<li class="mod-row" data-id="' + esc(b.id) + '" data-name="' + esc(b.name) + '" data-status="' + esc(b.status) + '">' +
+        '<div class="mod-row-main"><p class="mod-row-title">' + esc(b.name) + '</p><p class="mod-sub">' + where(b.category, b.neighborhood) +
+        (b.owner_email ? ", owned by " + esc(b.owner_email) : ", no owner") + "</p></div>" +
+        '<div class="mod-row-status">' + statusSel + "</div>" +
+        '<div class="mod-row-pills" role="group" aria-label="Badges for ' + esc(b.name) + '">' +
+        BADGES.map(function (p) { return pill('data-badge="' + p[0] + '"', p[1], (b.badges || []).indexOf(p[0]) !== -1); }).join("") +
+        pill('data-field="featured"', "Featured on home page", b.featured, !isMod, isMod ? "" : "Only moderators can change Featured").replace('class="mod-pill', 'class="mod-pill mod-pill-featured') + "</div>" +
+        '<div class="mod-row-save"><button class="btn-link" data-act="history" data-id="' + esc(b.id) + '" aria-expanded="' + (hist ? "true" : "false") + '">Notes and history</button>' +
+        '<button class="btn btn-ghost btn-sm" data-act="save-flags" data-id="' + esc(b.id) + '">Save</button></div>' +
+        (hist ? historyPanel(b.id, hist) : "") +
+        "</li>";
+    }
+    function historyPanel(id, hist) {
+      var body = hist === "loading" ? '<p class="mod-loading">Loading…</p>'
+        : hist.length ? '<ol class="mod-log">' + hist.map(logItem).join("") + "</ol>"
+        : '<p class="mod-sub">No notes or moderation history yet.</p>';
+      return '<div class="mod-history">' +
+        '<form class="mod-note-form" data-id="' + esc(id) + '"><label class="sr-only" for="note-' + esc(id) + '">Internal note</label>' +
+        '<textarea id="note-' + esc(id) + '" rows="2" maxlength="2000" placeholder="Add an internal note (only the team sees this)"></textarea>' +
+        '<button type="submit" class="btn btn-ghost btn-sm">Add note</button></form>' + body + "</div>";
+    }
+    function allListings() {
+      var list = filteredListings();
+      var pages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+      if (state.allPage >= pages) state.allPage = pages - 1;
+      var slice = list.slice(state.allPage * PAGE_SIZE, (state.allPage + 1) * PAGE_SIZE);
+      var pager = pages > 1
+        ? '<div class="mod-pager"><button class="btn btn-ghost btn-sm" data-act="page" data-dir="-1"' + (state.allPage === 0 ? " disabled" : "") + ">Previous</button>" +
+          "<span>Page " + (state.allPage + 1) + " of " + pages + "</span>" +
+          '<button class="btn btn-ghost btn-sm" data-act="page" data-dir="1"' + (state.allPage >= pages - 1 ? " disabled" : "") + ">Next</button></div>"
+        : "";
+      return '<p class="mod-count">' + list.length + (list.length === 1 ? " listing" : " listings") +
+        (list.length !== state.all.length ? " of " + state.all.length : "") + "</p>" +
+        (slice.length ? '<ul class="mod-list">' + slice.map(listingRow).join("") + "</ul>" : '<div class="mod-empty"><p>No listings match.</p></div>') + pager;
+    }
+    function allListingsView() {
       return '<p class="mod-intro">Every listing in the directory. Badges are set by volunteers and moderators' + (isMod ? "; status and Featured by moderators." : ". Status and Featured are set by moderators.") + "</p>" +
-        '<ul class="mod-list">' + rows_.map(function (b) {
-          var statusSel = '<select data-field="status" aria-label="Status for ' + esc(b.name) + '"' + (isMod ? "" : " disabled") + ">" +
-            ["approved", "pending", "rejected"].map(function (s) { return '<option value="' + s + '"' + (b.status === s ? " selected" : "") + ">" + STATUS_LABELS[s] + "</option>"; }).join("") + "</select>";
-          return '<li class="mod-row" data-id="' + esc(b.id) + '" data-name="' + esc(b.name) + '" data-status="' + esc(b.status) + '">' +
-            '<div class="mod-row-main"><p class="mod-row-title">' + esc(b.name) + '</p><p class="mod-sub">' + where(b.category, b.neighborhood) +
-            (b.owner_email ? ", owned by " + esc(b.owner_email) : ", no owner") + "</p></div>" +
-            '<div class="mod-row-status">' + statusSel + "</div>" +
-            '<div class="mod-row-pills" role="group" aria-label="Badges for ' + esc(b.name) + '">' +
-            BADGES.map(function (p) { return pill('data-badge="' + p[0] + '"', p[1], (b.badges || []).indexOf(p[0]) !== -1); }).join("") +
-            pill('data-field="featured"', "Featured on home page", b.featured, !isMod, isMod ? "" : "Only moderators can change Featured").replace('class="mod-pill', 'class="mod-pill mod-pill-featured') + "</div>" +
-            '<div class="mod-row-save"><button class="btn btn-ghost btn-sm" data-act="save-flags" data-id="' + esc(b.id) + '">Save</button></div>' +
-            "</li>";
-        }).join("") + "</ul>";
+        '<div class="mod-tools" role="search">' +
+          '<div class="field"><label for="modAllQ">Search</label><input type="search" id="modAllQ" value="' + esc(state.allQuery) + '" placeholder="Name, category, area or owner email" autocomplete="off" spellcheck="false"></div>' +
+          '<div class="field"><label for="modAllStatus">Status</label><select id="modAllStatus">' +
+            [["", "Any status"], ["approved", "Live"], ["pending", "Waiting for review"], ["rejected", "Not approved"]].map(function (o) {
+              return '<option value="' + o[0] + '"' + (state.allStatus === o[0] ? " selected" : "") + ">" + o[1] + "</option>";
+            }).join("") + "</select></div>" +
+          '<div class="field"><label for="modAllFlag">Show</label><select id="modAllFlag">' +
+            [["", "Everything"], ["no-owner", "No owner"], ["featured", "Featured"]].map(function (o) {
+              return '<option value="' + o[0] + '"' + (state.allFlag === o[0] ? " selected" : "") + ">" + o[1] + "</option>";
+            }).join("") + "</select></div>" +
+        "</div>" +
+        '<div id="modAllList">' + allListings() + "</div>";
+    }
+    function renderAllList() {
+      var box = root.querySelector("#modAllList");
+      if (box) box.innerHTML = allListings();
+    }
+
+    function logItem(l) {
+      var verb = ACTIONS[l.action] || l.action;
+      var d = l.detail || {};
+      var extra = d.note || d.reason || "";
+      if (l.action === "listing.badges") extra = "Now: " + ((d.to || []).join(", ") || "no badges");
+      if (l.action === "team.role") extra = "Now a " + d.role;
+      if (l.action === "team.added") extra = "As a " + d.role;
+      return '<li><p><strong>' + esc(l.actor_email || "Someone") + "</strong> " + esc(verb) + (l.summary ? " " + esc(l.summary) : "") + "</p>" +
+        (extra ? '<p class="mod-log-note">' + esc(extra) + "</p>" : "") +
+        '<p class="mod-sub">' + when(l.created_at) + "</p></li>";
     }
 
     function teamPanel(members) {
@@ -221,6 +377,10 @@
       return '<button class="mod-nav-item" role="tab" data-tab="' + id + '" aria-selected="' + (state.tab === id) + '">' +
         "<span>" + label + "</span>" + (n ? '<span class="mod-nav-count">' + n + "</span>" : "") + "</button>";
     }
+    function unhandledMessages() {
+      return state.data ? state.data.messages.filter(function (m) { return !m.handled_at; }).length : 0;
+    }
+    function loading(what) { return '<p class="mod-loading">Loading ' + what + "…</p>"; }
     function render() {
       var d = state.data;
       var waiting = QUEUES.reduce(function (sum, q) { return sum + queueItems(q.id).length; }, 0);
@@ -229,7 +389,9 @@
         '<div role="tablist" aria-orientation="vertical">' +
         QUEUES.map(function (q) { return navItem(q.id, q.label, queueItems(q.id).length); }).join("") +
         '<hr class="mod-rail-rule">' +
-        SECTIONS.filter(function (x) { return !x.modOnly || isMod; }).map(function (x) { return navItem(x.id, x.label, 0); }).join("") +
+        SECTIONS.filter(function (x) { return !x.modOnly || isMod; }).map(function (x) {
+          return navItem(x.id, x.label, x.id === "messages" ? unhandledMessages() : 0);
+        }).join("") +
         "</div>" +
         '<div class="mod-rail-foot"><p>Signed in as a ' + esc(h.role === "moderator" ? "moderator" : "volunteer") + ".</p>" +
         '<p>Checks for new items every minute.</p>' +
@@ -242,28 +404,91 @@
       var title = q ? q.label : SECTIONS.filter(function (x) { return x.id === state.tab; })[0].label;
       if (q) {
         var items = queueItems(q.id);
-        var sheet = { "new": listingSheet, edits: editSheet, claims: claimSheet, reviews: reviewSheet }[q.id];
-        body = items.length ? items.map(sheet).join("") : '<div class="mod-empty"><p class="mod-empty-title">' + q.empty + "</p><p>New submissions show up here, and you'll see a count by My account.</p></div>";
+        var sheet = { "new": listingSheet, edits: editSheet, claims: claimSheet, reviews: reviewSheet, reports: reportSheet }[q.id];
+        var bulk = q.id === "reviews" && items.length > 1
+          ? '<div class="mod-bulk"><label class="mod-select-all"><input type="checkbox" data-bulk-all> Select all</label>' +
+            '<button class="btn btn-ghost btn-sm" data-act="bulk-review" data-status="rejected" disabled>Reject selected</button>' +
+            '<button class="btn btn-primary btn-sm" data-act="bulk-review" data-status="approved" disabled>Publish selected</button></div>'
+          : "";
+        body = items.length ? bulk + items.map(sheet).join("") : '<div class="mod-empty"><p class="mod-empty-title">' + q.empty + "</p><p>New submissions show up here, and you'll see a count by My account.</p></div>";
       } else if (state.tab === "messages") {
-        body = d.messages.length ? d.messages.map(messageSheet).join("") : '<div class="mod-empty"><p class="mod-empty-title">No messages yet.</p></div>';
+        var msgs = d.messages.slice().sort(function (a, b) { return (a.handled_at ? 1 : 0) - (b.handled_at ? 1 : 0); });
+        body = msgs.length ? msgs.map(messageSheet).join("") : '<div class="mod-empty"><p class="mod-empty-title">No messages yet.</p></div>';
+      } else if (state.tab === "published") {
+        body = !state.published ? loading("reviews")
+          : '<p class="mod-intro">The latest 200 published reviews.' + (isMod ? "" : " A moderator can remove one; if you spot a problem, tell them.") + "</p>" +
+            (state.published.length ? state.published.map(publishedReview).join("") : '<div class="mod-empty"><p>No published reviews yet.</p></div>');
+      } else if (state.tab === "activity") {
+        body = !state.log ? loading("activity")
+          : state.log.length ? '<p class="mod-intro">The latest 300 decisions and notes by the team.</p><ol class="mod-log mod-sheet mod-sheet-quiet">' + state.log.map(logItem).join("") + "</ol>"
+          : '<div class="mod-empty"><p>Nothing yet. Decisions show up here as the team makes them.</p></div>';
       } else if (state.tab === "team") {
-        body = state.team ? teamPanel(state.team) : '<p class="mod-loading">Loading the team…</p>';
+        body = state.team ? teamPanel(state.team) : loading("the team");
       } else {
-        body = state.all ? allListings(state.all) : '<p class="mod-loading">Loading listings…</p>';
+        body = state.all ? allListingsView() : loading("listings");
       }
       root.innerHTML = '<div class="mod">' + nav +
         '<section class="mod-main" role="tabpanel" aria-label="' + esc(title) + '"><h2 class="mod-title">' + esc(title) + "</h2>" + body + "</section></div>";
     }
 
+    // Loads what the current tab shows beyond the queue itself.
+    async function loadTab() {
+      if (state.tab === "all") state.all = await api.allBusinesses();
+      if (state.tab === "published") state.published = await api.recentReviews();
+      if (state.tab === "activity") state.log = await api.log();
+      if (state.tab === "team" && isMod) state.team = await api.team();
+    }
     async function refresh() {
       state.data = await api.queue();
       lastSeen = queueTotal();
       setTitle(lastSeen);
-      if (state.tab === "all") state.all = await api.allBusinesses();
-      if (state.tab === "team" && isMod) state.team = await api.team();
+      await loadTab();
       render();
       if (h.onChange) h.onChange();
     }
+
+    function closeReason(sheet) {
+      var box = sheet && sheet.querySelector(".mod-reason");
+      if (box) box.remove();
+    }
+    function openReason(btn_) {
+      var sheet = btn_.closest(".mod-sheet") || btn_.closest(".mod-row");
+      closeReason(sheet);
+      var box = document.createElement("div");
+      box.className = "mod-reason";
+      var fid = "reason-" + Math.random().toString(36).slice(2, 9);
+      var confirm = btn_.cloneNode(true);
+      confirm.removeAttribute("data-ask");
+      confirm.setAttribute("data-confirmed", "1");
+      confirm.className = "btn btn-primary btn-sm";
+      confirm.textContent = btn_.getAttribute("data-confirm-label") || "Confirm";
+      confirm.disabled = false;
+      box.innerHTML = '<label for="' + fid + '">' + esc(btn_.getAttribute("data-ask")) + ' <span class="mod-sub">(optional)</span></label>' +
+        '<textarea id="' + fid + '" rows="3" maxlength="1000"></textarea>' +
+        '<div class="mod-reason-actions"><button class="btn-link" data-act="reason-cancel">Cancel</button></div>';
+      box.querySelector(".mod-reason-actions").appendChild(confirm);
+      sheet.appendChild(box);
+      box.querySelector("textarea").focus();
+    }
+
+    root.addEventListener("input", function (ev) {
+      if (ev.target.id === "modAllQ") { state.allQuery = ev.target.value; state.allPage = 0; renderAllList(); }
+    });
+    root.addEventListener("change", function (ev) {
+      var t = ev.target;
+      if (t.id === "modAllStatus") { state.allStatus = t.value; state.allPage = 0; renderAllList(); return; }
+      if (t.id === "modAllFlag") { state.allFlag = t.value; state.allPage = 0; renderAllList(); return; }
+      if (t.hasAttribute("data-bulk-all")) {
+        root.querySelectorAll("[data-bulk]").forEach(function (c) { c.checked = t.checked; });
+      }
+      if (t.hasAttribute("data-bulk") || t.hasAttribute("data-bulk-all")) {
+        var n = root.querySelectorAll("[data-bulk]:checked").length;
+        root.querySelectorAll('[data-act="bulk-review"]').forEach(function (b) {
+          b.disabled = !n;
+          b.textContent = (b.getAttribute("data-status") === "approved" ? "Publish " : "Reject ") + (n ? n + " selected" : "selected");
+        });
+      }
+    });
 
     root.addEventListener("click", async function (ev) {
       var tab = ev.target.closest("[data-tab]");
@@ -272,43 +497,76 @@
         render();
         var focusTarget = root.querySelector('[data-tab="' + state.tab + '"]');
         if (focusTarget) focusTarget.focus();
-        if (state.tab === "all" && !state.all) {
-          try { state.all = await api.allBusinesses(); render(); } catch (e) { h.toast(e.message || "Could not load listings."); }
-        }
-        if (state.tab === "team" && isMod) {
-          try { state.team = await api.team(); render(); } catch (e) { h.toast(e.message || "Could not load the team."); }
+        var needs = (state.tab === "all" && !state.all) || state.tab === "published" || state.tab === "activity" || (state.tab === "team" && isMod);
+        if (needs) {
+          try { await loadTab(); render(); } catch (e) { h.toast(e.message || "Could not load that."); }
         }
         return;
       }
-      var btn = ev.target.closest("[data-act]");
-      if (!btn) return;
-      var act = btn.getAttribute("data-act"), id = btn.getAttribute("data-id"), s = btn.getAttribute("data-status");
+      var btn_ = ev.target.closest("[data-act]");
+      if (!btn_) return;
+      var act = btn_.getAttribute("data-act"), id = btn_.getAttribute("data-id"), s = btn_.getAttribute("data-status");
       if (act === "desktop-alerts") return; // handled by its own listener
-      if (act === "claim-approve" && btn.getAttribute("data-has-owner") &&
+      if (act === "reason-cancel") { closeReason(btn_.closest(".mod-sheet") || btn_.closest(".mod-row")); return; }
+      if (btn_.hasAttribute("data-ask")) { openReason(btn_); return; }
+      if (act === "page") {
+        state.allPage += Number(btn_.getAttribute("data-dir"));
+        renderAllList();
+        var list = root.querySelector("#modAllList");
+        if (list) list.scrollIntoView({ block: "start" });
+        return;
+      }
+      if (act === "history") {
+        if (state.openHistory[id]) { delete state.openHistory[id]; renderAllList(); return; }
+        state.openHistory[id] = "loading"; renderAllList();
+        try { state.openHistory[id] = await api.history(id); } catch (e) { delete state.openHistory[id]; h.toast(e.message || "Could not load the history."); }
+        renderAllList();
+        return;
+      }
+      if (act === "claim-approve" && btn_.getAttribute("data-has-owner") &&
           !window.confirm("This listing already has an owner. Approving moves it to the person who claimed it. Continue?")) return;
-      btn.disabled = true;
+      var box = btn_.closest(".mod-reason");
+      var why = box ? box.querySelector("textarea").value : null;
+      btn_.disabled = true;
       try {
         var msg = "Done.";
         if (act === "refresh") { await refresh(); h.toast("Up to date."); return; }
-        else if (act === "listing-status") { await api.setListingStatus(id, s); msg = s === "approved" ? "Published. It's now in the directory." : "Listing rejected."; }
+        else if (act === "listing-status") { await api.setListingStatus(id, s, why); msg = s === "approved" ? "Published. It's now in the directory." : "Sent back to the owner."; }
         else if (act === "edit-apply") { await api.applyEdit(id); msg = "Changes applied to the live listing."; }
-        else if (act === "edit-reject") { await api.rejectEdit(id); msg = "Changes rejected. The live listing is unchanged."; }
+        else if (act === "edit-reject") { await api.rejectEdit(id, why); msg = "Changes rejected. The live listing is unchanged."; }
         else if (act === "claim-approve") { await api.resolveClaim(id, true); msg = "Claim approved. They now own the listing."; }
-        else if (act === "claim-reject") { await api.resolveClaim(id, false); msg = "Claim rejected."; }
-        else if (act === "review-status") { await api.setReviewStatus(id, s); msg = s === "approved" ? "Review published." : "Review rejected."; }
+        else if (act === "claim-reject") { await api.resolveClaim(id, false, why); msg = "Claim rejected."; }
+        else if (act === "review-status") { await api.setReviewStatus(id, s, why); msg = s === "approved" ? "Review published." : "Review removed."; }
+        else if (act === "report") {
+          var action = btn_.getAttribute("data-action");
+          await api.resolveReport(id, action, why);
+          msg = { dismiss: "Report dismissed.", resolve: "Report marked fixed.", hide_review: "Review hidden.", unpublish: "Listing taken down." }[action];
+        }
+        else if (act === "bulk-review") {
+          var ids = Array.prototype.map.call(root.querySelectorAll("[data-bulk]:checked"), function (c) { return c.value; });
+          var failed = 0;
+          for (var i = 0; i < ids.length; i++) {
+            try { await api.setReviewStatus(ids[i], s, null); } catch (e) { failed++; }
+          }
+          msg = (ids.length - failed) + (s === "approved" ? " published." : " rejected.") + (failed ? " " + failed + " could not be changed." : "");
+        }
+        else if (act === "message-handled") {
+          await api.setMessageHandled(id, btn_.getAttribute("data-handled") === "1");
+          msg = btn_.getAttribute("data-handled") === "1" ? "Marked handled." : "Reopened.";
+        }
         else if (act === "save-flags") {
-          var row = btn.closest(".mod-row"); // not [data-id]: the button itself carries one
+          var row = btn_.closest(".mod-row"); // not [data-id]: the button itself carries one
           var badges = Array.prototype.slice.call(row.querySelectorAll("[data-badge]:checked")).map(function (c) { return c.getAttribute("data-badge"); });
           var featured = row.querySelector('[data-field="featured"]').checked;
           var newStatus = row.querySelector('[data-field="status"]').value;
           var statusChanged = newStatus !== row.getAttribute("data-status");
-          if (statusChanged && newStatus !== "approved" && !window.confirm("This takes " + row.getAttribute("data-name") + " out of the public directory. Continue?")) { btn.disabled = false; return; }
+          if (statusChanged && newStatus !== "approved" && !window.confirm("This takes " + row.getAttribute("data-name") + " out of the public directory. Continue?")) { btn_.disabled = false; return; }
           await api.setFlags(id, badges, featured);
-          if (statusChanged) await api.setListingStatus(id, newStatus);
+          if (statusChanged) await api.setListingStatus(id, newStatus, null);
           msg = "Saved.";
         }
         else if (act === "member-role") {
-          var mrow = btn.closest("[data-user]");
+          var mrow = btn_.closest("[data-user]");
           await api.setMemberRole(mrow.getAttribute("data-user"), mrow.querySelector("[data-member-role]").value);
           if (mrow.getAttribute("data-user") === h.userId) {
             // Your own role changed: reload so the page shows what you can do now.
@@ -319,8 +577,8 @@
           msg = "Role updated.";
         }
         else if (act === "member-remove") {
-          var rrow = btn.closest("[data-user]");
-          if (!window.confirm("Remove " + rrow.getAttribute("data-email") + " from the team? They keep their account but lose moderation access.")) { btn.disabled = false; return; }
+          var rrow = btn_.closest("[data-user]");
+          if (!window.confirm("Remove " + rrow.getAttribute("data-email") + " from the team? They keep their account but lose moderation access.")) { btn_.disabled = false; return; }
           await api.removeMember(rrow.getAttribute("data-user"));
           msg = "Removed from the team.";
         }
@@ -328,19 +586,38 @@
         h.toast(msg);
       } catch (err) {
         h.toast((err && err.message) || "That didn't work. Please try again.");
-        btn.disabled = false;
+        btn_.disabled = false;
       }
     });
 
     root.addEventListener("submit", async function (ev) {
+      var noteForm = ev.target.closest(".mod-note-form");
+      if (noteForm) {
+        ev.preventDefault();
+        var nid = noteForm.getAttribute("data-id");
+        var text = noteForm.querySelector("textarea").value.trim();
+        if (!text) return;
+        var nb = noteForm.querySelector("button");
+        nb.disabled = true;
+        try {
+          await api.addNote(nid, text);
+          state.openHistory[nid] = await api.history(nid);
+          renderAllList();
+          h.toast("Note added.");
+        } catch (err) {
+          h.toast((err && err.message) || "Could not add the note.");
+          nb.disabled = false;
+        }
+        return;
+      }
       var form = ev.target.closest("#adminAddForm");
       if (!form) return;
       ev.preventDefault();
       var email = document.getElementById("adminAddEmail").value.trim();
       var role = document.getElementById("adminAddRole").value;
-      var btn = form.querySelector('button[type="submit"]');
+      var btn_ = form.querySelector('button[type="submit"]');
       if (!email) return;
-      btn.disabled = true;
+      btn_.disabled = true;
       try {
         await api.addMember(email, role);
         state.team = await api.team();
@@ -348,7 +625,7 @@
         h.toast("Added as a " + role + ".");
       } catch (err) {
         h.toast((err && err.message) || "Could not add them. Please try again.");
-        btn.disabled = false;
+        btn_.disabled = false;
       }
     });
 
@@ -358,8 +635,7 @@
       try { return localStorage.getItem(DESKTOP_KEY) === "1" && window.Notification && Notification.permission === "granted"; } catch (e) { return false; }
     }
     function queueTotal() {
-      var d = state.data;
-      return d ? d.new_listings.length + d.edits.length + d.claims.length + d.reviews.length : 0;
+      return QUEUES.reduce(function (sum, q) { return sum + queueItems(q.id).length; }, 0);
     }
     function setTitle(n) {
       document.title = (n ? "(" + n + ") " : "") + "Moderation — NICC Business";

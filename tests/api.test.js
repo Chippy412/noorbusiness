@@ -146,3 +146,43 @@ test("alerts go to the whole team only once a real sender is set up", async () =
     await recipients({ NOTIFY_EMAIL_TO: "me@gmail.com", NOTIFY_EMAIL_FROM: "alerts@updates.noorohio.org" }, async () => { throw new Error("db down"); }),
     ["me@gmail.com"], "a team lookup failure falls back to NOTIFY_EMAIL_TO");
 });
+
+test("submit: reports need a real listing id, a known reason, and details for 'other'", async () => {
+  process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
+  const handler = require("../api/submit");
+  const id = "11111111-1111-1111-1111-111111111111";
+  for (const body of [
+    { type: "report", business_id: "../x", reason: "closed" },
+    { type: "report", business_id: id, reason: "made-up" },
+    { type: "report", business_id: id, reason: "other" },
+    { type: "report", business_id: id, review_id: "nope", reason: "spam" },
+    { type: "report", business_id: id, reason: "spam", email: "a@b.co?bcc=x" }
+  ]) {
+    const res = mockRes();
+    await handler({ method: "POST", headers: {}, body }, res);
+    assert.strictEqual(res.code, 400, JSON.stringify(body));
+  }
+  delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+});
+
+test("notify: decisions are never sent from Resend's test sender", async () => {
+  process.env.NOTIFY_SECRET = "s3cret";
+  process.env.RESEND_API_KEY = "k"; process.env.NOTIFY_EMAIL_TO = "a@b.co"; process.env.NOTIFY_EMAIL_FROM = "NICC <onboarding@resend.dev>";
+  const handler = require("../api/notify");
+  const res = mockRes();
+  await handler({ method: "POST", headers: { authorization: "Bearer s3cret" },
+    body: { type: "INSERT", table: "owner_notices", record: { id: "11111111-1111-1111-1111-111111111111", title: "x" } } }, res);
+  assert.strictEqual(res.code, 200);
+  assert.strictEqual(res.body.skipped, true);
+  for (const k of ["NOTIFY_SECRET", "RESEND_API_KEY", "NOTIFY_EMAIL_TO", "NOTIFY_EMAIL_FROM"]) delete process.env[k];
+});
+
+test("notify: decision and report emails carry the useful details", () => {
+  const { noticeText, summarize } = require("../api/notify")._test;
+  const t = noticeText({ title: "Your claim on Shop was not approved", reason: "We could not verify you" });
+  assert.ok(t.startsWith("Your claim on Shop was not approved."));
+  assert.ok(t.includes("We could not verify you"));
+  assert.ok(!noticeText({ title: "Live", reason: null }).includes("Note from"));
+  const r = summarize("reports", { business_id: "abc", reason: "closed", details: "Shut last month" });
+  assert.ok(r.includes("Closed or moved") && r.includes("Shut last month"));
+});
