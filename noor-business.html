@@ -409,19 +409,21 @@
   .hero-visual { position: relative; padding: 18px; }
   .hero-visual .pattern-bg { position: absolute; inset: 0; border-radius: 24px; }
   .hero-visual .pattern-bg::before { background-size: 140px 140px; opacity: calc(var(--pattern-opacity) * 1.6); }
-  .hero-photo { aspect-ratio: 4/5; background: var(--accent-soft); }
+  .hero-photo { aspect-ratio: 4/5; background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--ground); }
   .hero-photo img { object-position: 76% 50%; transform-origin: 80% 0; }
-  /* On desktop the photo sits a little lower in the tall arch and fades in
-     from the top, so the right dome clears the arch's curved corner. */
+  /* On desktop the photo is a little shorter than the tall arch and fades out
+     at the bottom, so the wide crop keeps the NICC lettering and the right
+     dome clear of the arch's curved corner. */
   @media (min-width: 941px) {
     .hero-photo img {
-      height: 84%; margin-top: 16%; object-position: 82% 50%; transform-origin: 72% 0;
-      -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 10%);
-      mask-image: linear-gradient(to bottom, transparent 0, #000 10%);
+      height: 88%; object-position: 81% 50%; transform-origin: 72% 0;
+      -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 76%, transparent 100%);
+      mask-image: linear-gradient(to bottom, #000 0, #000 76%, transparent 100%);
     }
   }
   @media (min-width: 941px) and (prefers-reduced-motion: no-preference) {
-    .hero-visual .arch.hero-photo img { scale: 1.05; }
+    /* Only drift upward on scroll, so no gap opens at the top of the arch. */
+    .hero-visual .arch.hero-photo img { scale: 1.05; translate: 0 calc(max(var(--p), 0) * -22px); }
   }
   .hero-float {
     position: absolute; left: 4px; bottom: 38px; background: var(--surface);
