@@ -409,21 +409,8 @@
   .hero-visual { position: relative; padding: 18px; }
   .hero-visual .pattern-bg { position: absolute; inset: 0; border-radius: 24px; }
   .hero-visual .pattern-bg::before { background-size: 140px 140px; opacity: calc(var(--pattern-opacity) * 1.6); }
-  .hero-photo { aspect-ratio: 4/5; background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--ground); }
-  .hero-photo img { object-position: 50% 50%; transform-origin: 50% 0; }
-  /* On desktop the photo is a little shorter than the tall arch and fades out
-     at the bottom into the arch's tinted backing. */
-  @media (min-width: 941px) {
-    .hero-photo img {
-      height: 88%; object-position: 50% 45%; transform-origin: 50% 0;
-      -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 76%, transparent 100%);
-      mask-image: linear-gradient(to bottom, #000 0, #000 76%, transparent 100%);
-    }
-  }
-  @media (min-width: 941px) and (prefers-reduced-motion: no-preference) {
-    /* Only drift upward on scroll, so no gap opens at the top of the arch. */
-    .hero-visual .arch.hero-photo img { scale: 1.05; translate: 0 calc(max(var(--p), 0) * -22px); }
-  }
+  .hero-photo { aspect-ratio: 4/5; }
+  .hero-photo img { object-position: 50% 45%; }
   .hero-float {
     position: absolute; left: 4px; bottom: 38px; background: var(--surface);
     border: 1px solid var(--hairline); border-radius: 18px; padding: 16px 18px;
