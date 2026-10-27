@@ -39,7 +39,38 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:ital,opsz,wght@0,12..96,500;0,12..96,600;0,12..96,700;1,12..96,600&family=Manrope:wght@400;500;600;700;800&family=Amiri:wght@400;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="preload" as="image" type="image/webp" href="images/nicc-aerial.webp" fetchpriority="high">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:ital,opsz,wght@0,12..96,500;0,12..96,600;0,12..96,700;1,12..96,600&family=Manrope:wght@400;500;600;700;800&family=Amiri:wght@400;700&family=JetBrains+Mono:wght@500&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:ital,opsz,wght@0,12..96,500;0,12..96,600;0,12..96,700;1,12..96,600&family=Manrope:wght@400;500;600;700;800&family=Amiri:wght@400;700&family=JetBrains+Mono:wght@500&display=swap"></noscript>
+<link rel="manifest" href="manifest.webmanifest">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://nicc-business.vercel.app/#org",
+      "name": "NICC Business",
+      "url": "https://nicc-business.vercel.app/",
+      "logo": "https://nicc-business.vercel.app/images/logo.png",
+      "description": "A community-run directory of Muslim-owned and halal-verified businesses in Columbus, Ohio.",
+      "areaServed": { "@type": "City", "name": "Columbus, Ohio" }
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://nicc-business.vercel.app/#website",
+      "url": "https://nicc-business.vercel.app/",
+      "name": "NICC Business",
+      "publisher": { "@id": "https://nicc-business.vercel.app/#org" },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": { "@type": "EntryPoint", "urlTemplate": "https://nicc-business.vercel.app/#/explore?q={search_term_string}" },
+        "query-input": "required name=search_term_string"
+      }
+    }
+  ]
+}
+</script>
 
 <style>
   /* ============================================================
@@ -294,10 +325,19 @@
   .nav-toggle { display: none; background: none; border: none; color: var(--ink); padding: 8px; cursor: pointer; }
   .nav-toggle svg { width: 24px; height: 24px; }
   .mobile-panel {
-    display: none; position: fixed; inset: 74px 0 0 0; background: var(--ground);
+    display: flex; position: fixed; inset: 74px 0 0 0; background: var(--ground);
     z-index: 39; padding: 28px 24px; flex-direction: column; gap: 2px; overflow-y: auto;
+    visibility: hidden; opacity: 0; transform: translateY(-10px); pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.45s cubic-bezier(0.16,1,0.3,1), visibility 0s linear 0.45s;
   }
-  .mobile-panel.open { display: flex; }
+  .mobile-panel.open { visibility: visible; opacity: 1; transform: none; pointer-events: auto; transition-delay: 0s; }
+  .mobile-panel > * { opacity: 0; transform: translateY(10px); transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.16,1,0.3,1); }
+  .mobile-panel.open > * { opacity: 1; transform: none; }
+  .mobile-panel.open > :nth-child(1) { transition-delay: 60ms; } .mobile-panel.open > :nth-child(2) { transition-delay: 100ms; }
+  .mobile-panel.open > :nth-child(3) { transition-delay: 140ms; } .mobile-panel.open > :nth-child(4) { transition-delay: 180ms; }
+  .mobile-panel.open > :nth-child(5) { transition-delay: 220ms; } .mobile-panel.open > :nth-child(6) { transition-delay: 260ms; }
+  .mobile-panel.open > :nth-child(n+7) { transition-delay: 300ms; }
+  @media (min-width: 1001px) { .mobile-panel { display: none; } }
   .mobile-panel a { padding: 15px 4px; border-bottom: 1px solid var(--hairline); font-family: "Bricolage Grotesque", sans-serif; font-size: 1.2rem; font-weight: 600; }
   .mobile-panel .btn { margin-top: 20px; }
   .nav-links a, .saved-chip, .nav-actions .btn, .brand { white-space: nowrap; }
@@ -332,6 +372,7 @@
   /* ---------- Arch media ---------- */
   .arch { border-radius: 50% 50% 20px 20px / 42% 42% 20px 20px; overflow: hidden; position: relative; }
   .arch img { width: 100%; height: 100%; object-fit: cover; }
+  picture { display: contents; }
   .arch::after {
     content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
     box-shadow: inset 0 0 0 1px var(--sage);
@@ -369,7 +410,7 @@
   .hero-visual .pattern-bg { position: absolute; inset: 0; border-radius: 24px; }
   .hero-visual .pattern-bg::before { background-size: 140px 140px; opacity: calc(var(--pattern-opacity) * 1.6); }
   .hero-photo { aspect-ratio: 9/10; }
-  .hero-photo img { object-position: 76% 50%; }
+  .hero-photo img { object-position: 76% 50%; transform-origin: 80% 0; }
   .hero-float {
     position: absolute; left: 4px; bottom: 38px; background: var(--surface);
     border: 1px solid var(--hairline); border-radius: 18px; padding: 16px 18px;
@@ -1224,6 +1265,106 @@
   .page-head p, .section-head p, .faq-a, .mission p, .value-row p { text-wrap: pretty; }
   .page-head h1, .section-head h2, .hero h1, .mission h2 { text-wrap: balance; }
 
+
+  /* ---------- Launch polish ---------- */
+  /* Pill rail: soft fade on whichever edge has more to scroll to. */
+  @property --fl { syntax: "<number>"; inherits: false; initial-value: 0; }
+  @property --fr { syntax: "<number>"; inherits: false; initial-value: 0; }
+  .pill-rail {
+    transition: --fl 0.25s ease, --fr 0.25s ease;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 calc(var(--fl) * 40px), #000 calc(100% - var(--fr) * 40px), transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 calc(var(--fl) * 40px), #000 calc(100% - var(--fr) * 40px), transparent);
+  }
+
+  /* Empty state: suggestions instead of a dead end. */
+  .empty-suggest { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 0 auto 20px; max-width: 520px; }
+  .empty-suggest-label { width: 100%; font-size: 0.8rem; font-weight: 700; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; }
+  .empty-or { margin-top: 18px; font-size: 0.9rem; color: var(--muted); }
+  .empty-or a { color: var(--accent); font-weight: 700; }
+
+  /* Not-found page search. */
+  .nf-search { display: flex; gap: 8px; max-width: 460px; margin: 26px auto 0; padding: 6px; background: var(--surface); border: 1px solid var(--hairline); border-radius: 999px; transition: border-color 0.2s ease; }
+  .nf-search:focus-within { border-color: var(--accent); }
+  .nf-search input { flex: 1; min-width: 0; border: 0; background: none; padding: 0 16px; font: inherit; color: var(--ink); outline: none; }
+  .nf-search input::placeholder { color: var(--muted); }
+  .nf-pills { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 20px; }
+
+  /* Scroll depth: JS writes --p (-1..1, how far an element has travelled
+     through the viewport). The individual translate/scale properties
+     compose with the entrance transforms above instead of fighting them. */
+  [data-plx] { --p: 0; }
+  .hero-visual .hero-photo img { scale: 1.1; translate: 0 calc(var(--p) * -22px); }
+  .hero-visual .pattern-bg { translate: 0 calc(var(--p) * 16px); }
+  .hero-visual .hero-float { translate: 0 calc(var(--p) * -12px); }
+  .split-media .arch img { scale: calc(1.02 + (1 - var(--p)) * 0.045); }
+
+  /* Page and card-to-dialog transitions (View Transitions API, where supported). */
+  .has-vt .page:not([hidden]), .has-vt dialog.listing-modal[open], .has-vt dialog.listing-modal[open]::backdrop { animation: none; }
+  .has-vt .site-nav { view-transition-name: site-nav; }
+  .has-vt .bottom-bar { view-transition-name: bottom-bar; }
+  ::view-transition-group(*) { animation-duration: 0.42s; animation-timing-function: cubic-bezier(0.16,1,0.3,1); }
+  ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.32s; animation-timing-function: cubic-bezier(0.16,1,0.3,1); }
+  @keyframes vt-out { to { opacity: 0; } }
+  @keyframes vt-in { from { opacity: 0; transform: translateY(12px); } }
+  html.vt-route::view-transition-old(root) { animation-name: vt-out; }
+  html.vt-route::view-transition-new(root) { animation-name: vt-in; }
+  ::view-transition-old(site-nav), ::view-transition-new(site-nav), ::view-transition-old(bottom-bar), ::view-transition-new(bottom-bar) { animation: none; mix-blend-mode: normal; }
+  ::view-transition-old(listing-shell), ::view-transition-new(listing-shell) { height: 100%; overflow: clip; border-radius: 18px; }
+
+
+  /* ---------- More motion ---------- */
+  /* Scroll progress bar (scroll-driven animation; absent where unsupported). */
+  .scroll-progress { display: none; }
+  @supports (animation-timeline: scroll()) {
+    .scroll-progress { display: block; position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 60; background: var(--accent); transform-origin: 0 50%; transform: scaleX(0); pointer-events: none; animation: progress-grow linear both; animation-timeline: scroll(root); }
+    @keyframes progress-grow { to { transform: scaleX(1); } }
+  }
+
+  /* Sliding nav underline. */
+  .nav-links { position: relative; }
+  .nav-ind { position: absolute; left: 0; bottom: 2px; height: 2px; width: var(--w, 0); border-radius: 2px; background: var(--accent); transform: translateX(var(--x, 0)); opacity: 0; transition: transform 0.5s cubic-bezier(0.16,1,0.3,1), width 0.5s cubic-bezier(0.16,1,0.3,1), opacity 0.25s ease; pointer-events: none; }
+  .nav-ind.on { opacity: 1; }
+  .nav-links.has-ind a[aria-current="page"] { border-bottom-color: transparent; }
+
+  /* Filter popovers ease open. */
+  @keyframes pop-in { from { opacity: 0; transform: translateY(-6px) scale(0.97); } }
+  .pop-panel:not([hidden]) { animation: pop-in 0.22s cubic-bezier(0.16,1,0.3,1); transform-origin: top right; }
+
+  /* Button light sweep, card spotlight, softer pills and rows. */
+  .btn-primary { position: relative; overflow: hidden; isolation: isolate; }
+  .btn-primary::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.26) 50%, transparent 70%); transform: translateX(-130%); transition: transform 0.8s cubic-bezier(0.16,1,0.3,1); }
+  .btn-primary:hover::before { transform: translateX(130%); }
+  .pill:hover { transform: translateY(-2px); border-color: var(--accent); color: var(--accent); }
+  @media (hover: hover) {
+    .listing:hover { background-image: radial-gradient(360px circle at var(--mx, 50%) var(--my, 0%), color-mix(in srgb, var(--accent) 9%, transparent), transparent 62%); }
+  }
+  .footer-col a, .footer-legal a { transition: color 0.2s ease, transform 0.25s cubic-bezier(0.16,1,0.3,1); display: inline-block; }
+  .footer-col a:hover, .footer-legal a:hover { color: var(--accent); transform: translateX(3px); }
+
+  /* Card reflow when filtering, sorting or switching view. */
+  html.vt-flip::view-transition-old(root), html.vt-flip::view-transition-new(root) { animation: none; }
+  html.vt-flip #results .listing, html.vt-flip #featuredGrid .listing { animation: none !important; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mobile-panel, .mobile-panel > *, .nav-ind, .btn-primary::before, .footer-col a, .footer-legal a { transition: none; }
+    .scroll-progress, .pop-panel:not([hidden]) { animation: none !important; }
+  }
+
+  /* Print: just the content. */
+  @media print {
+    .site-nav, .bottom-bar, .to-top, .toast, footer, .cta-band, .hero-visual, .pill-rail, dialog.listing-modal .modal-close { display: none !important; }
+    body { padding: 0 !important; background: #fff; color: #000; }
+    * { animation: none !important; transition: none !important; box-shadow: none !important; }
+    .reveal.pre { opacity: 1 !important; transform: none !important; }
+    dialog.listing-modal[open] { position: static; max-height: none; width: auto; border: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pill-rail { transition: none; }
+    .hero-visual .hero-photo img, .hero-visual .pattern-bg, .hero-visual .hero-float { translate: none; }
+    .hero-visual .hero-photo img, .split-media .arch img { scale: 1; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .page:not([hidden]), #results .listing, #featuredGrid .listing, dialog.listing-modal[open],
     dialog.listing-modal[open]::backdrop, .hero h1, .hero-sub, .hero .search-card, .hero-trust,
@@ -1236,6 +1377,7 @@
 
 </head>
 <body>
+<div class="scroll-progress" aria-hidden="true"></div>
 <noscript>
   <div style="max-width:560px;margin:48px auto;padding:0 20px;font-family:system-ui,sans-serif;line-height:1.5;color:#14180f">
     <h1 style="font-size:1.5rem">NICC Business needs JavaScript</h1>
@@ -1373,9 +1515,9 @@
           </form>
           <p class="hero-trust" id="heroTrust"><svg class="icon"><use href="#i-shield"/></svg><span>A volunteer checks every halal badge before it appears.</span></p>
         </div>
-        <div class="hero-visual">
+        <div class="hero-visual" data-plx>
           <div class="pattern-bg"></div>
-          <div class="arch hero-photo"><img src="images/nicc-aerial.jpg" width="1800" height="1012" alt="Aerial view of the Noor Islamic Cultural Center beside its pond"></div>
+          <div class="arch hero-photo"><picture><source type="image/webp" srcset="images/nicc-aerial.webp"><img src="images/nicc-aerial.jpg" width="1800" height="1012" fetchpriority="high" decoding="async" alt="Aerial view of the Noor Islamic Cultural Center beside its pond"></picture></div>
           <div class="hero-float">
             <span class="badge-icon"><svg class="icon"><use href="#i-shield"/></svg></span>
             <div>
@@ -1419,7 +1561,7 @@
         </div>
         <div class="category-layout">
           <button class="category-photo" data-quick-cat="Restaurants">
-            <img src="images/category-restaurants.jpg" width="780" height="780" alt="Lentil soup, hummus, tabbouleh and flatbread on a table">
+            <picture><source type="image/webp" srcset="images/category-restaurants.webp"><img loading="lazy" decoding="async" src="images/category-restaurants.jpg" width="780" height="780" alt="Lentil soup, hummus, tabbouleh and flatbread on a table"></picture>
             <span class="cat-icon"><svg class="icon"><use href="#i-heart"/></svg></span>
             <h3>Restaurants</h3>
             <span>Levantine, Somali, Desi, Turkish, and more</span>
@@ -1475,9 +1617,9 @@
 
     <section>
       <div class="wrap split">
-        <div class="split-media reveal">
+        <div data-plx class="split-media reveal">
           <div class="pattern-bg"></div>
-          <div class="arch"><img loading="lazy" src="images/community.jpg" width="760" height="950" alt="A bowl of dates beside a lit candle"></div>
+          <div class="arch"><picture><source type="image/webp" srcset="images/community.webp"><img loading="lazy" decoding="async" src="images/community.jpg" width="760" height="950" alt="A bowl of dates beside a lit candle"></picture></div>
         </div>
         <div>
           <h2 style="font-size:clamp(1.6rem,1.2rem + 1.4vw,2.3rem)">Built for this community, not for ad revenue.</h2>
@@ -1661,7 +1803,15 @@
           <div class="e-icon"><svg class="icon"><use href="#i-search"/></svg></div>
           <h3>No businesses match those filters yet.</h3>
           <p>Try a wider neighborhood, or clear a filter to see more of the directory.</p>
+          <div class="empty-suggest">
+            <span class="empty-suggest-label">Popular right now</span>
+            <button class="pill" data-quick-cat="Restaurants"><svg class="icon"><use href="#i-heart"/></svg> Restaurants</button>
+            <button class="pill" data-quick-cat="Grocery"><svg class="icon"><use href="#i-basket"/></svg> Grocery</button>
+            <button class="pill" data-quick-cat="Modest Wear"><svg class="icon"><use href="#i-shirt"/></svg> Modest wear</button>
+            <button class="pill" data-quick-cat="Education"><svg class="icon"><use href="#i-book"/></svg> Education</button>
+          </div>
           <button type="button" class="btn btn-primary" id="emptyReset">Reset filters</button>
+          <p class="empty-or">Know a place we are missing? <a href="#/list" data-route="list">Tell us about it</a>.</p>
         </div>
       </div>
     </section>
@@ -1684,7 +1834,7 @@
   <!-- ============ ABOUT ============ -->
   <div class="page" id="page-about" hidden>
     <div class="page-head">
-      <div class="wrap">
+      <div class="wrap-narrow">
         <h1>About NICC Business</h1>
         <p>As-salamu alaykum. We are a small team building the directory our own families kept asking for.</p>
       </div>
@@ -1709,9 +1859,9 @@
           <p style="margin-top:14px;color:var(--muted);font-size:1.05rem;max-width:52ch">Search for halal food here and you get a national chain three suburbs away before you get the grocer two streets over. We built this directory so proximity, verification, and community trust come first.</p>
           <p style="margin-top:22px"><a class="text-link" href="#/list" data-route="list">List your business <svg class="icon"><use href="#i-arrow-right"/></svg></a></p>
         </div>
-        <div class="split-media reveal">
+        <div data-plx class="split-media reveal">
           <div class="pattern-bg"></div>
-          <div class="arch"><img loading="lazy" src="images/about.jpg" width="760" height="950" alt="White columns, arches and gold detail inside a mosque prayer hall"></div>
+          <div class="arch"><picture><source type="image/webp" srcset="images/about.webp"><img loading="lazy" decoding="async" src="images/about.jpg" width="760" height="950" alt="White columns, arches and gold detail inside a mosque prayer hall"></picture></div>
         </div>
       </div>
     </section>
@@ -1768,7 +1918,7 @@
   <!-- ============ FAQ ============ -->
   <div class="page" id="page-faq" hidden>
     <div class="page-head">
-      <div class="wrap">
+      <div class="wrap-narrow">
         <h1>Frequently asked questions</h1>
         <p>How verification works, what listing costs, and how reviews are handled.</p>
       </div>
@@ -2053,7 +2203,7 @@
   <!-- ============ ACCOUNT ============ -->
   <div class="page" id="page-account" hidden>
     <div class="page-head">
-      <div class="wrap">
+      <div class="wrap-narrow">
         <h1>Your account</h1>
         <p>Sign up or log in to add a business, claim an existing one, or edit your listing.</p>
       </div>
@@ -2293,7 +2443,7 @@
   <!-- ============ PRIVACY ============ -->
   <div class="page" id="page-privacy" hidden>
     <div class="page-head">
-      <div class="wrap">
+      <div class="wrap-narrow">
         <h1>Privacy policy</h1>
         <p>What we collect, why, and how it is kept.</p>
       </div>
@@ -2320,7 +2470,7 @@
   <!-- ============ TERMS ============ -->
   <div class="page" id="page-terms" hidden>
     <div class="page-head">
-      <div class="wrap">
+      <div class="wrap-narrow">
         <h1>Terms &amp; conditions</h1>
         <p>The ground rules for using and listing on NICC Business.</p>
       </div>
@@ -2370,8 +2520,18 @@
     </div>
     <section>
       <div class="wrap-narrow" style="text-align:center;padding-bottom:40px">
-        <p style="color:var(--muted)">Try exploring the directory, or head back home.</p>
-        <div style="margin-top:20px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <p style="color:var(--muted)">Try a search, or head back home.</p>
+        <form class="nf-search" id="nfSearch" role="search">
+          <input type="search" id="nfQuery" placeholder="What are you looking for?" aria-label="Search the directory" autocomplete="off">
+          <button type="submit" class="btn btn-primary">Search</button>
+        </form>
+        <div class="nf-pills">
+          <button class="pill" data-quick-cat="Restaurants">Restaurants</button>
+          <button class="pill" data-quick-cat="Grocery">Grocery</button>
+          <button class="pill" data-quick-cat="Modest Wear">Modest wear</button>
+          <button class="pill" data-quick-cat="Education">Education</button>
+        </div>
+        <div style="margin-top:28px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
           <a class="btn btn-primary" href="#/home" data-route="home">Go home</a>
           <a class="btn btn-ghost" href="#/explore" data-route="explore">Explore listings</a>
         </div>
@@ -2486,7 +2646,7 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <p>&copy; 2026 NICC Business. Columbus, Ohio.</p>
+      <p>&copy; 2026 NICC Business. Made with care by volunteers in Columbus, Ohio.</p>
       <div class="footer-legal">
         <a href="#/privacy" data-route="privacy">Privacy</a>
         <a href="#/terms" data-route="terms">Terms</a>
@@ -2724,13 +2884,22 @@
     revealInit();
   }
 
+  var heroCounted = false;
   function updateHeroTrust() {
     var el = document.querySelector("#heroTrust span");
     if (!el) return;
     var n = LISTINGS.filter(function (l) { return l.badges.indexOf("halal") !== -1; }).length;
-    el.innerHTML = n
-      ? "<strong>" + n + " halal-verified " + (n === 1 ? "listing" : "listings") + "</strong>, each checked by a volunteer before the badge appears."
-      : "A volunteer checks every halal badge before it appears.";
+    if (!n) { el.textContent = "A volunteer checks every halal badge before it appears."; return; }
+    var animate = !heroCounted && !reduceMotion && n > 1;
+    heroCounted = true;
+    el.innerHTML = '<strong><span id="heroCount">' + (animate ? 0 : n) + "</span> halal-verified " + (n === 1 ? "listing" : "listings") + "</strong>, each checked by a volunteer before the badge appears.";
+    if (!animate) return;
+    var num = document.getElementById("heroCount"), t0 = performance.now(), dur = 900;
+    (function tick(now) {
+      var k = Math.min(1, (now - t0) / dur);
+      num.textContent = Math.round(n * (1 - Math.pow(1 - k, 3)));
+      if (k < 1) requestAnimationFrame(tick);
+    })(t0);
   }
 
   async function bootBusinessData() {
@@ -2762,7 +2931,7 @@
     return s;
   }
 
-  function openListing(id) {
+  function openListing(id, fromEl) {
     var item = LISTINGS.filter(function (l) { return l.id === id; })[0];
     if (!item) { toast("That listing isn't available any more."); return; }
     currentItem = item;
@@ -2833,7 +3002,20 @@
         if (currentItem === item && u && item.ownerId === u.id) claimBtn.hidden = true;
       }).catch(function () { /* leave it visible */ });
     }
-    modal.showModal();
+    if (supportsVT) {
+      // The card morphs into the dialog; with no source card the dialog just fades in.
+      if (fromEl) fromEl.style.viewTransitionName = "listing-shell";
+      var shown = function () {
+        if (fromEl) fromEl.style.viewTransitionName = "";
+        modal.style.viewTransitionName = "listing-shell";
+        modal.showModal();
+      };
+      try {
+        startVT(shown).finished.then(function () { modal.style.viewTransitionName = ""; }, function () { modal.style.viewTransitionName = ""; });
+      } catch (e) { shown(); }
+    } else {
+      modal.showModal();
+    }
     renderReviewsSection(item);
   }
 
@@ -2916,7 +3098,7 @@
 
   document.addEventListener("click", function (e) {
     var openBtn = e.target.closest("[data-open]");
-    if (openBtn) { openListing(openBtn.getAttribute("data-open")); return; }
+    if (openBtn) { openListing(openBtn.getAttribute("data-open"), openBtn.closest(".listing") || openBtn); return; }
 
     var saveBtn = e.target.closest(".save-btn");
     if (saveBtn) {
@@ -2955,7 +3137,24 @@
     }
   });
 
-  document.getElementById("modalClose").addEventListener("click", function () { modal.close(); });
+  // Close by shrinking the dialog back into the card it came from.
+  function closeModal() {
+    if (!modal.open) return;
+    if (!supportsVT) { modal.close(); return; }
+    var card = currentItem && document.querySelector('#results .listing[data-id="' + currentItem.id + '"]:not([hidden]), #featuredGrid .listing[data-id="' + currentItem.id + '"]');
+    if (card) { var r = card.getBoundingClientRect(); if (r.bottom < 0 || r.top > window.innerHeight) card = null; }
+    modal.style.viewTransitionName = "listing-shell";
+    var reset = function () { modal.style.viewTransitionName = ""; if (card) card.style.viewTransitionName = ""; };
+    try {
+      startVT(function () {
+        modal.style.viewTransitionName = "";
+        modal.close();
+        if (card) card.style.viewTransitionName = "listing-shell";
+      }).finished.then(reset, reset);
+    } catch (e) { reset(); modal.close(); }
+  }
+  modal.addEventListener("cancel", function (e) { if (supportsVT) { e.preventDefault(); closeModal(); } });
+  document.getElementById("modalClose").addEventListener("click", closeModal);
   modal.addEventListener("close", syncUrl);
   document.getElementById("modalShare").addEventListener("click", async function () {
     if (!currentItem) return;
@@ -3044,7 +3243,7 @@
     if (res.status === 404) { setStatus(status, "That isn't in the directory any more.", true); return; }
     setStatus(status, "Could not send your report. Please try again.", true);
   });
-  modal.addEventListener("click", function (e) { if (e.target === modal) modal.close(); });
+  modal.addEventListener("click", function (e) { if (e.target === modal) closeModal(); });
   modalSave.addEventListener("click", function () {
     if (!currentItem) return;
     var nowSaved = toggleSaved(currentItem.id);
@@ -3103,11 +3302,12 @@
       else a.removeAttribute("aria-current");
     });
     document.title = PAGE_TITLES[route] || "NICC Business";
+    if (window.__placeNavInd) window.__placeNavInd();
     closeMobile();
     revealInit();
     var h1 = document.querySelector("#page-" + route + " h1");
     if (h1) { h1.setAttribute("tabindex", "-1"); h1.focus({ preventScroll: true }); }
-    window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
+    window.scrollTo({ top: 0, behavior: (reduceMotion || document.documentElement.classList.contains("vt-route")) ? "auto" : "smooth" });
     if (route === "explore") {
       var openId = hashParams().get("open"); // read before syncUrl() rewrites the hash
       if (!applyParamsFromHash()) syncUrl();
@@ -3118,7 +3318,60 @@
     if (route === "contact") ensureTurnstile("contactTurnstile");
     if (route === "list") ensureTurnstile("listTurnstile");
   }
-  window.addEventListener("hashchange", function () { render(currentRoute()); });
+  /* Cross-fade between pages with the View Transitions API where it exists.
+     Everything falls back to the plain render() when it doesn't. */
+  // startViewTransition with the "skipped" rejections swallowed (hidden tab, superseded transition).
+  function startVT(cb) {
+    var t = document.startViewTransition(cb);
+    if (t.ready) t.ready.catch(function () {});
+    if (t.updateCallbackDone) t.updateCallbackDone.catch(function () {});
+    return t;
+  }
+  var supportsVT = typeof document.startViewTransition === "function" && !reduceMotion;
+  var lastRoute = null;
+  if (supportsVT) document.documentElement.classList.add("has-vt");
+  function viewTransition(update, cls) {
+    var root = document.documentElement;
+    if (!supportsVT) { update(); return; }
+    if (cls) root.classList.add(cls);
+    var t;
+    try { t = startVT(update); } catch (e) { if (cls) root.classList.remove(cls); update(); return; }
+    t.finished.then(function () { if (cls) root.classList.remove(cls); }, function () { if (cls) root.classList.remove(cls); });
+  }
+  // Slide cards to their new places instead of snapping (filter, sort, grid/list).
+  function flip(fn) {
+    var grid = document.getElementById("results");
+    var page = document.getElementById("page-explore");
+    if (!supportsVT || !grid || !page || page.hidden || document.querySelector("dialog[open]")) { fn(); return; }
+    var vh = window.innerHeight, named = [];
+    function nameVisible() {
+      grid.querySelectorAll(".listing[data-id]:not([hidden])").forEach(function (c) {
+        var r = c.getBoundingClientRect();
+        if (r.bottom > -80 && r.top < vh + 80 && named.length < 36) { c.style.viewTransitionName = "c" + c.getAttribute("data-id").replace(/[^a-z0-9]/gi, ""); named.push(c); }
+      });
+    }
+    nameVisible();
+    var root = document.documentElement;
+    root.classList.add("vt-flip");
+    var done = function () { named.forEach(function (c) { c.style.viewTransitionName = ""; }); root.classList.remove("vt-flip"); };
+    var t;
+    try {
+      t = startVT(function () {
+        named.forEach(function (c) { c.style.viewTransitionName = ""; });
+        named = [];
+        fn();
+        nameVisible();
+      });
+    } catch (e) { done(); fn(); return; }
+    t.finished.then(done, done);
+  }
+
+  window.addEventListener("hashchange", function () {
+    var route = currentRoute();
+    if (route === lastRoute) { render(route); return; }
+    lastRoute = route;
+    viewTransition(function () { render(route); }, "vt-route");
+  });
 
   /* Fade listing photos in when they finish loading (load/error don't bubble, so capture). */
   function markImageLoaded(e) {
@@ -3231,6 +3484,91 @@
     document.getElementById("railPrev").addEventListener("click", function () { stepRail(-1); });
     document.getElementById("railNext").addEventListener("click", function () { stepRail(1); });
   }
+
+  /* ============ Sliding nav underline ============ */
+  (function () {
+    var nav = document.querySelector(".nav-links");
+    if (!nav) return;
+    var ind = document.createElement("span");
+    ind.className = "nav-ind"; ind.setAttribute("aria-hidden", "true");
+    nav.appendChild(ind);
+    function place() {
+      var cur = nav.querySelector('a[aria-current="page"]');
+      if (!cur || !nav.offsetWidth) { ind.classList.remove("on"); nav.classList.remove("has-ind"); return; }
+      nav.classList.add("has-ind");
+      ind.style.setProperty("--x", cur.offsetLeft + "px");
+      ind.style.setProperty("--w", cur.offsetWidth + "px");
+      ind.classList.add("on");
+    }
+    window.__placeNavInd = place;
+    window.addEventListener("resize", place);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(place);
+    place();
+  })();
+
+  /* ============ Card spotlight follows the pointer ============ */
+  document.addEventListener("pointermove", function (e) {
+    var c = e.target.closest && e.target.closest(".listing");
+    if (!c) return;
+    var r = c.getBoundingClientRect();
+    c.style.setProperty("--mx", (e.clientX - r.left) + "px");
+    c.style.setProperty("--my", (e.clientY - r.top) + "px");
+  }, { passive: true });
+
+  /* ============ Pill rail edge fades ============ */
+  document.querySelectorAll(".pill-rail").forEach(function (r) {
+    var sync = function () {
+      r.style.setProperty("--fl", r.scrollLeft > 4 ? 1 : 0);
+      r.style.setProperty("--fr", r.scrollLeft + r.clientWidth < r.scrollWidth - 4 ? 1 : 0);
+    };
+    r.addEventListener("scroll", sync, { passive: true });
+    window.addEventListener("resize", sync);
+    sync();
+    setTimeout(sync, 300);
+  });
+
+  /* ============ Scroll depth (hero parallax, slow image zoom) ============ */
+  if (!reduceMotion && "IntersectionObserver" in window) {
+    var plxVisible = new Set(), plxQueued = false;
+    var plxPaint = function () {
+      plxQueued = false;
+      var vh = window.innerHeight;
+      plxVisible.forEach(function (el) {
+        var r = el.getBoundingClientRect();
+        var p = ((r.top + r.height / 2) - vh / 2) / (vh / 2 + r.height / 2);
+        el.style.setProperty("--p", Math.max(-1, Math.min(1, p)).toFixed(3));
+      });
+    };
+    var plxSchedule = function () { if (!plxQueued) { plxQueued = true; requestAnimationFrame(plxPaint); } };
+    var plxIo = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) { if (en.isIntersecting) plxVisible.add(en.target); else plxVisible.delete(en.target); });
+      plxSchedule();
+    });
+    document.querySelectorAll("[data-plx]").forEach(function (el) { plxIo.observe(el); });
+    window.addEventListener("scroll", plxSchedule, { passive: true });
+    window.addEventListener("resize", plxSchedule);
+  }
+
+  /* ============ "/" jumps to search ============ */
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey) return;
+    var t = e.target;
+    if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+    if (document.querySelector("dialog[open]")) return;
+    var field = document.querySelector(".page:not([hidden]) #heroQuery, .page:not([hidden]) #fQuery");
+    if (!field) return;
+    e.preventDefault();
+    field.focus();
+    if (field.select) field.select();
+  });
+
+  /* ============ Not-found search ============ */
+  var nfSearch = document.getElementById("nfSearch");
+  if (nfSearch) nfSearch.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var q = document.getElementById("nfQuery").value.trim();
+    location.hash = "#/explore" + (q ? "?q=" + encodeURIComponent(q) : "");
+  });
 
   /* ============ Hero search hands off to Explore ============ */
   var heroSearch = document.getElementById("heroSearch");
@@ -3451,6 +3789,11 @@
       if (!reduceMotion) { resultCount.classList.remove("bump"); void resultCount.offsetWidth; resultCount.classList.add("bump"); }
     }
     emptyState.classList.toggle("show", shown === 0);
+    if (shown === 0) {
+      var qNow = document.getElementById("fQuery").value.trim();
+      var eh = emptyState.querySelector("h3");
+      if (eh) eh.textContent = qNow ? "Nothing matched \u201c" + qNow + "\u201d yet." : "No businesses match those filters yet.";
+    }
     updateFilterLabels();
     syncUrl();
   }
@@ -3626,15 +3969,15 @@
     document.getElementById("filterPanel").addEventListener("submit", function (e) { e.preventDefault(); applyFilters(); });
     ["fQuery", "fCategory", "fHood", "fRating"].forEach(function (id) {
       var el = document.getElementById(id);
-      el.addEventListener("input", applyFilters);
-      el.addEventListener("change", applyFilters);
+      el.addEventListener("input", function () { flip(applyFilters); });
+      el.addEventListener("change", function () { flip(applyFilters); });
     });
-    badgeBoxes.forEach(function (b) { b.addEventListener("change", applyFilters); });
-    matchRadios.forEach(function (r) { r.addEventListener("change", applyFilters); });
-    if (openNowBox) openNowBox.addEventListener("change", applyFilters);
-    if (savedBox) savedBox.addEventListener("change", applyFilters);
-    document.getElementById("fSort").addEventListener("change", function () { sortResults(); applyFilters(); });
-    withinSel.addEventListener("change", applyFilters);
+    badgeBoxes.forEach(function (b) { b.addEventListener("change", function () { flip(applyFilters); }); });
+    matchRadios.forEach(function (r) { r.addEventListener("change", function () { flip(applyFilters); }); });
+    if (openNowBox) openNowBox.addEventListener("change", function () { flip(applyFilters); });
+    if (savedBox) savedBox.addEventListener("change", function () { flip(applyFilters); });
+    document.getElementById("fSort").addEventListener("change", function () { flip(function () { sortResults(); applyFilters(); }); });
+    withinSel.addEventListener("change", function () { flip(applyFilters); });
     document.getElementById("useLocation").addEventListener("click", useMyLocation);
     document.getElementById("setOrigin").addEventListener("click", setAddressOrigin);
     originText.addEventListener("keydown", function (e) {
@@ -3642,17 +3985,21 @@
     });
     refreshOriginUi();
     document.getElementById("resetFilters").addEventListener("click", function () { resetFilters(); });
-    document.getElementById("emptyReset").addEventListener("click", function () { resetFilters(); });
+    document.getElementById("emptyReset").addEventListener("click", function () { flip(function () { resetFilters(); }); });
 
     var viewGrid = document.getElementById("viewGrid");
     var viewList = document.getElementById("viewList");
     viewGrid.addEventListener("click", function () {
-      results.classList.remove("list-view");
-      viewGrid.setAttribute("aria-pressed", "true"); viewList.setAttribute("aria-pressed", "false");
+      flip(function () {
+        results.classList.remove("list-view");
+        viewGrid.setAttribute("aria-pressed", "true"); viewList.setAttribute("aria-pressed", "false");
+      });
     });
     viewList.addEventListener("click", function () {
-      results.classList.add("list-view");
-      viewList.setAttribute("aria-pressed", "true"); viewGrid.setAttribute("aria-pressed", "false");
+      flip(function () {
+        results.classList.add("list-view");
+        viewList.setAttribute("aria-pressed", "true"); viewGrid.setAttribute("aria-pressed", "false");
+      });
     });
 
     sortResults();
@@ -5032,7 +5379,8 @@
   setToggleIcon(false);
   updateSavedCount();
   newChallenge();
-  render(currentRoute());
+  lastRoute = currentRoute();
+  render(lastRoute);
   urlSyncReady = true;
   bootBusinessData();
   syncSavedWithAccount();
