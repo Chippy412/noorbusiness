@@ -39,7 +39,7 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" as="image" type="image/webp" href="images/nicc-aerial.webp" fetchpriority="high">
+<link rel="preload" as="image" type="image/webp" href="images/hero-meal.webp" fetchpriority="high">
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:ital,opsz,wght@0,12..96,500;0,12..96,600;0,12..96,700;1,12..96,600&family=Manrope:wght@400;500;600;700;800&family=Amiri:wght@400;700&family=JetBrains+Mono:wght@500&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:ital,opsz,wght@0,12..96,500;0,12..96,600;0,12..96,700;1,12..96,600&family=Manrope:wght@400;500;600;700;800&family=Amiri:wght@400;700&family=JetBrains+Mono:wght@500&display=swap"></noscript>
 <link rel="manifest" href="manifest.webmanifest">
@@ -410,13 +410,12 @@
   .hero-visual .pattern-bg { position: absolute; inset: 0; border-radius: 24px; }
   .hero-visual .pattern-bg::before { background-size: 140px 140px; opacity: calc(var(--pattern-opacity) * 1.6); }
   .hero-photo { aspect-ratio: 4/5; background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--ground); }
-  .hero-photo img { object-position: 76% 50%; transform-origin: 80% 0; }
+  .hero-photo img { object-position: 50% 50%; transform-origin: 50% 0; }
   /* On desktop the photo is a little shorter than the tall arch and fades out
-     at the bottom, so the wide crop keeps the NICC lettering and the right
-     dome clear of the arch's curved corner. */
+     at the bottom into the arch's tinted backing. */
   @media (min-width: 941px) {
     .hero-photo img {
-      height: 88%; object-position: 81% 50%; transform-origin: 72% 0;
+      height: 88%; object-position: 50% 45%; transform-origin: 50% 0;
       -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 76%, transparent 100%);
       mask-image: linear-gradient(to bottom, #000 0, #000 76%, transparent 100%);
     }
@@ -1531,7 +1530,7 @@
         </div>
         <div class="hero-visual" data-plx>
           <div class="pattern-bg"></div>
-          <div class="arch hero-photo"><picture><source type="image/webp" srcset="images/nicc-aerial.webp"><img src="images/nicc-aerial.jpg" width="1800" height="1012" fetchpriority="high" decoding="async" alt="Aerial view of the Noor Islamic Cultural Center beside its pond"></picture></div>
+          <div class="arch hero-photo"><picture><source type="image/webp" srcset="images/hero-meal.webp"><img src="images/hero-meal.jpg" width="1200" height="1800" fetchpriority="high" decoding="async" alt="A spread of grilled halal meats, vegetables and sauces"></picture></div>
           <div class="hero-float">
             <span class="badge-icon"><svg class="icon"><use href="#i-shield"/></svg></span>
             <div>
