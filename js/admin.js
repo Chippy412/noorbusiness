@@ -80,15 +80,9 @@
     address: "Address", phone: "Phone", website: "Website", photo_url: "Photo"
   };
   var BADGES = [
-    ["halal", "Halal verified"], ["prayer", "Prayer space"], ["women", "Women owned"],
+    ["prayer", "Prayer space"], ["women", "Women owned"],
     ["family", "Family run"], ["community", "Community service"]
   ];
-  var HALAL_LABELS = {
-    certified: "Certified halal (says they can name the certifier)",
-    supplier: "Halal supplier, not formally certified",
-    some: "Some halal options",
-    na: "Not applicable"
-  };
   var REPORT_REASONS = {
     closed: "Closed or moved", wrong_info: "Wrong information", inappropriate: "Inappropriate",
     spam: "Spam or fake", other: "Something else"
@@ -184,7 +178,6 @@
         (photo ? '<img src="' + photo + '" alt="" class="mod-photo">' : "") +
         '<p class="mod-lede">' + esc(l.description) + '</p><p class="mod-prose">' + esc(l.long_description) + "</p>" +
         rows([
-          ["Halal (owner says)", l.halal_status ? esc(HALAL_LABELS[l.halal_status] || l.halal_status) : none()],
           ["Address", val(l.address)], ["Phone", val(l.phone)], ["Website", val(l.website)],
           ["Hours", hours || none()]
         ]) +

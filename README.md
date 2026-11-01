@@ -93,7 +93,7 @@ once in the SQL editor; all are safe to re-run):
 6. `2026-10-05-admin.sql`, `2026-10-06-roles.sql`, `2026-10-07-fixes.sql`,
    `2026-10-08-review-fixes.sql`, `2026-10-09-notifications.sql`,
    `2026-10-10-moderation-tools.sql`, `2026-10-11-sponsorship.sql`,
-   `2026-10-12-locations.sql`, then on the Moderation page > All listings,
+   `2026-10-12-locations.sql`, `2026-11-02-remove-halal-verification.sql`, then on the Moderation page > All listings,
    click "Find map locations for older listings" until it says all done
 7. Add the first moderator (see Moderation below)
 
@@ -121,7 +121,7 @@ My account page for moderators). It shows:
 - **Claims**: approving transfers ownership to the person who claimed it.
 - **Reviews**: approve or reject.
 - **Messages**: contact-form messages, with a reply-by-email link.
-- **All listings**: set badges (e.g. Halal verified; volunteers and
+- **All listings**: set badges (e.g. Prayer space; volunteers and
   moderators), Featured and status (moderators only, see Roles).
 
 **Notifications for the team:**
