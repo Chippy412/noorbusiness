@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Block City Sandbox</title>
+  <link rel="stylesheet" href="style.css">
+
+  <!-- The import map must be declared before any module script is loaded. -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "cannon-es": "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <!-- WebGL surface: main.js creates the renderer on this canvas. -->
+  <canvas id="game"></canvas>
+
+  <!-- In-play HUD. The whole layer ignores the mouse (pointer-events: none). -->
+  <div id="hud" aria-live="off">
+    <!-- Compact controls reminder, top-left (hidden on narrow windows). -->
+    <div id="controls" class="panel">
+      <h2>Controls</h2>
+      <dl>
+        <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Move / steer</dd>
+        <dt><kbd>Mouse</kbd></dt><dd>Look</dd>
+        <dt><kbd>Shift</kbd></dt><dd>Run</dd>
+        <dt><kbd>Space</kbd></dt><dd>Jump (on foot) / handbrake (driving)</dd>
+        <dt><kbd>F</kbd></dt><dd>Enter / exit vehicle</dd>
+        <dt><kbd>R</kbd></dt><dd>Reset vehicle upright</dd>
+        <dt><kbd>Esc</kbd></dt><dd>Release mouse</dd>
+      </dl>
+    </div>
+
+    <!-- State badge + speed readout (speed only shown while driving), top-centre. -->
+    <div id="status">
+      <span id="badge" class="badge on-foot">ON FOOT</span>
+      <span id="speed" class="panel hidden"><span id="speed-value">0</span><span class="unit">km/h</span></span>
+    </div>
+
+    <!-- FPS counter, top-right. -->
+    <div id="fps" class="panel">-- FPS</div>
+
+    <!-- Context prompt, bottom-centre. Hidden while there is nothing to say. -->
+    <div id="prompt" class="panel hidden"></div>
+
+    <!-- Minimap, bottom-right. Backing-store size is set in hud.js (devicePixelRatio). -->
+    <div id="minimap-frame" class="panel">
+      <canvas id="minimap" width="200" height="200"></canvas>
+      <span class="north">N</span>
+    </div>
+  </div>
+
+  <!-- Start / pause overlay: shown at startup and whenever pointer lock is lost. -->
+  <div id="overlay">
+    <div class="overlay-card">
+      <h1>Block City Sandbox</h1>
+      <p class="tagline">Walk, drive and jump ramps around a tiny block city.</p>
+      <button id="start-button" type="button">Click to play</button>
+      <dl class="controls-list">
+        <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Move on foot / steer and throttle when driving</dd>
+        <dt><kbd>Mouse</kbd></dt><dd>Look around</dd>
+        <dt><kbd>Shift</kbd></dt><dd>Run</dd>
+        <dt><kbd>Space</kbd></dt><dd>Jump (on foot) / handbrake (driving)</dd>
+        <dt><kbd>F</kbd></dt><dd>Enter / exit vehicle</dd>
+        <dt><kbd>R</kbd></dt><dd>Reset vehicle upright</dd>
+        <dt><kbd>Esc</kbd></dt><dd>Release mouse (pause)</dd>
+      </dl>
+    </div>
+  </div>
+
+  <!-- Fatal error box: hidden until main.js / HUD.showFatal() fills it. -->
+  <div id="fatal" role="alert" hidden></div>
+
+  <noscript>
+    <div class="noscript">Block City Sandbox needs JavaScript and WebGL to run.</div>
+  </noscript>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
