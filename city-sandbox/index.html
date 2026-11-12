@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Block City Sandbox</title>
+  <meta name="theme-color" content="#05070d">
+  <title>Neon Tide</title>
   <link rel="stylesheet" href="style.css">
 
   <!-- The import map must be declared before any module script is loaded. -->
@@ -11,6 +12,7 @@
   {
     "imports": {
       "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
       "cannon-es": "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"
     }
   }
@@ -20,64 +22,330 @@
   <!-- WebGL surface: main.js creates the renderer on this canvas. -->
   <canvas id="game"></canvas>
 
-  <!-- In-play HUD. The whole layer ignores the mouse (pointer-events: none). -->
-  <div id="hud" aria-live="off">
-    <!-- Compact controls reminder, top-left (hidden on narrow windows). -->
-    <div id="controls" class="panel">
-      <h2>Controls</h2>
-      <dl>
-        <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Move / steer</dd>
-        <dt><kbd>Mouse</kbd></dt><dd>Look</dd>
-        <dt><kbd>Shift</kbd></dt><dd>Run</dd>
-        <dt><kbd>Space</kbd></dt><dd>Jump (on foot) / handbrake (driving)</dd>
-        <dt><kbd>F</kbd></dt><dd>Enter / exit vehicle</dd>
-        <dt><kbd>R</kbd></dt><dd>Reset vehicle upright</dd>
-        <dt><kbd>Esc</kbd></dt><dd>Release mouse</dd>
-      </dl>
+  <!-- ======================= IN-PLAY HUD (never takes the mouse) ======================= -->
+  <div id="hud" aria-hidden="true">
+
+    <!-- top-left: mission tracker -->
+    <div id="mission-slot">
+      <section id="mission" class="panel off">
+        <header class="m-head">
+          <span class="m-tag"><i class="live-dot"></i>Active job</span>
+          <span class="m-payout"><small>Payout</small><b id="m-payout">$0</b></span>
+        </header>
+        <h2 id="m-title"></h2>
+        <p id="m-objective"></p>
+        <div id="m-timer" class="m-row off">
+          <svg class="m-ico" viewBox="0 0 16 16"><circle cx="8" cy="9" r="5.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 6v3.2l2 1.3M6.2 1.6h3.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <div class="bar"><i id="m-timer-fill"></i></div>
+          <span id="m-time" class="num">0:00</span>
+        </div>
+        <div id="m-integrity" class="m-row off">
+          <svg class="m-ico" viewBox="0 0 16 16"><path d="M8 1.6 14 4.8v6.4L8 14.4 2 11.2V4.8zM2.3 4.9 8 8l5.7-3.1M8 8v6.2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+          <div class="bar seg"><i id="m-int-fill"></i></div>
+          <span id="m-int-val" class="num">100%</span>
+        </div>
+      </section>
+      <div id="mission-idle" class="panel slim">
+        <span class="gem">&#9670;</span>
+        <span>No active job &mdash; find a courier depot</span>
+      </div>
     </div>
 
-    <!-- State badge + speed readout (speed only shown while driving), top-centre. -->
-    <div id="status">
-      <span id="badge" class="badge on-foot">ON FOOT</span>
-      <span id="speed" class="panel hidden"><span id="speed-value">0</span><span class="unit">km/h</span></span>
+    <!-- top-centre: compass strip (hidden on small windows) -->
+    <div id="compass-wrap">
+      <canvas id="compass"></canvas>
+      <i class="compass-caret"></i>
     </div>
 
-    <!-- FPS counter, top-right. -->
-    <div id="fps" class="panel">-- FPS</div>
+    <!-- top-right: wallet / rank / world info, with the toast stack flowing underneath -->
+    <div id="right-col">
+      <section id="stats" class="panel">
+        <div class="cash-row">
+          <span class="cash-label">Cash</span>
+          <span id="cash" class="num">$0</span>
+          <span id="cash-delta" class="num"></span>
+        </div>
+        <div id="rank">
+          <div class="rank-line">
+            <span id="rank-index" class="rank-chip">R1</span>
+            <span id="rank-name">Rookie</span>
+            <span id="rank-pct" class="num">0%</span>
+          </div>
+          <div class="bar thin"><i id="rank-fill"></i></div>
+        </div>
+        <div class="meta-row">
+          <span class="meta" title="Tide shards">
+            <svg viewBox="0 0 16 16"><path d="M8 1 12.5 8 8 15 3.5 8z" fill="currentColor" opacity=".25"/><path d="M8 1 12.5 8 8 15 3.5 8zM3.5 8h9" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+            <b id="shards" class="num">0/0</b>
+          </span>
+          <span class="meta" title="Deliveries">
+            <svg viewBox="0 0 16 16"><path d="M8 1.6 14 4.8v6.4L8 14.4 2 11.2V4.8zM2.3 4.9 8 8l5.7-3.1M8 8v6.2" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+            <b id="deliveries" class="num">0</b>
+          </span>
+          <span id="clock-wrap" class="meta day">
+            <svg class="sun" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3.2" fill="currentColor"/><path d="M8 .8v2M8 13.2v2M.8 8h2M13.2 8h2M2.9 2.9l1.4 1.4M11.7 11.7l1.4 1.4M2.9 13.1l1.4-1.4M11.7 4.3l1.4-1.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            <svg class="moon" viewBox="0 0 16 16"><path d="M13.6 10.2A6.2 6.2 0 0 1 5.8 2.4a6.2 6.2 0 1 0 7.8 7.8z" fill="currentColor"/></svg>
+            <b id="clock" class="num">00:00</b>
+          </span>
+        </div>
+      </section>
+      <div id="fps" class="num">-- fps</div>
+      <div id="toasts" role="status"></div>
+    </div>
 
-    <!-- Context prompt, bottom-centre. Hidden while there is nothing to say. -->
-    <div id="prompt" class="panel hidden"></div>
+    <!-- bottom-left: minimap -->
+    <div id="minimap-wrap">
+      <canvas id="minimap"></canvas>
+      <i class="mm-ring"></i>
+      <span class="mm-north">N</span>
+      <span class="mm-key"><kbd>M</kbd>Map</span>
+    </div>
 
-    <!-- Minimap, bottom-right. Backing-store size is set in hud.js (devicePixelRatio). -->
-    <div id="minimap-frame" class="panel">
-      <canvas id="minimap" width="200" height="200"></canvas>
-      <span class="north">N</span>
+    <!-- bottom-right: driving cluster / stamina -->
+    <div id="corner">
+      <section id="cluster" class="panel off">
+        <div class="cl-side">
+          <div id="nitro" class="cl-block">
+            <div class="cl-label"><span>Nitro</span><svg viewBox="0 0 16 16"><path d="M9.5 1 3.5 9h3.6L6 15l6.5-8.4H8.8z" fill="currentColor"/></svg></div>
+            <div id="nitro-pips" class="pips"></div>
+            <div class="bar thin burn"><i id="nitro-burn-fill"></i></div>
+          </div>
+          <div id="health" class="cl-block">
+            <div class="cl-label"><span>Chassis</span><b id="health-val" class="num">100</b></div>
+            <div class="bar"><i id="health-fill"></i></div>
+          </div>
+        </div>
+        <div class="gauge">
+          <svg viewBox="0 0 200 200" aria-hidden="true">
+            <defs>
+              <linearGradient id="g-speed" x1="0" y1="1" x2="1" y2="0">
+                <stop offset="0" stop-color="#3df2ff"/>
+                <stop offset=".6" stop-color="#8f7bff"/>
+                <stop offset="1" stop-color="#ff3ea5"/>
+              </linearGradient>
+              <linearGradient id="g-nitro" x1="0" y1="1" x2="1" y2="0">
+                <stop offset="0" stop-color="#ffb648"/>
+                <stop offset="1" stop-color="#ff3ea5"/>
+              </linearGradient>
+            </defs>
+            <g id="speedo-ticks"></g>
+            <path class="g-track" d="M40.6 159.4A84 84 0 1 1 159.4 159.4" pathLength="100"/>
+            <path id="speedo-fill" class="g-fill" d="M40.6 159.4A84 84 0 1 1 159.4 159.4" pathLength="100"/>
+          </svg>
+          <div class="g-read">
+            <span id="speed" class="num">0</span>
+            <small>KM/H</small>
+          </div>
+          <div class="g-gear"><small>Gear</small><b id="gear">N</b></div>
+        </div>
+      </section>
+
+      <section id="stamina" class="panel slim off">
+        <svg viewBox="0 0 16 16"><path d="M9.5 1 3.5 9h3.6L6 15l6.5-8.4H8.8z" fill="currentColor"/></svg>
+        <span class="st-label">Stamina</span>
+        <div class="bar"><i id="stamina-fill"></i></div>
+      </section>
+    </div>
+
+    <!-- bottom-centre: context prompt -->
+    <div id="prompt" class="off"><kbd id="prompt-key"></kbd><span id="prompt-text"></span></div>
+
+  </div>
+
+  <!-- ======================= FULL MAP (KeyM) ======================= -->
+  <div id="fullmap" class="overlay" aria-hidden="true">
+    <div class="fm-inner">
+      <div class="fm-frame panel">
+        <header class="fm-head">
+          <h2>Island map</h2>
+          <span class="fm-hint"><kbd>M</kbd>Close</span>
+        </header>
+        <canvas id="fullmap-canvas"></canvas>
+      </div>
+      <aside class="fm-legend panel">
+        <h3>Legend</h3>
+        <ul>
+          <li><svg viewBox="0 0 20 20"><path d="M10 2.5 15.5 16 10 12.8 4.5 16z" fill="#fff" stroke="#3df2ff" stroke-width="1.4" stroke-linejoin="round"/></svg>You</li>
+          <li><svg viewBox="0 0 20 20"><path d="M10 2.5 17.5 10 10 17.5 2.5 10z" fill="#3df2ff"/><path d="M10 6.5 13.5 10 10 13.5 6.5 10z" fill="#06203a"/></svg>Courier depot</li>
+          <li><svg viewBox="0 0 20 20"><path d="M10 2 18 10 10 18 2 10z" fill="#ffb648"/><path d="M6 10h8M10 6v8" stroke="#3a2200" stroke-width="1.6"/></svg>Pickup</li>
+          <li><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7" fill="none" stroke="#4dffb0" stroke-width="2"/><path d="M8 14.5v-9l6 2.2-6 2.3" fill="#4dffb0" stroke="#4dffb0" stroke-width="1.2" stroke-linejoin="round"/></svg>Drop-off</li>
+          <li><svg viewBox="0 0 20 20"><path d="M10 2 17 6v8l-7 4-7-4V6z" fill="#ff3ea5"/><circle cx="10" cy="10" r="3" fill="#2b0420"/></svg>Garage</li>
+          <li><svg viewBox="0 0 20 20"><rect x="6" y="3.5" width="8" height="13" rx="2.5" fill="#ff6b5e" stroke="#0008"/></svg>Vehicle</li>
+          <li><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="3" fill="#c9b8ff"/></svg>Local</li>
+          <li><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="3" fill="#fff36b"/><circle cx="10" cy="10" r="5.5" fill="none" stroke="#fff36b" stroke-opacity=".4"/></svg>Collectible</li>
+        </ul>
+        <div class="fm-swatches">
+          <span><i style="background:#d2bf8c"></i>Beach</span>
+          <span><i style="background:#2f8f6a"></i>Park</span>
+          <span><i style="background:#8a7fd0"></i>Plaza</span>
+          <span><i style="background:#ff9a3d"></i>Ramp</span>
+        </div>
+      </aside>
     </div>
   </div>
 
-  <!-- Start / pause overlay: shown at startup and whenever pointer lock is lost. -->
-  <div id="overlay">
-    <div class="overlay-card">
-      <h1>Block City Sandbox</h1>
-      <p class="tagline">Walk, drive and jump ramps around a tiny block city.</p>
-      <button id="start-button" type="button">Click to play</button>
-      <dl class="controls-list">
-        <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Move on foot / steer and throttle when driving</dd>
-        <dt><kbd>Mouse</kbd></dt><dd>Look around</dd>
-        <dt><kbd>Shift</kbd></dt><dd>Run</dd>
-        <dt><kbd>Space</kbd></dt><dd>Jump (on foot) / handbrake (driving)</dd>
-        <dt><kbd>F</kbd></dt><dd>Enter / exit vehicle</dd>
-        <dt><kbd>R</kbd></dt><dd>Reset vehicle upright</dd>
-        <dt><kbd>Esc</kbd></dt><dd>Release mouse (pause)</dd>
-      </dl>
+  <!-- ======================= GARAGE SHOP ======================= -->
+  <div id="shop" class="overlay scrim" role="dialog" aria-modal="true" aria-labelledby="shop-heading">
+    <div class="modal panel shop-modal">
+      <header class="modal-head">
+        <div>
+          <small class="eyebrow magenta">Tideline Garage</small>
+          <h2 id="shop-heading">Upgrades</h2>
+        </div>
+        <div class="shop-cash"><small>Cash</small><b id="shop-cash" class="num">$0</b></div>
+        <button id="shop-close" class="icon-btn" type="button" aria-label="Close shop">
+          <svg viewBox="0 0 16 16"><path d="M3 3l10 10M13 3 3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </header>
+      <div id="shop-list" class="shop-list"></div>
+      <footer class="modal-foot">
+        <span class="foot-note">Upgrades apply to every vehicle you drive.</span>
+        <button id="shop-done" class="btn" type="button">Back to the streets</button>
+      </footer>
     </div>
   </div>
 
-  <!-- Fatal error box: hidden until main.js / HUD.showFatal() fills it. -->
+  <!-- ======================= PAUSE MENU ======================= -->
+  <div id="pause" class="overlay scrim" role="dialog" aria-modal="true" aria-labelledby="pause-heading">
+    <div class="modal panel pause-modal">
+      <header class="modal-head">
+        <div>
+          <small class="eyebrow">Neon Tide</small>
+          <h2 id="pause-heading">Paused</h2>
+        </div>
+        <button id="btn-resume" class="btn primary" type="button">Resume</button>
+      </header>
+
+      <div class="pause-body">
+        <section class="settings" aria-label="Settings">
+          <h3>Settings</h3>
+
+          <label class="set-row" for="set-volume">
+            <span class="set-name">Volume</span>
+            <input id="set-volume" type="range" min="0" max="1" step="0.01" value="0.8">
+            <output id="out-volume" class="num">80%</output>
+          </label>
+
+          <div class="set-row">
+            <span class="set-name" id="lbl-music">Music</span>
+            <button id="set-music" class="switch" type="button" role="switch" aria-checked="true" aria-labelledby="lbl-music"><i></i></button>
+            <output id="out-music">On</output>
+          </div>
+
+          <div class="set-row">
+            <span class="set-name" id="lbl-quality">Quality</span>
+            <div id="set-quality" class="segmented" role="radiogroup" aria-labelledby="lbl-quality">
+              <button type="button" role="radio" data-value="low" aria-checked="false">Low</button>
+              <button type="button" role="radio" data-value="medium" aria-checked="true">Medium</button>
+              <button type="button" role="radio" data-value="high" aria-checked="false">High</button>
+            </div>
+          </div>
+
+          <label class="set-row" for="set-sensitivity">
+            <span class="set-name">Look sensitivity</span>
+            <input id="set-sensitivity" type="range" min="0.4" max="2" step="0.05" value="1">
+            <output id="out-sensitivity" class="num">1.00&times;</output>
+          </label>
+
+          <div class="set-row">
+            <span class="set-name" id="lbl-invert">Invert Y</span>
+            <button id="set-invertY" class="switch" type="button" role="switch" aria-checked="false" aria-labelledby="lbl-invert"><i></i></button>
+            <output id="out-invertY">Off</output>
+          </div>
+        </section>
+
+        <section class="controls" aria-label="Controls">
+          <h3>Controls</h3>
+          <dl class="keys">
+            <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Move &middot; steer</dd>
+            <dt><kbd>Mouse</kbd></dt><dd>Look around</dd>
+            <dt><kbd>Shift</kbd></dt><dd>Sprint &middot; nitro</dd>
+            <dt><kbd>Space</kbd></dt><dd>Jump &middot; handbrake</dd>
+            <dt><kbd>F</kbd></dt><dd>Enter / exit vehicle</dd>
+            <dt><kbd>R</kbd></dt><dd>Reset vehicle</dd>
+            <dt><kbd>M</kbd></dt><dd>Island map</dd>
+            <dt><kbd>Esc</kbd></dt><dd>Pause</dd>
+          </dl>
+        </section>
+      </div>
+
+      <footer class="modal-foot">
+        <div id="reset-zone" class="reset-zone">
+          <button id="btn-reset" class="btn ghost danger" type="button">Reset progress</button>
+          <div id="reset-confirm" class="reset-confirm" hidden>
+            <span>Erase all progress?</span>
+            <button id="btn-reset-yes" class="btn danger" type="button">Erase</button>
+            <button id="btn-reset-no" class="btn ghost" type="button">Cancel</button>
+          </div>
+        </div>
+        <button id="btn-quit" class="btn ghost" type="button">Quit to title</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ======================= TITLE SCREEN ======================= -->
+  <div id="title" class="overlay" role="dialog" aria-modal="true" aria-label="Neon Tide">
+    <div class="t-sky" aria-hidden="true">
+      <i class="t-stars"></i>
+      <i class="t-sun"></i>
+      <i class="t-haze"></i>
+      <i class="t-grid"></i>
+    </div>
+    <div class="t-content">
+      <div class="t-logo" aria-hidden="true">
+        <span class="t-neon">Neon</span>
+        <span class="t-tide">Tide</span>
+        <svg class="t-wave" viewBox="0 0 400 20" preserveAspectRatio="none"><path d="M0 10c25-12 25 12 50 0s25 12 50 0 25 12 50 0 25 12 50 0 25 12 50 0 25 12 50 0 25 12 50 0 25 12 50 0" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+      </div>
+      <h1 class="sr-only">Neon Tide</h1>
+      <p class="t-tagline">Deliver fast. Drive loud. Own the island after dark.</p>
+
+      <div class="t-buttons">
+        <button id="btn-continue" class="btn primary big" type="button" hidden>Continue</button>
+        <button id="btn-new" class="btn primary big" type="button">New Game</button>
+      </div>
+      <p id="t-save-note" class="t-note" hidden>Starting a new game replaces your saved courier.</p>
+
+      <ul class="t-controls">
+        <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>Move &middot; steer</span></li>
+        <li><kbd>Mouse</kbd><span>Look</span></li>
+        <li><kbd>Shift</kbd><span>Sprint &middot; nitro</span></li>
+        <li><kbd>Space</kbd><span>Jump &middot; handbrake</span></li>
+        <li><kbd>F</kbd><span>Enter / exit vehicle</span></li>
+        <li class="nicety"><kbd>R</kbd><span>Reset vehicle</span></li>
+        <li class="nicety"><kbd>M</kbd><span>Map</span></li>
+        <li class="nicety"><kbd>Esc</kbd><span>Pause</span></li>
+      </ul>
+    </div>
+    <p class="t-credits">Everything you see and hear is generated in code</p>
+  </div>
+
+  <!-- full-screen black fade (respawn transitions) -->
+  <div id="fade"></div>
+
+  <!-- centre callouts sit above the fade so "WASTED"-style banners stay readable -->
+  <div id="callouts" aria-hidden="true">
+    <div id="popup"><div id="popup-text"></div><div id="popup-sub"></div></div>
+    <div id="banner">
+      <i class="bn-line"></i>
+      <div id="banner-title"></div>
+      <div id="banner-sub"></div>
+      <i class="bn-line"></i>
+    </div>
+  </div>
+
+  <!-- loading state: pure CSS, removed from view once the HUD constructs -->
+  <div id="boot" role="status" aria-live="polite">
+    <div class="boot-mark"><i></i><i></i><i></i></div>
+    <div class="boot-name">Neon Tide</div>
+    <div class="boot-sub">Generating island&hellip;</div>
+  </div>
+
+  <!-- Fatal error box: hidden until HUD.showFatal() / main.js fills it. -->
   <div id="fatal" role="alert" hidden></div>
 
   <noscript>
-    <div class="noscript">Block City Sandbox needs JavaScript and WebGL to run.</div>
+    <div class="noscript">Neon Tide needs JavaScript and WebGL to run.</div>
   </noscript>
 
   <script type="module" src="js/main.js"></script>

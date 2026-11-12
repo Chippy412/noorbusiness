@@ -47,7 +47,7 @@ export class Player {
     this.body = body;
 
     // --- visuals ----------------------------------------------------------
-    const { group, animate } = createHumanoid({ shirt: 0x21c06b, pants: 0x1f2a44 });
+    const { group, animate } = createHumanoid({ shirt: 0xff5a8a, pants: 0x1f2a44, skin: 0xd9a066, hair: 0x2b1b12 });
     this.mesh = group;
     this._animate = animate;
     this._walkPhase = 0;
@@ -60,6 +60,19 @@ export class Player {
     this._coyote = 0;       // seconds since the ground was last felt
     this._jumpCooldown = 0;
     this._rayFrom = new CANNON.Vec3();
+
+    /** Sprint stamina 0..1. */
+    this.stamina = 1;
+    this._staminaDelay = 0;
+    this._winded = false;
+    /** Seconds of energy-drink boost left (free sprinting, faster). */
+    this.energy = 0;
+    this.running = false;
+    /** One-frame event flags for audio / effects, cleared by the game. */
+    this.justJumped = false;
+    this.justLanded = 0; // landing speed (m/s) or 0
+    this._wasGrounded = true;
+    this._fallSpeed = 0;
     this._rayTo = new CANNON.Vec3();
 
     physics.onPreStep((h) => this._preStep(h));
@@ -74,7 +87,9 @@ export class Player {
    */
   setInput(dirX, dirZ, run, jumpPressed) {
     const len = Math.hypot(dirX, dirZ);
-    const speed = len > 0 ? (run ? P.runSpeed : P.walkSpeed) / len : 0;
+    this.running = run && len > 0 && !this._winded;
+    const boost = this.energy > 0 ? 1.18 : 1;
+    const speed = len > 0 ? ((this.running ? P.runSpeed : P.walkSpeed) * boost) / len : 0;
     this._wishX = dirX * speed;
     this._wishZ = dirZ * speed;
     if (jumpPressed) this._jumpQueued = 0.15; // small buffer: feels responsive
@@ -110,6 +125,7 @@ export class Player {
     // Jump (allowed a moment after walking off an edge: "coyote time").
     if (this._jumpQueued > 0 && this._coyote < 0.12 && this._jumpCooldown === 0) {
       v.y = P.jumpSpeed;
+      this.justJumped = true;
       this._jumpQueued = 0;
       this._jumpCooldown = 0.3;
       this._coyote = 1;
@@ -119,6 +135,24 @@ export class Player {
   /** Per-frame: sync the model with the body and animate it. */
   update(dt) {
     if (!this.enabled) return;
+
+    // Stamina: sprinting drains it, a short rest refills it.
+    this.energy = Math.max(0, this.energy - dt);
+    if (this.running && this.energy === 0) {
+      this.stamina = Math.max(0, this.stamina - dt * 0.16);
+      this._staminaDelay = 0.9;
+      if (this.stamina === 0) this._winded = true;
+    } else {
+      this._staminaDelay = Math.max(0, this._staminaDelay - dt);
+      if (this._staminaDelay === 0) this.stamina = Math.min(1, this.stamina + dt * 0.22);
+      if (this.stamina > 0.25) this._winded = false;
+    }
+    // Landing detection (for sound and dust).
+    if (!this.grounded) this._fallSpeed = Math.max(this._fallSpeed, -this.body.velocity.y);
+    if (this.grounded && !this._wasGrounded) this.justLanded = this._fallSpeed;
+    if (this.grounded) this._fallSpeed = 0;
+    this._wasGrounded = this.grounded;
+
     const p = this.body.interpolatedPosition;
     this.position.set(p.x, p.y - HALF_HEIGHT, p.z);
 
@@ -133,7 +167,10 @@ export class Player {
     }
 
     this._walkPhase += speed * dt * 2.4;
-    this._animate(this._walkPhase, this.grounded ? Math.min(1, speed / 3) : 0.6);
+    this._animate(this._walkPhase, this.grounded ? Math.min(1, speed / 3) : 0.6, {
+      airborne: !this.grounded,
+      run: Math.min(1, Math.max(0, (speed - P.walkSpeed) / (P.runSpeed - P.walkSpeed))),
+    });
 
     this.mesh.position.copy(this.position);
     this.mesh.rotation.y = this.heading;

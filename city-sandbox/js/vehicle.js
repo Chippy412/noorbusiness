@@ -13,6 +13,7 @@ import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { CONFIG } from './config.js';
 import { GROUP } from './physics.js';
+import { createCarModel } from './gfx/models.js';
 
 const V = CONFIG.vehicle;
 
@@ -32,12 +33,27 @@ const _forward = new CANNON.Vec3();
 const _up = new CANNON.Vec3();
 const LOCAL_FORWARD = new CANNON.Vec3(0, 0, 1);
 const LOCAL_UP = new CANNON.Vec3(0, 1, 0);
+const LOCAL_LEFT = new CANNON.Vec3(1, 0, 0);
+const _left = new CANNON.Vec3();
 
 export class Vehicle {
-  /** @param {{physics: import('./physics.js').Physics, scene: THREE.Scene, color:number, x:number, z:number, heading:number}} opts */
-  constructor({ physics, scene, color, x, z, heading }) {
+  /** @param {{physics: import('./physics.js').Physics, scene: THREE.Scene, color:number, x:number, z:number, heading:number, style?:string}} opts */
+  constructor({ physics, scene, color, x, z, heading, style = 'coupe' }) {
     this.physics = physics;
     this.color = color;
+    this.style = style;
+    this.styleStats = CONFIG.vehicleStyles[style];
+    this.name = this.styleStats.name;
+    /** Effective multipliers = model stats x garage upgrades (see applyUpgrades). */
+    this.stats = { engine: 1, topSpeed: 1, grip: 1, armor: 1 };
+
+    this.health = 100;       // 0 = wrecked engine (limps until repaired)
+    this.boosting = false;   // nitro burning
+    this.airborne = false;   // no wheel touches the ground
+    this.slip = 0;           // 0..1 how hard the tyres are sliding sideways
+    this.braking = false;
+    /** Called with (impactSpeed m/s, otherBody) on hard collisions. */
+    this.onImpact = null;
 
     /** True while the player is driving this car. */
     this.occupied = false;
@@ -107,50 +123,60 @@ export class Vehicle {
     }
     car.addToWorld(physics.world);
     this.car = car;
+    this._baseSlip = car.wheelInfos.map((w) => w.frictionSlip);
+    this.applyUpgrades({});
+
+    body.addEventListener('collide', (e) => {
+      const impact = Math.abs(e.contact.getImpactVelocityAlongNormal());
+      if (impact > 3.5 && this.onImpact) this.onImpact(impact, e.body);
+    });
 
     // --- visuals ----------------------------------------------------------
-    this.mesh = this._buildMesh(color);
+    this.model = createCarModel({ color, style });
+    this.mesh = this.model.group;
+    this.wheelMeshes = this.model.wheels;
     scene.add(this.mesh);
 
     physics.onPreStep((h) => this._preStep(h));
     this.update();
   }
 
-  _buildMesh(color) {
-    const { width, height, length } = V.chassis;
-    const group = new THREE.Group();
-    const add = (w, h, d, c, x, y, z, parent = group) => {
-      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshLambertMaterial({ color: c }));
-      m.position.set(x, y, z);
-      m.castShadow = true;
-      parent.add(m);
-      return m;
-    };
-    const top = BOX_OFFSET_Y + height / 2;
-    add(width, height, length, color, 0, BOX_OFFSET_Y, 0);                       // body
-    add(width * 0.86, 0.55, length * 0.48, 0x1d2733, 0, top + 0.27, -0.25);       // cabin / glass
-    add(width * 0.88, 0.06, length * 0.5, color, 0, top + 0.57, -0.25);           // roof
-    add(0.4, 0.16, 0.06, 0xfff6c9, 0.6, BOX_OFFSET_Y + 0.1, length / 2 + 0.01);   // headlights
-    add(0.4, 0.16, 0.06, 0xfff6c9, -0.6, BOX_OFFSET_Y + 0.1, length / 2 + 0.01);
-    add(0.4, 0.14, 0.06, 0xb3121a, 0.6, BOX_OFFSET_Y + 0.1, -length / 2 - 0.01);  // tail lights
-    add(0.4, 0.14, 0.06, 0xb3121a, -0.6, BOX_OFFSET_Y + 0.1, -length / 2 - 0.01);
+  /**
+   * Recompute handling from the model's stats and the garage upgrade levels.
+   * @param {{engine?:number, tires?:number, armor?:number}} levels
+   */
+  applyUpgrades(levels) {
+    const st = this.styleStats;
+    this.stats.engine = st.engine * (1 + 0.12 * (levels.engine || 0));
+    this.stats.topSpeed = st.topSpeed * (1 + 0.07 * (levels.engine || 0));
+    this.stats.grip = st.grip * (1 + 0.09 * (levels.tires || 0));
+    this.stats.armor = st.toughness / (1 - 0.22 * Math.min(3, levels.armor || 0));
+    this.car.wheelInfos.forEach((w, i) => (w.frictionSlip = this._baseSlip[i] * this.stats.grip));
+  }
 
-    // Wheels are children of the chassis group and are placed in chassis
-    // space every frame, so they can never lag behind the body.
-    const tyre = new THREE.CylinderGeometry(V.wheelRadius, V.wheelRadius, 0.3, 18);
-    tyre.rotateZ(Math.PI / 2); // cylinder axis -> X (the axle)
-    const tyreMat = new THREE.MeshLambertMaterial({ color: 0x15171a });
-    const hubMat = new THREE.MeshLambertMaterial({ color: 0xc9ccd1 });
-    this.wheelMeshes = [];
-    for (let i = 0; i < 4; i++) {
-      const w = new THREE.Mesh(tyre, tyreMat);
-      w.castShadow = true;
-      const hub = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.12, V.wheelRadius * 1.2), hubMat);
-      w.add(hub); // a bar across the wheel makes its spin visible
-      group.add(w);
-      this.wheelMeshes.push(w);
-    }
-    return group;
+  /** Top speed right now (m/s), including nitro. */
+  get maxSpeed() {
+    return V.maxSpeed * this.stats.topSpeed * (this.boosting ? CONFIG.nitro.speedBoost : 1);
+  }
+
+  /** Apply crash damage (already scaled by the caller); returns the new health. */
+  damage(amount) {
+    this.health = Math.max(0, this.health - amount / this.stats.armor);
+    this.model.setDamage(1 - this.health / 100);
+    return this.health;
+  }
+
+  repair() {
+    this.health = 100;
+    this.model.setDamage(0);
+  }
+
+  /** Gear indicator for the HUD. */
+  get gear() {
+    const fs = this.forwardSpeed;
+    if (fs < -0.6) return 'R';
+    if (Math.abs(fs) < 0.6 && this.throttle === 0) return 'N';
+    return String(1 + Math.min(4, Math.floor((Math.max(0, fs) / (V.maxSpeed * this.stats.topSpeed)) * 5)));
   }
 
   /** Runs once per fixed physics step: turn driver input into wheel forces. */
@@ -158,6 +184,12 @@ export class Vehicle {
     const body = this.body;
     body.quaternion.vmult(LOCAL_FORWARD, _forward);
     const fs = body.velocity.dot(_forward);
+
+    const top = this.maxSpeed;
+    const power =
+      V.engineForce * this.stats.engine *
+      (this.boosting ? CONFIG.nitro.forceBoost : 1) *
+      (this.health <= 0 ? 0.4 : 1);
 
     let engine = 0;
     let brake = 0;
@@ -172,7 +204,7 @@ export class Vehicle {
       }
     } else if (this.throttle > 0) {
       if (fs < -1) brake = V.brakeForce; // rolling backwards: brake first
-      else engine = V.engineForce * this.throttle * Math.max(0, 1 - (fs / V.maxSpeed) ** 2);
+      else engine = power * this.throttle * Math.max(0, 1 - (fs / top) ** 2);
     } else if (this.throttle < 0) {
       if (fs > 1) brake = V.brakeForce; // rolling forwards: brake first
       else engine = V.reverseForce * this.throttle * Math.max(0, 1 - (fs / V.maxReverseSpeed) ** 2);
@@ -181,6 +213,7 @@ export class Vehicle {
     }
 
     // Steering: less lock at speed, and the wheels turn at a finite rate.
+    this.braking = this.occupied && (brake > 10 || this.handbrake || this.throttle < 0);
     const t = Math.min(1, Math.abs(fs) / V.maxSpeed);
     const lock = V.maxSteer + (V.minSteer - V.maxSteer) * Math.sqrt(t);
     const target = (this.occupied ? this.steerInput : 0) * lock;
@@ -210,6 +243,12 @@ export class Vehicle {
     body.quaternion.vmult(LOCAL_UP, _up);
     this.forwardSpeed = body.velocity.dot(_forward);
     this.upright = _up.y;
+    this.airborne = this.car.numWheelsOnGround === 0;
+    body.quaternion.vmult(LOCAL_LEFT, _left);
+    const lateral = Math.abs(body.velocity.dot(_left));
+    const wanted = this.airborne ? 0 : Math.min(1, Math.max(0, (lateral - 2.5) / 7));
+    this.slip += (wanted - this.slip) * 0.2;
+    this.model.setBraking(this.braking);
     // Only update the heading when the nose is not pointing straight up/down.
     if (Math.hypot(_forward.x, _forward.z) > 0.2) this.heading = Math.atan2(_forward.x, _forward.z);
 
@@ -236,8 +275,14 @@ export class Vehicle {
 
   /** Put the car back on its wheels where it is (keeps its heading). */
   resetUpright() {
+    this.teleport(this.body.position.x, this.body.position.y + 1.2, this.body.position.z, this.heading);
+  }
+
+  /** Move the car to (x, y, z) facing `heading`, at rest. */
+  teleport(x, y, z, heading) {
     const b = this.body;
-    b.position.y += 1.2;
+    this.heading = heading;
+    b.position.set(x, y, z);
     b.quaternion.setFromAxisAngle(LOCAL_UP, this.heading);
     b.velocity.set(0, 0, 0);
     b.angularVelocity.set(0, 0, 0);

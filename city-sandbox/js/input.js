@@ -8,7 +8,7 @@
  * Mouse movement is only recorded while the pointer is locked to the canvas.
  */
 const GAME_KEYS = new Set([
-  'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyF', 'KeyR', 'Space',
+  'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyF', 'KeyR', 'KeyE', 'KeyH', 'Space', 'Tab',
   'ShiftLeft', 'ShiftRight', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
 ]);
 
@@ -45,6 +45,10 @@ export class Input {
   }
 
   /** Ask the browser to capture the mouse (must be called from a click). */
+  releaseLock() {
+    if (document.pointerLockElement) document.exitPointerLock();
+  }
+
   requestLock() {
     const result = this.lockElement.requestPointerLock?.();
     // Newer browsers return a promise that rejects if the lock is refused.

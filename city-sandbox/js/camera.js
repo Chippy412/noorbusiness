@@ -22,13 +22,17 @@ export class CameraRig {
   /** @param {{physics: import('./physics.js').Physics, aspect:number}} opts */
   constructor({ physics, aspect }) {
     this.physics = physics;
-    this.camera = new THREE.PerspectiveCamera(K.fov, aspect, 0.1, 900);
+    this.camera = new THREE.PerspectiveCamera(K.fov, aspect, 0.3, 2500);
     this.yaw = Math.PI; // start behind a subject that faces +Z
     this.pitch = 0.3;
     this.distance = K.footDistance;
     this.focus = new THREE.Vector3();
     this._initialised = false;
     this._idle = 0; // seconds since the mouse last moved
+    this.sensitivity = 1; // user setting multiplier
+    this.invertY = false;
+    this._fovKick = 0;    // extra degrees from speed / nitro
+    this._shake = 0;      // current shake amplitude (m)
     this._desired = new THREE.Vector3();
     this._dir = new THREE.Vector3();
   }
@@ -48,8 +52,9 @@ export class CameraRig {
 
     // --- orbit angles from the mouse ---------------------------------------
     if (mouse.x !== 0 || mouse.y !== 0) {
-      this.yaw -= mouse.x * K.mouseSensitivity;
-      this.pitch += mouse.y * K.mouseSensitivity;
+      const k = K.mouseSensitivity * this.sensitivity;
+      this.yaw -= mouse.x * k;
+      this.pitch += mouse.y * k * (this.invertY ? -1 : 1);
       this.pitch = Math.max(K.minPitch, Math.min(K.maxPitch, this.pitch));
       this._idle = 0;
     } else {
@@ -90,7 +95,28 @@ export class CameraRig {
     else this.distance += (allowed - this.distance) * damp(4, dt); // ease back out
 
     this.camera.position.copy(this.focus).addScaledVector(this._dir, this.distance);
+    if (this._shake > 0.001) {
+      this.camera.position.x += (Math.random() - 0.5) * this._shake;
+      this.camera.position.y += (Math.random() - 0.5) * this._shake;
+      this.camera.position.z += (Math.random() - 0.5) * this._shake;
+      this._shake *= Math.exp(-7 * dt);
+    }
     this.camera.lookAt(this.focus);
+
+    // Speed sells itself through a widening field of view.
+    const ratio = driving ? Math.min(1.4, (subject.speed || 0) / CONFIG.vehicle.maxSpeed) : 0;
+    const kick = ratio * ratio * 14 + (subject.boosting ? 9 : 0);
+    this._fovKick += (kick - this._fovKick) * damp(4, dt);
+    const fov = K.fov + this._fovKick;
+    if (Math.abs(fov - this.camera.fov) > 0.02) {
+      this.camera.fov = fov;
+      this.camera.updateProjectionMatrix();
+    }
+  }
+
+  /** Kick the camera (crashes, hard landings). amount ~0..1. */
+  shake(amount) {
+    this._shake = Math.min(1.2, Math.max(this._shake, amount));
   }
 
   resize(aspect) {

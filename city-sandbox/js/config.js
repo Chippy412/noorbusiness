@@ -54,7 +54,7 @@ export const CONFIG = {
   },
 
   npc: {
-    count: 8,
+    count: 14,
     walkSpeed: 1.4,
     fleeSpeed: 5.5,
     fleeRadius: 11,       // a moving vehicle closer than this scares an NPC
@@ -63,7 +63,7 @@ export const CONFIG = {
   },
 
   camera: {
-    fov: 60,
+    fov: 62,
     footDistance: 6.5,
     carDistance: 10.5,
     footHeight: 1.5,      // look-at height above the player's feet
@@ -75,6 +75,48 @@ export const CONFIG = {
     autoAlignDelay: 1.6,  // s without mouse input before re-centring behind the car
   },
 
+  world: {
+    seaLevel: -0.6,
+    dayLength: 540,       // real seconds per in-game day
+    startHour: 17.2,      // golden hour: the best first impression
+    // Land masses as rounded rectangles (centre, half extents, corner radius).
+    land: [
+      { name: 'island', x: 0, z: 0, hx: 190, hz: 190, r: 70 },
+      { name: 'islet', x: 0, z: -305, hx: 50, hz: 45, r: 38 },
+      { name: 'bridge', x: 0, z: -225, hx: 7, hz: 42, r: 0.5 },
+      { name: 'pier', x: 228, z: 0, hx: 42, hz: 8, r: 1 },
+    ],
+  },
+
+  /** Per-model handling multipliers (applied on top of CONFIG.vehicle). */
+  vehicleStyles: {
+    coupe: { name: 'Marlin Coupe', engine: 1.0, topSpeed: 1.0, grip: 1.0, toughness: 1.0 },
+    sport: { name: 'Vespera GT', engine: 1.3, topSpeed: 1.22, grip: 1.08, toughness: 0.8 },
+    van: { name: 'Pelican Van', engine: 0.85, topSpeed: 0.85, grip: 0.95, toughness: 1.5 },
+  },
+
+  nitro: { duration: 2.6, forceBoost: 2.3, speedBoost: 1.35, startCharges: 2 },
+
+  /** Garage upgrades. price(level) = base * (level + 1). */
+  upgrades: [
+    { id: 'engine', name: 'Engine Tune', desc: '+12% acceleration, +7% top speed per level', base: 400, maxLevel: 3 },
+    { id: 'tires', name: 'Sticky Tyres', desc: '+9% grip per level', base: 300, maxLevel: 3 },
+    { id: 'nitro', name: 'Nitro Tank', desc: '+1 nitro charge capacity per level', base: 350, maxLevel: 3 },
+    { id: 'armor', name: 'Reinforced Frame', desc: '-22% crash damage per level', base: 300, maxLevel: 3 },
+    { id: 'repair', name: 'Full Repair', desc: 'Fix the car you arrived in', base: 60, maxLevel: 0 },
+    { id: 'refill', name: 'Nitro Refill', desc: 'Fill every nitro charge', base: 80, maxLevel: 0 },
+  ],
+
+  /** Reputation ranks by total money earned. */
+  ranks: [
+    { name: 'Rookie', at: 0 },
+    { name: 'Runner', at: 600 },
+    { name: 'Courier', at: 1800 },
+    { name: 'Pro Courier', at: 4000 },
+    { name: 'Ace', at: 7500 },
+    { name: 'Island Legend', at: 12000 },
+  ],
+
   colors: {
     sky: 0x9fd3ff,
     road: 0x2f3237,
@@ -84,8 +126,12 @@ export const CONFIG = {
     ramp: 0xff8a1e,
     wall: 0x55504a,
     crate: 0xb07a3c,
-    buildings: [0x4f6d8f, 0x8f5d4f, 0x6a8f4f, 0x8f834f, 0x7a4f8f, 0x4f8f86, 0x9a9a9a, 0xb5654a],
-    vehicles: [0xd8322b, 0x2b6fd8],
+    // Pastel coastal palette for low/mid-rise, cool glass tints for towers.
+    buildings: [0xf2b5a7, 0xf6d6a8, 0xa9dcd3, 0xf4efe6, 0xe9a6b8, 0xbcd4f0, 0xffe2c2, 0xc9e8b8, 0xf7c59f, 0xd6c3ee],
+    towers: [0x7fa8c9, 0x6fb3b8, 0x8e9fd1, 0xa3b8c8, 0x5f93b5, 0xb08fc7],
+    neon: [0xff3d9a, 0x21e6ff, 0xffb000, 0x9d5cff, 0x3dff9a],
+    containers: [0xc0392b, 0x2e86c1, 0xe67e22, 0x27ae60, 0xf1c40f, 0x8e44ad, 0xecf0f1],
+    vehicles: [0xe02b3a, 0xffc61a, 0x1fb6a6],
   },
 };
 
