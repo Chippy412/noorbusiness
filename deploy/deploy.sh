@@ -52,6 +52,25 @@ STAGE=$(mktemp -d)
 cp -r noor-business.html 404.html manifest.webmanifest robots.txt js images "$STAGE"/
 rsync -a --delete "$STAGE"/ "$WEB"/ 2>/dev/null || { rm -rf "${WEB:?}"/*; cp -r "$STAGE"/. "$WEB"/; }
 rm -rf "$STAGE"
+
+# Point the browser at this server instead of Vercel / hosted Supabase:
+# Supabase is same-origin (Nginx proxies it), the anon key is the self-hosted
+# one, and canonical / sitemap links use SITE_URL. Values come from api.env.
+if [ -f "$ENVF" ]; then
+  SITE_URL=$(grep -E '^SITE_URL=' "$ENVF" | cut -d= -f2- || true)
+  ANON=$(grep -E '^SUPABASE_ANON_KEY=' "$ENVF" | cut -d= -f2- || true)
+  if [ -n "$ANON" ]; then
+    sed -i -E \
+      -e 's#var SUPABASE_URL = "[^"]*";#var SUPABASE_URL = window.location.origin;#' \
+      -e "s#var SUPABASE_ANON_KEY = \"[^\"]*\";#var SUPABASE_ANON_KEY = \"$ANON\";#" \
+      "$WEB/js/supabase-client.js"
+  else
+    echo "!! SUPABASE_ANON_KEY missing in $ENVF; the site still talks to hosted Supabase"
+  fi
+  if [ -n "$SITE_URL" ]; then
+    sed -i "s#https://nicc-business.vercel.app#${SITE_URL%/}#g" "$WEB/noor-business.html" "$WEB/robots.txt" "$WEB/404.html"
+  fi
+fi
 chmod -R a+rX "$WEB"
 
 echo "== nginx"
