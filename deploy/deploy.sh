@@ -79,7 +79,7 @@ install -m 644 deploy/nginx/noorbusiness.conf /etc/nginx/conf.d/noorbusiness.con
 # block. If a certificate exists, have certbot put it back, with the
 # http->https redirect (set NO_HTTPS_REDIRECT=1 to skip the redirect).
 if [ -d /etc/letsencrypt/live/noorbusiness.org ] && command -v certbot >/dev/null 2>&1; then
-  certbot install --non-interactive --cert-name noorbusiness.org --nginx \
+  certbot install --non-interactive --cert-name noorbusiness.org --nginx --hsts \
     $([ -n "${NO_HTTPS_REDIRECT:-}" ] || echo --redirect) \
     || echo "!! certbot could not re-apply HTTPS; run: certbot install --cert-name noorbusiness.org --nginx"
 fi
