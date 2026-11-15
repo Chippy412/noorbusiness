@@ -54,6 +54,7 @@ and isn't something `git clone` gives you.
   after `schema.sql`, against a fresh project.
 - `scripts/setup-supabase.sh` — the interactive setup wizard described
   above.
+- `server/`, `deploy/` — self-hosting on the masjid's Lightsail server; see `docs/self-hosting.md`.
 - `docs/superpowers/` — the design spec and implementation plan this
   backend was built from.
 

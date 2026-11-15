@@ -7,7 +7,7 @@
 var supa = require("./_lib/supa");
 var h = require("./_lib/html");
 
-var SITE = "https://nicc-business.vercel.app";
+var SITE = (process.env.SITE_URL || "https://nicc-business.vercel.app").replace(/\/$/, "");
 
 function page(title, desc, canonical, image, jsonLd, body, status) {
   return { status: status || 200, html: '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">' +
