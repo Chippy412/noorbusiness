@@ -91,5 +91,9 @@ node --test tests/api.test.js tests/server.test.js tests/guide.test.js >/dev/nul
 systemctl restart noorbusiness-api
 sleep 1
 curl -fsS http://127.0.0.1:3001/healthz && echo
-curl -fsS -o /dev/null -w "site via nginx: %{http_code}\n" http://127.0.0.1/
+if [ -d /etc/letsencrypt/live/noorbusiness.org ]; then
+  curl -fsS -o /dev/null -w "site via nginx: %{http_code}\n" --resolve noorbusiness.org:443:127.0.0.1 https://noorbusiness.org/
+else
+  curl -fsS -o /dev/null -w "site via nginx: %{http_code}\n" -H 'Host: noorbusiness.org' http://127.0.0.1/
+fi
 echo "== done"
