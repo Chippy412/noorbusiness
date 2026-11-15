@@ -1,7 +1,7 @@
 // api/sitemap.js  (served at /sitemap.xml via a rewrite in vercel.json)
 var supa = require("./_lib/supa");
 var h = require("./_lib/html");
-var SITE = "https://nicc-business.vercel.app";
+var SITE = (process.env.SITE_URL || "https://nicc-business.vercel.app").replace(/\/$/, "");
 
 module.exports = async function handler(req, res) {
   var r = await supa.rest("businesses?select=id,created_at&status=eq.approved&order=created_at.desc&limit=1000");

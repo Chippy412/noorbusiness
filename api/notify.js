@@ -6,6 +6,7 @@
 // NOTIFY_EMAIL_FROM (a sender verified in Resend, or onboarding@resend.dev).
 var html = require("./_lib/html");
 var supa = require("./_lib/supa");
+var SITE = (process.env.SITE_URL || "https://nicc-business.vercel.app").replace(/\/$/, "");
 
 var LABELS = {
   businesses: "New business listing to review",
@@ -46,7 +47,7 @@ async function loadNoticeEmail(id) {
 }
 function noticeText(r) {
   return r.title + "." + (r.reason ? "\n\nNote from the volunteer team:\n" + r.reason : "") +
-    "\n\nSee your listings and reviews at https://nicc-business.vercel.app/#/account" +
+    "\n\nSee your listings and reviews at " + SITE + "/#/account" +
     "\n\nYou're getting this because you have an account on NICC Business.";
 }
 
@@ -93,7 +94,7 @@ module.exports = async function handler(req, res) {
   }
 
   var subject = LABELS[payload.table];
-  var text = summarize(payload.table, payload.record) + "\n\nModerate it at https://nicc-business.vercel.app/#/admin";
+  var text = summarize(payload.table, payload.record) + "\n\nModerate it at " + SITE + "/#/admin";
   var ok = await send(key, { from: from, to: await recipients(process.env, loadTeamEmails), subject: "[NICC Business] " + subject, text: text });
   res.status(ok ? 200 : 502).json({ ok: ok });
 };

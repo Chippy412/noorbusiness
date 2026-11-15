@@ -1,0 +1,29 @@
+# deploy/systemd/noorbusiness-api.service
+# The API wrapper (server/index.js). Installed by deploy/deploy.sh to
+# /etc/systemd/system/. Secrets live in /etc/noorbusiness/api.env (mode 600),
+# never in the repo; see deploy/api.env.example.
+[Unit]
+Description=NICC Business API (api/*.js behind Nginx)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=noorbusiness
+Group=noorbusiness
+WorkingDirectory=/opt/noorbusiness
+EnvironmentFile=/etc/noorbusiness/api.env
+Environment=NODE_ENV=production HOST=127.0.0.1 PORT=3000
+ExecStart=/usr/bin/node /opt/noorbusiness/server/index.js
+Restart=always
+RestartSec=3
+MemoryMax=300M
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadOnlyPaths=/opt/noorbusiness
+
+[Install]
+WantedBy=multi-user.target
