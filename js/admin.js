@@ -67,6 +67,7 @@
     { id: "published", label: "Published reviews" },
     { id: "all", label: "All listings" },
     { id: "activity", label: "Activity" },
+    { id: "guide", label: "Guide" },
     { id: "sponsors", label: "Sponsors", modOnly: true },
     { id: "team", label: "Team", modOnly: true }
   ];
@@ -111,7 +112,7 @@
     var esc = h.escape;
     var isMod = h.role === "moderator";
     var state = {
-      tab: "new", data: null, all: null, team: null, published: null, log: null, sponsors: null,
+      tab: "new", guide: null, guideError: null, data: null, all: null, team: null, published: null, log: null, sponsors: null,
       allQuery: "", allStatus: "", allFlag: "", allPage: 0, openHistory: {}
     };
 
@@ -470,6 +471,10 @@
         body = !state.log ? loading("activity")
           : state.log.length ? '<p class="mod-intro">The latest 300 decisions and notes by the team.</p><ol class="mod-log mod-sheet mod-sheet-quiet">' + state.log.map(logItem).join("") + "</ol>"
           : '<div class="mod-empty"><p>Nothing yet. Decisions show up here as the team makes them.</p></div>';
+      } else if (state.tab === "guide") {
+        body = state.guide ? '<article class="mod-guide-wrap">' + state.guide + "</article>"
+          : state.guideError ? '<div class="mod-empty"><p class="mod-empty-title">' + esc(state.guideError) + '</p><p>Use <em>Refresh now</em> to try again.</p></div>'
+          : loading("the guide");
       } else if (state.tab === "team") {
         body = state.team ? teamPanel(state.team) : loading("the team");
       } else if (state.tab === "sponsors") {
@@ -482,7 +487,23 @@
     }
 
     // Loads what the current tab shows beyond the queue itself.
+    // The guide comes from /api/guide with the session token (the server
+    // re-checks team membership). It is our own trusted file, so it is
+    // inserted as-is. Errors are shown in the panel instead of thrown.
+    async function loadGuide() {
+      try {
+        var session = await window.NiccSupabase.auth.getSession();
+        var token = session && session.data && session.data.session && session.data.session.access_token;
+        var gr = await fetch("/api/guide", { headers: { Authorization: "Bearer " + token }, cache: "no-store" });
+        var gd = await gr.json().catch(function () { return {}; });
+        if (gr.ok && gd.ok && typeof gd.html === "string") { state.guide = gd.html; state.guideError = null; }
+        else state.guideError = gd.error === "team_only" ? "The guide is only for signed-in team members." : "Couldn't load the guide.";
+      } catch (e) {
+        state.guideError = "Couldn't load the guide. Check your connection.";
+      }
+    }
     async function loadTab() {
+      if (state.tab === "guide" && !state.guide) await loadGuide();
       if (state.tab === "all") state.all = await api.allBusinesses();
       if (state.tab === "published") state.published = await api.recentReviews();
       if (state.tab === "activity") state.log = await api.log();
@@ -545,6 +566,13 @@
     });
 
     root.addEventListener("click", async function (ev) {
+      var jump = ev.target.closest('.mod-guide-wrap a[href^="#g-"]');
+      if (jump) { // in-guide links: scroll, don't change the page route
+        ev.preventDefault();
+        var dest = root.querySelector("#" + jump.getAttribute("href").slice(1));
+        if (dest) dest.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
       var tab = ev.target.closest("[data-tab]");
       if (tab) {
         state.tab = tab.getAttribute("data-tab");
@@ -552,7 +580,7 @@
         var focusTarget = root.querySelector('[data-tab="' + state.tab + '"]');
         if (focusTarget) focusTarget.focus();
         var needs = (state.tab === "all" && !state.all) || state.tab === "published" || state.tab === "activity" ||
-          (isMod && (state.tab === "team" || state.tab === "sponsors"));
+          (state.tab === "guide" && !state.guide) || (isMod && (state.tab === "team" || state.tab === "sponsors"));
         if (needs) {
           try { await loadTab(); render(); } catch (e) { h.toast(e.message || "Could not load that."); }
         }

@@ -79,7 +79,7 @@ nginx -t
 systemctl reload nginx
 
 echo "== api"
-node --test tests/api.test.js tests/server.test.js >/dev/null && echo "tests ok"
+node --test tests/api.test.js tests/server.test.js tests/guide.test.js >/dev/null && echo "tests ok"
 systemctl restart noorbusiness-api
 sleep 1
 curl -fsS http://127.0.0.1:3001/healthz && echo

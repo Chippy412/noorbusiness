@@ -1012,6 +1012,29 @@
   .mod-empty p { margin: 0; }
   .mod-empty-title { color: var(--ink); font-size: 1.05rem; font-weight: 700; margin-bottom: 4px !important; }
   .mod-loading { color: var(--muted); }
+  /* Guide: long-form docs inside .mod-main. Colours come from the theme variables, so light and dark both work. */
+  .mod-guide-wrap { max-width: 68ch; color: var(--ink-2); line-height: 1.65; overflow-wrap: anywhere; }
+  .mod-guide-wrap h3 { font-size: 1.35rem; line-height: 1.25; color: var(--ink); margin: 2.2em 0 0.6em; scroll-margin-top: 110px; }
+  .mod-guide-wrap h4 { font-size: 1.05rem; line-height: 1.3; color: var(--ink); margin: 1.7em 0 0.4em; scroll-margin-top: 110px; }
+  .mod-guide-wrap > .mod-guide > :first-child { margin-top: 0; }
+  .mod-guide-wrap p, .mod-guide-wrap ul, .mod-guide-wrap ol, .mod-guide-wrap dl { margin: 0 0 1em; }
+  .mod-guide-wrap ul, .mod-guide-wrap ol { padding-left: 1.4em; }
+  .mod-guide-wrap li { margin-bottom: 0.4em; }
+  .mod-guide-wrap li > ol, .mod-guide-wrap li > ul { margin-top: 0.4em; }
+  .mod-guide-wrap strong { color: var(--ink); }
+  .mod-guide-wrap a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+  .mod-guide-lede { color: var(--ink); font-size: 1.08rem; }
+  .mod-guide-toc { padding: 14px 18px 4px; margin: 0 0 1.5em; border: 1px solid var(--hairline); border-radius: 14px; background: var(--surface); }
+  .mod-guide-toc ol { margin: 0 0 10px; }
+  .mod-guide-wrap code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.86em; padding: 1px 6px; border-radius: 6px; background: var(--surface-2); color: var(--ink); overflow-wrap: anywhere; }
+  .mod-guide-wrap hr { border: 0; border-top: 1px solid var(--hairline); margin: 2.6em 0 0; }
+  .mod-guide-wrap table { width: 100%; border-collapse: collapse; margin: 0 0 1.2em; font-size: 0.92rem; display: block; overflow-x: auto; }
+  .mod-guide-wrap th, .mod-guide-wrap td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--hairline); }
+  .mod-guide-wrap thead th { color: var(--muted); font-size: 0.82rem; font-weight: 700; border-bottom-color: var(--ink-2); }
+  .mod-guide-wrap tbody th { color: var(--ink); font-weight: 700; white-space: nowrap; }
+  .mod-guide-wrap dt { color: var(--ink); font-weight: 700; margin-top: 1.1em; }
+  .mod-guide-wrap dd { margin: 0.3em 0 0; padding-left: 14px; border-left: 3px solid var(--hairline); }
+  .mod-guide-wrap dd > ol { margin-bottom: 0; }
   .mod-intro { color: var(--muted); margin: -8px 0 16px; }
   .mod-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--hairline); }
   .mod-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "main status" "pills save"; gap: 12px 16px; align-items: center; padding: 18px 0; border-bottom: 1px solid var(--hairline); }
