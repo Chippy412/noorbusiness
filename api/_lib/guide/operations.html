@@ -146,3 +146,60 @@
 <li>Record the date and the names in the Activity notes or the masjid&rsquo;s own records.</li>
 </ol>
 </div>
+
+<h4>Making changes with Claude</h4>
+<p>Claude Code is an AI assistant that can read and change the site&rsquo;s code. A maintainer who is not a full-time developer can use it to fix bugs, change wording or add small features. Use it on the web at <a href="https://claude.ai/code" target="_blank" rel="noopener noreferrer">claude.ai/code</a> or in the Claude desktop app. Claude works on a branch, a separate copy of the code. Nothing changes on the live site until a person merges the work and deploys it.</p>
+
+<p><strong>The safe routine</strong></p>
+<ol>
+  <li>Open Claude Code, connect GitHub and choose the repository (<code>Chippy412/noorbusiness</code>, or its new masjid-owned home).</li>
+  <li>Describe the change in plain words: what you see now, and what you want instead.</li>
+  <li>Make sure Claude works on a new branch and never changes <code>main</code> directly.</li>
+  <li>Ask Claude to run the tests and show you the result: <code>node --test tests/*.test.js</code>.</li>
+  <li>Ask Claude to open a pull request and explain it in plain words. Read the summary and the list of changed files. If something looks wrong or bigger than expected, ask questions before going further.</li>
+  <li>When you are satisfied and the automatic tests pass on GitHub, merge the pull request into <code>main</code>.</li>
+  <li>Deploy on the server: <code>sudo bash /opt/noorbusiness/deploy/deploy.sh</code> (see &ldquo;Deploying an update&rdquo;).</li>
+  <li>Open the live site and try the thing you changed. If something broke, ask Claude to revert the change, then merge and deploy again.</li>
+</ol>
+<p>If a change needs a database update (a new file in <code>supabase/migrations/</code>), Claude should say so. Take a fresh backup first, then apply the file from Studio&rsquo;s SQL editor. The deploy script does not run migrations.</p>
+
+<p><strong>Keep secrets out of the chat</strong></p>
+<ul>
+  <li>Never paste passwords, API keys, tokens or the SSH key file into Claude or any other chat.</li>
+  <li>Secrets belong only in the server&rsquo;s env files (see &ldquo;Where secrets live&rdquo;). If Claude needs to know a setting exists, give it the name only, for example <code>RESEND_API_KEY</code>.</li>
+  <li>If a secret is pasted by mistake, rotate it right away (see &ldquo;Rotating secrets&rdquo;).</li>
+  <li>Do not let Claude change the live server, DNS or the database directly unless a trusted maintainer is watching and has said yes to each step.</li>
+</ul>
+
+<p><strong>The repository is public</strong></p>
+<p>This Guide is only shown to the signed-in team, but the GitHub repository can be read by anyone. Keep private details (people&rsquo;s phone numbers, internal contacts, anything sensitive) out of the repository, including this Guide&rsquo;s files in <code>api/_lib/guide/</code>. Keep them in the masjid&rsquo;s own records instead.</p>
+
+<p><strong>Updating this Guide</strong></p>
+<p>This Guide lives in <code>api/_lib/guide/team.html</code> (everyone on the team) and <code>api/_lib/guide/operations.html</code> (moderators). When something changes, such as a new server, a new account or a new moderation rule, ask Claude to update the right file, then review, merge and deploy as above.</p>
+
+<p><strong>Example requests</strong></p>
+<ul>
+  <li>&ldquo;On the moderation page, add a filter in All listings for listings with no photo. Work on a new branch, run the tests and open a pull request.&rdquo;</li>
+  <li>&ldquo;The Contact page shows the wrong phone number. Find it and fix it. Show me the change before you commit.&rdquo;</li>
+  <li>&ldquo;Add a new badge called Student friendly. List every file you need to change, including the database, before changing anything.&rdquo;</li>
+  <li>&ldquo;A moderator says new-listing emails are not arriving. Read the code that sends them and tell me the likely causes. Do not change anything yet.&rdquo;</li>
+  <li>&ldquo;Update the Guide&rsquo;s DNS section: the masjid moved DNS to a new provider. Do not add any secrets.&rdquo;</li>
+  <li>&ldquo;Explain this pull request in plain English, and tell me what could go wrong when we deploy it.&rdquo;</li>
+</ul>
+
+<p><strong>Good habits</strong></p>
+<ul>
+  <li>Ask for one small change at a time.</li>
+  <li>Ask Claude to explain its plan before it changes anything big.</li>
+  <li>Never deploy a branch you have not looked at. The normal deploy uses <code>main</code>.</li>
+  <li>Take a backup before any database change, and avoid deploying right before a busy time.</li>
+</ul>
+
+<h4>Retiring the old setup</h4>
+<p>Before the move, the site ran on Vercel with a hosted Supabase project. They are kept for a short time as a fallback only. Once the new server has run without problems for one to two weeks:</p>
+<ol>
+  <li>Confirm that <code>noorbusiness.org</code> and <code>www</code> point to the masjid&rsquo;s server and HTTPS works.</li>
+  <li>Take a final export of the old hosted database and keep it with the masjid&rsquo;s records, in case something was missed.</li>
+  <li>Delete the old Vercel project and pause, then delete, the hosted Supabase project. Its database password and secret key were shared in a chat during the move and have been rotated. Do not reuse them.</li>
+  <li>Remove the old services&rsquo; keys from any password manager, and record the date in the masjid&rsquo;s records.</li>
+</ol>
