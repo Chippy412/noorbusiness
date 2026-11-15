@@ -95,7 +95,13 @@ check_services() {
 }
 
 check_http() {
-  curl -fsS -o /dev/null --max-time 10 http://127.0.0.1/ || fail "http://127.0.0.1/ did not return a success status"
+  # Nginx answers by host name (http only redirects), so probe https with the
+  # real name pinned to localhost; fall back to http if there is no cert yet.
+  if [ -d /etc/letsencrypt/live/noorbusiness.org ]; then
+    curl -fsS -o /dev/null --max-time 10 --resolve noorbusiness.org:443:127.0.0.1 https://noorbusiness.org/ || fail "site via nginx (https://noorbusiness.org/) did not return a success status"
+  else
+    curl -fsS -o /dev/null --max-time 10 -H 'Host: noorbusiness.org' http://127.0.0.1/ || fail "site via nginx (http://127.0.0.1/) did not return a success status"
+  fi
   curl -fsS -o /dev/null --max-time 10 http://127.0.0.1:3001/healthz || fail "API /healthz (127.0.0.1:3001) failed"
 }
 
