@@ -7,7 +7,7 @@
 // It reproduces the parts of Vercel the handlers rely on:
 //   req.query            parsed query string (plus params from a rewrite)
 //   req.body             JSON / urlencoded body, parsed unless the handler
-//                        exports config.api.bodyParser = false (Stripe webhook)
+//                        exports config.api.bodyParser = false
 //   res.status/json/send Express-like helpers
 // and the rewrites from vercel.json: /b/:id -> /api/listing?id=:id,
 // /sitemap.xml -> /api/sitemap.

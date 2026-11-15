@@ -13,7 +13,6 @@
 var geo = require("./_lib/geocode");
 var html = require("./_lib/html");
 var supa = require("./_lib/supa");
-var stripe = require("./_lib/stripe"); // for currentUser()
 
 var crypto = require("crypto");
 

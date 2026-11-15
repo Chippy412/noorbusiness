@@ -41,7 +41,7 @@ then uncomment the HSTS header in the Nginx file.
 
 `server/index.js` (no dependencies, Node 18+) runs each `api/*.js` handler the
 way Vercel did: `req.query`, a parsed `req.body` (skipped for handlers that
-export `config.api.bodyParser = false`, i.e. the Stripe webhook), and
+export `config.api.bodyParser = false`), and
 `res.status().json()/send()`. `GET /healthz` returns `{ok:true}`. Tests:
 `node --test tests/server.test.js`.
 

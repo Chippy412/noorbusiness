@@ -13,8 +13,8 @@ test("resolveRoute maps the vercel.json rewrites", () => {
   assert.strictEqual(resolveRoute("/sitemap.xml").file, path.join(API, "sitemap.js"));
 });
 
-test("resolveRoute finds nested handlers and refuses private or missing ones", () => {
-  assert.strictEqual(resolveRoute("/api/billing/plans").file, path.join(API, "billing", "plans.js"));
+test("resolveRoute finds handlers and refuses private or missing ones", () => {
+  assert.strictEqual(resolveRoute("/api/billing/plans"), null, "the Stripe billing routes are gone");
   assert.strictEqual(resolveRoute("/api/turnstile-config").file, path.join(API, "turnstile-config.js"));
   assert.strictEqual(resolveRoute("/api/_lib/supa"), null);
   assert.strictEqual(resolveRoute("/api/../server/index"), null);

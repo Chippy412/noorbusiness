@@ -379,14 +379,13 @@
           '<div class="field mod-comp-note"><label for="compNote">Note for the team</label><input type="text" id="compNote" maxlength="500" placeholder="Why (optional)"></div>' +
           '<button type="submit" class="btn btn-primary btn-sm">Give placement</button>' +
         "</form></section>";
-      if (!rows_.length) return form + '<div class="mod-empty"><p>No sponsorships yet. They appear here when an owner pays, or when you give one above.</p></div>';
+      if (!rows_.length) return form + '<div class="mod-empty"><p>No sponsorships yet. They appear here when you give one above.</p></div>';
       return form + '<ul class="mod-list">' + rows_.map(function (r) {
         var paidLive = r.paid_tier && future(r.paid_until) && ["active", "trialing", "past_due"].indexOf(r.paid_status) !== -1;
         var bits = [];
         if (r.paid_tier) bits.push("Paid " + esc(PLAN_NAMES[r.paid_tier]) + ": " + esc(r.paid_status || "unknown") +
           (paidLive ? (r.cancel_at_period_end ? ", ends " : ", renews ") + day(r.paid_period_end || r.paid_until) : "") + (r.payer_email ? " (" + esc(r.payer_email) + ")" : ""));
-        if (paidLive && r.business_status !== "approved") bits.push('<strong class="mod-flag">Still billing while the listing isn\u2019t live. Cancel or refund in Stripe if it won\u2019t be back soon.</strong>');
-        if (paidLive && r.payer_email && r.payer_email !== r.owner_email) bits.push('<strong class="mod-flag">Paid by ' + esc(r.payer_email) + ", but the listing now belongs to " + (r.owner_email ? esc(r.owner_email) : "no one") + ". Sort out billing with them in Stripe.</strong>");
+        if (paidLive && r.business_status !== "approved") bits.push('<strong class="mod-flag">Still billing while the listing isn\u2019t live. Check with the owner before it ends.</strong>');
         if (r.comp_tier && future(r.comp_until)) bits.push("Free " + esc(PLAN_NAMES[r.comp_tier]) + " until " + day(r.comp_until) + (r.comp_note ? ": " + esc(r.comp_note) : ""));
         var showing = r.sponsor_tier && future(r.sponsored_until)
           ? "Showing as " + esc(PLAN_NAMES[r.sponsor_tier]) + (r.business_status !== "approved" ? ", but the listing isn't live" : "")
@@ -398,7 +397,7 @@
           '<div class="mod-row-save">' + (r.comp_tier && future(r.comp_until) ? '<button class="btn-link mod-remove" data-act="comp-end" data-id="' + esc(r.business_id) + '">End free placement</button>' : "") + "</div>" +
           "</li>";
       }).join("") + "</ul>" +
-      '<p class="mod-intro" style="margin-top:14px">Refunds and plan changes for paid sponsorships are handled in the Stripe dashboard; changes show up here automatically.</p>';
+      '<p class="mod-intro" style="margin-top:14px">Paid sponsorships will be handled through the masjid\u2019s own payment process. Until then, give a free placement above once the owner has arranged it with the team.</p>';
     }
 
     function teamPanel(members) {
