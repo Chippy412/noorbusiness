@@ -27,8 +27,7 @@
       long_description: fields.longDescription,
       address: fields.address || null,
       phone: fields.phone || null,
-      website: fields.website || null,
-      halal_status: fields.halalStatus || null
+      website: fields.website || null
     }).select().single();
     if (result.error) throw result.error;
     return result.data;

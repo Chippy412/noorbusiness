@@ -42,6 +42,7 @@ MIGRATIONS = [
     "2026-10-10-moderation-tools.sql",
     "2026-10-11-sponsorship.sql",
     "2026-10-12-locations.sql",
+    "2026-11-02-remove-halal-verification.sql",
 ]
 
 
@@ -465,15 +466,16 @@ def volunteer_vs_moderator_listing_powers(t):
     t.as_(vol, aal="aal2")
     t.q("select admin_set_listing_status(%s, 'approved')", (p,))
     t.fails("select admin_set_listing_status(%s, 'rejected')", (live,), contains="moderator")
-    t.q("select admin_set_listing_flags(%s, '{halal,prayer}', false)", (live,))
-    t.fails("select admin_set_listing_flags(%s, '{halal}', true)", (live,), contains="moderator")
+    t.q("select admin_set_listing_flags(%s, '{family,prayer}', false)", (live,))
+    t.fails("select admin_set_listing_flags(%s, '{family}', true)", (live,), contains="moderator")
+    t.fails("select admin_set_listing_flags(%s, '{halal}', false)", (live,), contains="badge")  # retired badge
     t.fails("select admin_set_listing_flags(%s, '{fake}', false)", (live,), contains="badge")
     t.q("select admin_set_listing_status(%s, 'approved')", (live,))  # no-op, allowed
     t.as_(mod, aal="aal2")
     t.q("select admin_set_listing_status(%s, 'rejected')", (live,))
-    t.q("select admin_set_listing_flags(%s, '{halal}', true)", (live,))
+    t.q("select admin_set_listing_flags(%s, '{family}', true)", (live,))
     t.admin()
-    assert t.q("select status, badges, featured from businesses where id = %s", (live,))[0] == ("rejected", ["halal"], True)
+    assert t.q("select status, badges, featured from businesses where id = %s", (live,))[0] == ("rejected", ["family"], True)
     assert t.one("select status from businesses where id = %s", (p,)) == "approved"
 
 
@@ -526,7 +528,7 @@ def review_moderation(t):
 
 
 @test
-def new_listing_queue_shows_halal_and_owner(t):
+def new_listing_queue_shows_owner(t):
     mod, vol = team(t)
     o = t.user("o@x.co")
     t.as_(o)
@@ -534,7 +536,7 @@ def new_listing_queue_shows_halal_and_owner(t):
         " values (%s, 'Q', 'Restaurants', 'Dublin', 's', 'l', 'certified')", (o,))
     t.as_(vol, aal="aal2")
     item = [x for x in t.one("select admin_queue()")["new_listings"] if x["name"] == "Q"][0]
-    assert item["halal_status"] == "certified" and item["owner_email"] == "o@x.co", item
+    assert item["owner_email"] == "o@x.co", item
 
 
 @test

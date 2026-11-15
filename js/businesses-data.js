@@ -39,7 +39,8 @@
       hood: row.neighborhood,
       icon: CATEGORY_ICONS[row.category] || "i-storefront",
       tone: toneFor(index),
-      badges: row.badges || [],
+      // "halal" was a volunteer-verified badge; the directory no longer makes that claim.
+      badges: (row.badges || []).filter(function (b) { return b !== "halal"; }),
       // Editorial Featured, which a moderator can give an end date.
       featured: !!row.featured && (!row.featured_until || new Date(row.featured_until) > new Date()),
       rating: null,
@@ -54,7 +55,6 @@
       lat: typeof row.lat === "number" ? row.lat : null,
       lng: typeof row.lng === "number" ? row.lng : null,
       photo: row.photo_url || null,
-      verify: null,
       hours: row.hours || [],
       created: row.created_at || null,
       // Paid (or comped) placement, see 2026-10-11-sponsorship.sql. Recommended
