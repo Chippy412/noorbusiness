@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the NICC Business restore test weekly
+
+[Timer]
+# Sunday morning, after the nightly backup has finished.
+OnCalendar=Sun *-*-* 05:00:00 America/New_York
+RandomizedDelaySec=15min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,14 @@
+# Nightly backup (Postgres dump + storage archive + S3 copy). See deploy/backup/README.md.
+[Unit]
+Description=NICC Business nightly backup
+After=docker.service network-online.target
+Wants=network-online.target
+OnFailure=noorbusiness-alert@%n.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/noorbusiness/deploy/backup/backup.sh
+EnvironmentFile=-/etc/noorbusiness/backup.env
+Nice=10
+IOSchedulingClass=idle
+TimeoutStartSec=2h

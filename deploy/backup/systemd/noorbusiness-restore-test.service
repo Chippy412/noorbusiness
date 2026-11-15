@@ -1,0 +1,12 @@
+# Restores the latest dump into a throwaway container and checks key tables.
+[Unit]
+Description=NICC Business weekly restore test
+After=docker.service
+OnFailure=noorbusiness-alert@%n.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/noorbusiness/deploy/backup/restore-test.sh
+EnvironmentFile=-/etc/noorbusiness/backup.env
+Nice=10
+TimeoutStartSec=1h
