@@ -7,7 +7,7 @@ No other SaaS.
 | File | What it does |
 |---|---|
 | `backup.sh` | Nightly: `pg_dump -Fc` of the whole `postgres` DB (via `docker exec supabase-db`), roles dump, Supabase storage `tar.gz`, config/secrets `tar.gz`, checksums. Keeps 14 daily + 8 weekly (Sunday) locally in `/var/backups/noorbusiness`, then copies the day to `BACKUP_S3_URI`. |
-| `restore-test.sh` | Weekly: restores the latest dump into a throwaway `postgres:15` container (no network), checks `public.businesses` and `auth.users` have rows, removes the container. Exits nonzero on failure. |
+| `restore-test.sh` | Weekly: restores the latest dump into a throwaway `postgres:17` container (no network), checks `public.businesses` and `auth.users` have rows, removes the container. Exits nonzero on failure. |
 | `healthcheck.sh` | Every 5 min: disk, memory+swap, `nginx`/`noorbusiness-api`/`docker` active, `http://127.0.0.1/` and `/healthz`, Supabase containers running and not unhealthy, TLS cert expiry, newest backup age. Emails on failure. |
 | `systemd/` | `noorbusiness-backup`, `-restore-test`, `-healthcheck` service+timer pairs, and `noorbusiness-alert@.service` (emails when the backup or restore test unit fails). |
 | `install.sh` | Installs the units, creates `/etc/noorbusiness/backup.env`, enables the timers. |
@@ -146,7 +146,7 @@ restore test, which exercises the same dump.
 
 ## Notes and limits
 
-- The restore test uses plain `postgres:15`, which lacks some Supabase-only
+- The restore test uses plain `postgres:17`, which lacks some Supabase-only
   extensions, so it expects some `pg_restore` errors and judges success by the
   row counts. It proves the dump is complete and readable, not that every
   extension installs. Match `RESTORE_IMAGE` to the major version of `supabase-db`

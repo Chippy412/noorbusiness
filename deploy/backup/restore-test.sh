@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # deploy/backup/restore-test.sh — prove the latest dump actually restores.
 #
-# Restores the newest db.dump into a throwaway postgres:15 container, checks
+# Restores the newest db.dump into a throwaway postgres:17 container, checks
 # that public.businesses and auth.users have rows, then removes the container.
 # Exits nonzero on any failure. The container has no network; the image is
 # pulled from Docker Hub the first time if it is not already present.
 set -euo pipefail
 
 BACKUP_ROOT=${BACKUP_ROOT:-/var/backups/noorbusiness}
-IMAGE=${RESTORE_IMAGE:-postgres:15}
+IMAGE=${RESTORE_IMAGE:-postgres:17}
 TABLES=${RESTORE_CHECK_TABLES:-"public.businesses auth.users"}
 NAME=noorbusiness-restore-test-$$
 
@@ -42,7 +42,7 @@ for _ in $(seq 1 30); do
 done
 docker exec "$NAME" pg_isready -U postgres -q || die "throwaway postgres did not start"
 
-# Supabase's image has roles and extensions that plain postgres:15 lacks, so
+# Supabase's image has roles and extensions that plain postgres:17 lacks, so
 # pg_restore prints some errors (extensions like pgsodium, missing roles). We
 # skip owners/grants and judge success by the data checks, not its exit code.
 log "restoring"
