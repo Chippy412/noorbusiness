@@ -5,7 +5,7 @@
 <p>The authoritative technical notes live in the repository: <code>docs/self-hosting.md</code>, <code>deploy/backup/README.md</code> and <code>deploy/migrate/README.md</code>. If this page and those files ever disagree, trust the files.</p>
 
 <h4>Architecture</h4>
-<p>Everything runs on <strong>one AWS Lightsail server owned by the masjid</strong> (address <code>3.129.63.66</code>, domain <code>noorbusiness.org</code>).</p>
+<p>Everything runs on <strong>one AWS Lightsail server owned by the masjid</strong> (address <code>3.21.108.22</code>, domain <code>noorbusiness.org</code>).</p>
 <table>
 <thead><tr><th scope="col">Piece</th><th scope="col">What it does</th><th scope="col">Where</th></tr></thead>
 <tbody>
@@ -23,8 +23,8 @@
 <h4>Server access</h4>
 <p>You sign in to the server over SSH with a key. <strong>The SSH key is held by the masjid&rsquo;s AWS administrator. Never share it</strong> by email, chat or the repo. A new maintainer should be given their own access by that administrator (for example by adding their public key), and removed the same way when they leave.</p>
 <ul>
-<li>Connect: <code>ssh ec2-user@3.129.63.66</code> (using your key). Use <code>sudo</code> for the commands below.</li>
-<li>Open Supabase Studio from your own computer with a tunnel: <code>ssh -L 3000:127.0.0.1:3000 ec2-user@3.129.63.66</code>, then visit <code>http://localhost:3000</code> in your browser. Close the tunnel when you are done.</li>
+<li>Connect: <code>ssh ec2-user@3.21.108.22</code> (using your key). Use <code>sudo</code> for the commands below.</li>
+<li>Open Supabase Studio from your own computer with a tunnel: <code>ssh -L 3000:127.0.0.1:3000 ec2-user@3.21.108.22</code>, then visit <code>http://localhost:3000</code> in your browser. Close the tunnel when you are done.</li>
 <li>The Lightsail console (AWS, masjid account) can open a browser terminal and show the server&rsquo;s status, snapshots and firewall.</li>
 </ul>
 
@@ -55,7 +55,7 @@
 <p>Certificates are free ones from Let&rsquo;s Encrypt, issued by <code>certbot</code> through Nginx, and they <strong>renew automatically</strong>. The health check warns 14 days before expiry. To test renewal: <code>sudo certbot renew --dry-run</code>. If a renewal fails, read <code>journalctl -u certbot-renew</code> (or <code>/var/log/letsencrypt/letsencrypt.log</code>); the usual cause is DNS no longer pointing at this server.</p>
 
 <h4>DNS</h4>
-<p>DNS is in <strong>Route 53 in the masjid&rsquo;s AWS account</strong>. The records that matter are <code>A</code> records for <code>noorbusiness.org</code> and <code>www.noorbusiness.org</code>, both pointing to <code>3.129.63.66</code>. <strong>Never edit or delete MX records</strong>; they make email work. If the server is ever rebuilt with a new address, update both A records, then re-run certbot. Keep the Lightsail static IP attached so the address does not change by accident.</p>
+<p>DNS is in <strong>Route 53 in the masjid&rsquo;s AWS account</strong>. The records that matter are <code>A</code> records for <code>noorbusiness.org</code> and <code>www.noorbusiness.org</code>, both pointing to <code>3.21.108.22</code>. <strong>Never edit or delete MX records</strong>; they make email work. If the server is ever rebuilt with a new address, update both A records, then re-run certbot. Keep the Lightsail static IP attached so the address does not change by accident.</p>
 
 <h4>Outside accounts</h4>
 <table>
