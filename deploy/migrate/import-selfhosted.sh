@@ -56,7 +56,7 @@ listed=(
 apply_migration() {
   log "migration $(basename "$1")"
   sed -e "s|https://nicc-business.vercel.app|${NOTIFY_BASE_URL%/}|g" \
-      -e "s|__NOTIFY_SECRET__|${NOTIFY_SECRET//|/\\|}|g" "$1" | tgt_psql -q >/dev/null
+      -e "s|Bearer __NOTIFY_SECRET__|Bearer ${NOTIFY_SECRET//|/\\|}|g" "$1" | tgt_psql -q >/dev/null
 }
 
 if [ "${SKIP_SCHEMA:-0}" != 1 ]; then
