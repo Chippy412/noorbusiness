@@ -63,6 +63,6 @@ echo "== api"
 node --test tests/api.test.js tests/server.test.js >/dev/null && echo "tests ok"
 systemctl restart noorbusiness-api
 sleep 1
-curl -fsS http://127.0.0.1:3000/healthz && echo
+curl -fsS http://127.0.0.1:3001/healthz && echo
 curl -fsS -o /dev/null -w "site via nginx: %{http_code}\n" http://127.0.0.1/
 echo "== done"

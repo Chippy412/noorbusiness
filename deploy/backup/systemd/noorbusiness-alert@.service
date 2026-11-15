@@ -1,0 +1,9 @@
+# Started via OnFailure= by the backup and restore-test services.
+# %i is the failed unit's name. Rate limited like every other alert.
+[Unit]
+Description=Email an alert that %i failed
+
+[Service]
+Type=oneshot
+ExecStart=/opt/noorbusiness/deploy/backup/healthcheck.sh --notify "%i FAILED" "The systemd unit %i failed on this server. See: journalctl -u %i -n 100"
+EnvironmentFile=-/etc/noorbusiness/backup.env

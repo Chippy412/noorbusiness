@@ -1,0 +1,11 @@
+# Disk, memory, services, HTTP, containers, TLS, backup age. Emails on failure.
+# Exits nonzero while a problem exists, so `systemctl status` shows it too.
+[Unit]
+Description=NICC Business health check
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/noorbusiness/deploy/backup/healthcheck.sh
+EnvironmentFile=-/etc/noorbusiness/backup.env
+Nice=5

@@ -13,7 +13,7 @@ User=noorbusiness
 Group=noorbusiness
 WorkingDirectory=/opt/noorbusiness
 EnvironmentFile=/etc/noorbusiness/api.env
-Environment=NODE_ENV=production HOST=127.0.0.1 PORT=3000
+Environment=NODE_ENV=production HOST=127.0.0.1 PORT=3001
 ExecStart=/usr/bin/node /opt/noorbusiness/server/index.js
 Restart=always
 RestartSec=3
