@@ -1,0 +1,148 @@
+<div class="mod-guide mod-guide-ops">
+<hr>
+<h3 id="g-ops">Operations (moderators only)</h3>
+<p>This section is for the moderators and whoever maintains the site. It describes how the site is hosted and how to keep it running. It deliberately contains <strong>no passwords, keys or key file contents</strong>; those live only on the server and with the masjid&rsquo;s account owners. The repository is public, so never paste a secret into the repo, an issue, a chat or an email.</p>
+<p>The authoritative technical notes live in the repository: <code>docs/self-hosting.md</code>, <code>deploy/backup/README.md</code> and <code>deploy/migrate/README.md</code>. If this page and those files ever disagree, trust the files.</p>
+
+<h4>Architecture</h4>
+<p>Everything runs on <strong>one AWS Lightsail server owned by the masjid</strong> (address <code>3.129.63.66</code>, domain <code>noorbusiness.org</code>).</p>
+<table>
+<thead><tr><th scope="col">Piece</th><th scope="col">What it does</th><th scope="col">Where</th></tr></thead>
+<tbody>
+<tr><th scope="row">Nginx</th><td>Serves the site, terminates HTTPS, and forwards requests to the API and to Supabase.</td><td><code>/etc/nginx/conf.d/noorbusiness.conf</code> (copied from <code>deploy/nginx/</code>)</td></tr>
+<tr><th scope="row">Site files</th><td>The static pages, scripts and images.</td><td><code>/var/www/noorbusiness</code></td></tr>
+<tr><th scope="row">API service</th><td>A small Node program that runs the <code>api/*.js</code> routes (email alerts, contact form, listing pages, sitemap, this guide). systemd unit <code>noorbusiness-api</code>, listening on <code>127.0.0.1:3001</code>. Health URL: <code>/healthz</code>.</td><td>Code in <code>/opt/noorbusiness</code></td></tr>
+<tr><th scope="row">Supabase</th><td>Self-hosted database, sign-in, photo storage and its REST API, in Docker. systemd unit <code>supabase</code> starts it at boot.</td><td><code>/opt/supabase/docker</code></td></tr>
+<tr><th scope="row">Supabase Studio</th><td>The admin dashboard for the database. Listens only on <code>127.0.0.1:3000</code>; reach it through an SSH tunnel, never the open internet.</td><td>See &ldquo;Server access&rdquo;</td></tr>
+<tr><th scope="row">App repository</th><td>A clone of GitHub <code>Chippy412/noorbusiness</code>.</td><td><code>/opt/noorbusiness</code></td></tr>
+</tbody>
+</table>
+<p>Request flow: the browser talks to Nginx. Paths starting <code>/api/</code>, <code>/b/&lt;id&gt;</code> and <code>/sitemap.xml</code> go to the API on port 3001. Paths <code>/rest/v1</code>, <code>/auth/v1</code>, <code>/storage/v1</code> and <code>/realtime/v1</code> go to Supabase on port 8000. Everything else is a static file.</p>
+<p><strong>Where secrets live:</strong> only in <code>/etc/noorbusiness/api.env</code>, <code>/etc/noorbusiness/backup.env</code> and <code>/opt/supabase/docker/.env</code>. Templates with empty values are in the repo as <code>deploy/api.env.example</code> and <code>deploy/backup/backup.env.example</code>. Do not copy the real files anywhere insecure.</p>
+
+<h4>Server access</h4>
+<p>You sign in to the server over SSH with a key. <strong>The SSH key is held by the masjid&rsquo;s AWS administrator. Never share it</strong> by email, chat or the repo. A new maintainer should be given their own access by that administrator (for example by adding their public key), and removed the same way when they leave.</p>
+<ul>
+<li>Connect: <code>ssh ec2-user@3.129.63.66</code> (using your key). Use <code>sudo</code> for the commands below.</li>
+<li>Open Supabase Studio from your own computer with a tunnel: <code>ssh -L 3000:127.0.0.1:3000 ec2-user@3.129.63.66</code>, then visit <code>http://localhost:3000</code> in your browser. Close the tunnel when you are done.</li>
+<li>The Lightsail console (AWS, masjid account) can open a browser terminal and show the server&rsquo;s status, snapshots and firewall.</li>
+</ul>
+
+<h4>Deploying an update</h4>
+<ol>
+<li>Make the change on a branch in GitHub and get it reviewed. The tests run automatically on every push.</li>
+<li>Merge to <code>main</code>.</li>
+<li>On the server run: <code>sudo bash /opt/noorbusiness/deploy/deploy.sh</code></li>
+</ol>
+<p>The script pulls <code>main</code>, copies the public files to <code>/var/www/noorbusiness</code>, installs the Nginx config, runs the tests, restarts <code>noorbusiness-api</code> and checks it. It never touches DNS, certificates, Supabase or secrets. To try a branch first: <code>sudo bash /opt/noorbusiness/deploy/deploy.sh my-branch</code>, and deploy <code>main</code> again afterwards. If the script stops on a failing test, do not work around it; read the message and fix the cause.</p>
+<p>Database changes are SQL files in <code>supabase/migrations/</code>. They are applied once, in date order, from Studio&rsquo;s SQL editor (or <code>psql</code> in the database container), and are safe to re-run. The README lists the order.</p>
+
+<h4>Backups</h4>
+<ul>
+<li><strong>Nightly at 3:15 AM</strong> (America/New_York) a backup is written to <code>/var/backups/noorbusiness</code>: the database, the roles, the photo storage and the configuration (which contains secrets, so keep the folder private).</li>
+<li>The server keeps <strong>14 daily and 8 weekly</strong> copies.</li>
+<li>Once <code>BACKUP_S3_URI</code> is configured in <code>backup.env</code>, each night is also copied to the masjid&rsquo;s private S3 bucket, so a copy survives if the server is lost. <strong>If it is empty, nothing leaves the server. Confirm it is set.</strong></li>
+<li>A <strong>weekly restore test</strong> (Sundays) restores the latest dump into a throwaway container and checks that listings and users are there. A failure emails the alert address.</li>
+<li>Useful commands: <code>systemctl list-timers 'noorbusiness-*'</code>, <code>journalctl -u noorbusiness-backup -n 50</code>, <code>sudo systemctl start noorbusiness-backup</code> (take a fresh backup before any risky change).</li>
+</ul>
+<h4>Restoring</h4>
+<p>Follow <code>deploy/backup/README.md</code>, section &ldquo;Restoring for real&rdquo;. In short: fetch the chosen day from S3 (or use the local copy), check it with <code>sha256sum --check SHA256SUMS</code>, restore the configuration first on a fresh server so the keys match the users, then restore the database and photos. Take a fresh backup before restoring over a running server, and practise on a spare machine before you need it.</p>
+
+<h4>Health alerts</h4>
+<p>Every 5 minutes <code>noorbusiness-healthcheck</code> checks disk, memory, the <code>nginx</code>, <code>noorbusiness-api</code> and <code>docker</code> services, the site and <code>/healthz</code>, the Supabase containers, the HTTPS certificate expiry and the age of the newest backup. Problems are emailed through Resend to <code>ALERT_EMAIL_TO</code>; the same problem is emailed at most once every 6 hours, and one &ldquo;RECOVERED&rdquo; email follows when all is well. A dead server cannot email, so also keep the Lightsail <strong>StatusCheckFailed</strong> and CPU alarms set to notify a different mailbox.</p>
+
+<h4>HTTPS</h4>
+<p>Certificates are free ones from Let&rsquo;s Encrypt, issued by <code>certbot</code> through Nginx, and they <strong>renew automatically</strong>. The health check warns 14 days before expiry. To test renewal: <code>sudo certbot renew --dry-run</code>. If a renewal fails, read <code>journalctl -u certbot-renew</code> (or <code>/var/log/letsencrypt/letsencrypt.log</code>); the usual cause is DNS no longer pointing at this server.</p>
+
+<h4>DNS</h4>
+<p>DNS is in <strong>Route 53 in the masjid&rsquo;s AWS account</strong>. The records that matter are <code>A</code> records for <code>noorbusiness.org</code> and <code>www.noorbusiness.org</code>, both pointing to <code>3.129.63.66</code>. <strong>Never edit or delete MX records</strong>; they make email work. If the server is ever rebuilt with a new address, update both A records, then re-run certbot. Keep the Lightsail static IP attached so the address does not change by accident.</p>
+
+<h4>Outside accounts</h4>
+<table>
+<thead><tr><th scope="col">Account</th><th scope="col">Used for</th><th scope="col">Owner</th></tr></thead>
+<tbody>
+<tr><th scope="row">AWS (Lightsail, Route 53, S3)</th><td>The server, DNS and off-server backups.</td><td>The masjid</td></tr>
+<tr><th scope="row">Cloudflare Turnstile</th><td>The bot check on forms and sign-up.</td><td>Should be the masjid</td></tr>
+<tr><th scope="row">Resend</th><td>All email: alerts to the team, decisions to owners, health alerts.</td><td>Should be the masjid</td></tr>
+<tr><th scope="row">GitHub <code>Chippy412/noorbusiness</code></th><td>The code, tests and the place updates are merged.</td><td>Should be a masjid-owned account or organization</td></tr>
+</tbody>
+</table>
+<p>Each of these should be owned by the masjid, not by one volunteer&rsquo;s personal email, with at least two people able to sign in. If one is still under an individual, moving it is the most important handover task. Payments (Stripe or Mohid) are not connected and are off until the masjid decides.</p>
+
+<h4>Adding the first moderator</h4>
+<p>The very first moderator cannot be added from the site because there is nobody to add them. Have the person create an account and turn on two-factor, then run the SQL under &ldquo;The very first moderator&rdquo; in <code>README.md</code> in Studio&rsquo;s SQL editor, with their email. After that, moderators manage the Team tab themselves.</p>
+
+<h4>Rotating secrets</h4>
+<p>Rotate a secret when a person with access leaves, when it may have been exposed, or on a regular schedule.</p>
+<ol>
+<li>Create the new value at its source (Resend dashboard, Cloudflare dashboard, a fresh random string for <code>NOTIFY_SECRET</code> and <code>IP_HASH_SALT</code>).</li>
+<li>Edit the matching line in <code>/etc/noorbusiness/api.env</code> (or <code>backup.env</code>) with <code>sudo</code>.</li>
+<li>Restart: <code>sudo systemctl restart noorbusiness-api</code>.</li>
+<li>Revoke the old value at its source, then send a test (a contact-form message) to confirm email still works.</li>
+</ol>
+<p>The Supabase JWT secret and its anon and service keys are different: changing them signs everyone out, breaks the site until the new anon key is applied (<code>deploy.sh</code> copies it from <code>api.env</code> into the site), and affects the database trigger that calls the API. Do this only with a fresh backup, a quiet hour and the instructions in the Supabase self-hosting documentation. If <code>NOTIFY_SECRET</code> changes, the alert trigger SQL in the database must be updated with the same value.</p>
+<p>To remove a leaver&rsquo;s server access, ask the AWS administrator to remove their key. Also remove them from the Team tab and from GitHub.</p>
+
+<h4>Troubleshooting checklist</h4>
+<p>Always start with the basics: what changed recently, and what do the logs say?</p>
+<dl>
+<dt>The site is down or shows an error</dt>
+<dd>
+<ol>
+<li>Can you reach the server? <code>ssh</code> in. If not, check the Lightsail console and restart the instance from there.</li>
+<li><code>sudo systemctl status nginx noorbusiness-api docker supabase</code></li>
+<li><code>curl -s http://127.0.0.1:3001/healthz</code> should answer <code>{"ok":true}</code>.</li>
+<li><code>sudo nginx -t</code>, then <code>sudo systemctl reload nginx</code>; logs in <code>/var/log/nginx/error.log</code>.</li>
+<li><code>sudo journalctl -u noorbusiness-api -n 100 --no-pager</code></li>
+</ol>
+</dd>
+<dt>Listings do not load, or sign-in is broken</dt>
+<dd>
+<ol>
+<li><code>cd /opt/supabase/docker &amp;&amp; sudo docker compose ps</code>. Everything should be running and healthy.</li>
+<li>Look at the unhealthy one: <code>sudo docker compose logs --tail 100 &lt;service&gt;</code> (for example <code>db</code>, <code>auth</code>, <code>kong</code>, <code>rest</code>).</li>
+<li>Restart it: <code>sudo docker compose restart &lt;service&gt;</code>, or all of it: <code>sudo systemctl restart supabase</code>.</li>
+<li>If only sign-in or sign-up fails, check Cloudflare Turnstile is reachable and its keys in <code>api.env</code> still match, and that the site address in <code>api.env</code> is correct.</li>
+<li>If the site loads but cannot reach data after a deploy, check <code>SUPABASE_ANON_KEY</code> is set in <code>api.env</code> (the deploy script prints a warning if not).</li>
+</ol>
+</dd>
+<dt>Emails are not sending</dt>
+<dd>
+<ol>
+<li>Check the Resend dashboard: is the sender domain still verified, and is the account within its limits or suspended?</li>
+<li>Check <code>RESEND_API_KEY</code>, <code>NOTIFY_EMAIL_TO</code> and <code>NOTIFY_EMAIL_FROM</code> in <code>api.env</code> are set (never print the key into a chat or ticket).</li>
+<li>Read <code>sudo journalctl -u noorbusiness-api -n 100 --no-pager</code> for send errors.</li>
+<li>Alerts come from database triggers. If the secret in the trigger SQL no longer matches <code>NOTIFY_SECRET</code>, the API rejects them. Do not also create Supabase &ldquo;Database Webhooks&rdquo; for the same tables, or alerts arrive twice.</li>
+</ol>
+</dd>
+<dt>Disk is full (or the 85% alert)</dt>
+<dd>
+<ol>
+<li><code>df -h</code>, then <code>sudo du -xh /var/backups /var/lib/docker /var/log --max-depth=1 | sort -h | tail</code></li>
+<li>Backups: <code>sudo du -sh /var/backups/noorbusiness</code>. Do not delete the newest ones.</li>
+<li>Free Docker space: <code>sudo docker system df</code>, then <code>sudo docker image prune</code> (only unused images). Trim old logs with <code>sudo journalctl --vacuum-time=14d</code>.</li>
+<li>If it keeps filling, enlarge the Lightsail disk or move to a bigger plan.</li>
+</ol>
+</dd>
+<dt>A container is unhealthy or keeps restarting</dt>
+<dd>Run <code>sudo docker compose ps</code> and <code>sudo docker compose logs --tail 100 &lt;service&gt;</code> in <code>/opt/supabase/docker</code>. Low memory is a frequent cause: check <code>free -m</code> and the health alert for memory and swap. Restart with <code>sudo docker compose restart &lt;service&gt;</code>. If the database container itself will not start, stop and take advice before changing anything; do not delete volumes.</dd>
+<dt>Certificate warning in the browser</dt>
+<dd>See HTTPS above: <code>sudo certbot renew --dry-run</code>, then <code>sudo certbot renew</code> if it is due.</dd>
+<dt>A backup alert</dt>
+<dd><code>sudo journalctl -u noorbusiness-backup -n 100 --no-pager</code>. Usual causes are a full disk or the S3 keys being revoked. Run <code>sudo systemctl start noorbusiness-backup</code> after fixing it.</dd>
+<dt>The Moderation page says you are not allowed</dt>
+<dd>Check you are on the Team tab with the right email and signed in with two-factor. If nobody can get in, a maintainer with server access can add a moderator with the SQL from the README.</dd>
+</dl>
+<p>When in doubt, take a fresh backup first (<code>sudo systemctl start noorbusiness-backup</code>), write down what you change, and change one thing at a time.</p>
+
+<h4>Handing over to a new maintainer</h4>
+<ol>
+<li>Have the masjid&rsquo;s AWS administrator give them their own server access (never pass on someone else&rsquo;s key) and remove the previous maintainer&rsquo;s.</li>
+<li>Walk through this page and the three technical documents in the repository together, and have them perform a deploy and read a backup log.</li>
+<li>Confirm the masjid owns each outside account (AWS, Cloudflare, Resend, GitHub) and that at least two trusted people can sign in to each.</li>
+<li>Check that the off-server backup is configured, that the last weekly restore test passed, and that a copy of the server&rsquo;s secret files is stored somewhere safe and separate (for example the masjid&rsquo;s password manager), never in the repo.</li>
+<li>Make sure there are at least two moderators, and that health and backup alerts go to a mailbox more than one person reads.</li>
+<li>Rotate any secret the previous maintainer knew.</li>
+<li>Record the date and the names in the Activity notes or the masjid&rsquo;s own records.</li>
+</ol>
+</div>
