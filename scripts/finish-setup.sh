@@ -6,9 +6,10 @@
 #   bash scripts/finish-setup.sh
 #
 # What it does:
-#   1. Asks for your Resend API key (hidden) and where alerts should go.
+#   1. Asks for your Amazon SES IAM access key (hidden) and where alerts go.
 #   2. Generates a random NOTIFY_SECRET.
-#   3. Sets NOTIFY_SECRET, RESEND_API_KEY, NOTIFY_EMAIL_TO, NOTIFY_EMAIL_FROM
+#   3. Sets NOTIFY_SECRET, AWS_SES_ACCESS_KEY_ID, AWS_SES_SECRET_ACCESS_KEY,
+#      AWS_SES_REGION, NOTIFY_EMAIL_TO, NOTIFY_EMAIL_FROM
 #      on Vercel (production) and redeploys.
 #   4. Builds ONE SQL script (lock public inserts + alert triggers, with the
 #      secret filled in) and copies it to your clipboard. You paste it into
@@ -32,22 +33,27 @@ vercel_env() {
 }
 
 echo
-echo "1/4  Resend (free tier) sends the alert emails."
-open "https://resend.com/api-keys" >/dev/null 2>&1 || true
-echo "     Create an account, then API Keys > Create API key (sending access)."
-read -rsp "     Paste the Resend API key (hidden): " RESEND_API_KEY; echo
-[[ -n "$RESEND_API_KEY" ]] || { echo "No key entered."; exit 1; }
+echo "1/4  Amazon SES sends the alert emails (noorbusiness.org must be a verified SES identity)."
+open "https://console.aws.amazon.com/iam/home#/users" >/dev/null 2>&1 || true
+echo "     Create an IAM user whose only permission is ses:SendEmail, then an access key."
+read -rp  "     SES region [us-east-1]: " AWS_SES_REGION
+AWS_SES_REGION="${AWS_SES_REGION:-us-east-1}"
+read -rp  "     Paste the access key ID: " AWS_SES_ACCESS_KEY_ID
+read -rsp "     Paste the secret access key (hidden): " AWS_SES_SECRET_ACCESS_KEY; echo
+[[ -n "$AWS_SES_ACCESS_KEY_ID" && -n "$AWS_SES_SECRET_ACCESS_KEY" ]] || { echo "No key entered."; exit 1; }
 read -rp  "     Who should receive alerts? (comma-separated emails): " NOTIFY_EMAIL_TO
-echo "     Sender: use onboarding@resend.dev to start (Resend only lets you send"
-echo "     to your own signup email until you verify a domain)."
-read -rp  "     Sender address [NICC Business <onboarding@resend.dev>]: " NOTIFY_EMAIL_FROM
-NOTIFY_EMAIL_FROM="${NOTIFY_EMAIL_FROM:-NICC Business <onboarding@resend.dev>}"
+echo "     Sender: any address on the verified domain. Until SES production access"
+echo "     is granted, SES only delivers to verified addresses."
+read -rp  "     Sender address [NICC Business <alerts@noorbusiness.org>]: " NOTIFY_EMAIL_FROM
+NOTIFY_EMAIL_FROM="${NOTIFY_EMAIL_FROM:-NICC Business <alerts@noorbusiness.org>}"
 
 echo
 echo "2/4  Setting Vercel environment variables..."
 NOTIFY_SECRET="$(openssl rand -hex 24)"
 vercel_env NOTIFY_SECRET "$NOTIFY_SECRET"
-vercel_env RESEND_API_KEY "$RESEND_API_KEY"
+vercel_env AWS_SES_REGION "$AWS_SES_REGION"
+vercel_env AWS_SES_ACCESS_KEY_ID "$AWS_SES_ACCESS_KEY_ID"
+vercel_env AWS_SES_SECRET_ACCESS_KEY "$AWS_SES_SECRET_ACCESS_KEY"
 vercel_env NOTIFY_EMAIL_TO "$NOTIFY_EMAIL_TO"
 vercel_env NOTIFY_EMAIL_FROM "$NOTIFY_EMAIL_FROM"
 

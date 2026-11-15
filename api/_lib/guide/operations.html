@@ -49,7 +49,7 @@
 <p>Follow <code>deploy/backup/README.md</code>, section &ldquo;Restoring for real&rdquo;. In short: fetch the chosen day from S3 (or use the local copy), check it with <code>sha256sum --check SHA256SUMS</code>, restore the configuration first on a fresh server so the keys match the users, then restore the database and photos. Take a fresh backup before restoring over a running server, and practise on a spare machine before you need it.</p>
 
 <h4>Health alerts</h4>
-<p>Every 5 minutes <code>noorbusiness-healthcheck</code> checks disk, memory, the <code>nginx</code>, <code>noorbusiness-api</code> and <code>docker</code> services, the site and <code>/healthz</code>, the Supabase containers, the HTTPS certificate expiry and the age of the newest backup. Problems are emailed through Resend to <code>ALERT_EMAIL_TO</code>; the same problem is emailed at most once every 6 hours, and one &ldquo;RECOVERED&rdquo; email follows when all is well. A dead server cannot email, so also keep the Lightsail <strong>StatusCheckFailed</strong> and CPU alarms set to notify a different mailbox.</p>
+<p>Every 5 minutes <code>noorbusiness-healthcheck</code> checks disk, memory, the <code>nginx</code>, <code>noorbusiness-api</code> and <code>docker</code> services, the site and <code>/healthz</code>, the Supabase containers, the HTTPS certificate expiry and the age of the newest backup. Problems are emailed through Amazon SES to <code>ALERT_EMAIL_TO</code>; the same problem is emailed at most once every 6 hours, and one &ldquo;RECOVERED&rdquo; email follows when all is well. A dead server cannot email, so also keep the Lightsail <strong>StatusCheckFailed</strong> and CPU alarms set to notify a different mailbox.</p>
 
 <h4>HTTPS</h4>
 <p>Certificates are free ones from Let&rsquo;s Encrypt, issued by <code>certbot</code> through Nginx, and they <strong>renew automatically</strong>. The health check warns 14 days before expiry. To test renewal: <code>sudo certbot renew --dry-run</code>. If a renewal fails, read <code>journalctl -u certbot-renew</code> (or <code>/var/log/letsencrypt/letsencrypt.log</code>); the usual cause is DNS no longer pointing at this server.</p>
@@ -63,7 +63,7 @@
 <tbody>
 <tr><th scope="row">AWS (Lightsail, Route 53, S3)</th><td>The server, DNS and off-server backups.</td><td>The masjid</td></tr>
 <tr><th scope="row">Cloudflare Turnstile</th><td>The bot check on forms and sign-up.</td><td>Should be the masjid</td></tr>
-<tr><th scope="row">Resend</th><td>All email: alerts to the team, decisions to owners, health alerts.</td><td>Should be the masjid</td></tr>
+<tr><th scope="row">Amazon SES</th><td>All email: alerts to the team, decisions to owners, health alerts.</td><td>Should be the masjid</td></tr>
 <tr><th scope="row">GitHub <code>Chippy412/noorbusiness</code></th><td>The code, tests and the place updates are merged.</td><td>Should be a masjid-owned account or organization</td></tr>
 </tbody>
 </table>
@@ -75,7 +75,7 @@
 <h4>Rotating secrets</h4>
 <p>Rotate a secret when a person with access leaves, when it may have been exposed, or on a regular schedule.</p>
 <ol>
-<li>Create the new value at its source (Resend dashboard, Cloudflare dashboard, a fresh random string for <code>NOTIFY_SECRET</code> and <code>IP_HASH_SALT</code>).</li>
+<li>Create the new value at its source (the AWS IAM console for the SES keys, Cloudflare dashboard, a fresh random string for <code>NOTIFY_SECRET</code> and <code>IP_HASH_SALT</code>).</li>
 <li>Edit the matching line in <code>/etc/noorbusiness/api.env</code> (or <code>backup.env</code>) with <code>sudo</code>.</li>
 <li>Restart: <code>sudo systemctl restart noorbusiness-api</code>.</li>
 <li>Revoke the old value at its source, then send a test (a contact-form message) to confirm email still works.</li>
@@ -109,8 +109,8 @@
 <dt>Emails are not sending</dt>
 <dd>
 <ol>
-<li>Check the Resend dashboard: is the sender domain still verified, and is the account within its limits or suspended?</li>
-<li>Check <code>RESEND_API_KEY</code>, <code>NOTIFY_EMAIL_TO</code> and <code>NOTIFY_EMAIL_FROM</code> in <code>api.env</code> are set (never print the key into a chat or ticket).</li>
+<li>Check the Amazon SES console (in the region set by <code>AWS_SES_REGION</code>): is the <code>noorbusiness.org</code> identity still verified, is the account still out of the sandbox, and is it within its sending limits or under review?</li>
+<li>Check <code>AWS_SES_ACCESS_KEY_ID</code>, <code>AWS_SES_SECRET_ACCESS_KEY</code>, <code>NOTIFY_EMAIL_TO</code> and <code>NOTIFY_EMAIL_FROM</code> in <code>api.env</code> are set (never print the key into a chat or ticket).</li>
 <li>Read <code>sudo journalctl -u noorbusiness-api -n 100 --no-pager</code> for send errors.</li>
 <li>Alerts come from database triggers. If the secret in the trigger SQL no longer matches <code>NOTIFY_SECRET</code>, the API rejects them. Do not also create Supabase &ldquo;Database Webhooks&rdquo; for the same tables, or alerts arrive twice.</li>
 </ol>
@@ -139,7 +139,7 @@
 <ol>
 <li>Have the masjid&rsquo;s AWS administrator give them their own server access (never pass on someone else&rsquo;s key) and remove the previous maintainer&rsquo;s.</li>
 <li>Walk through this page and the three technical documents in the repository together, and have them perform a deploy and read a backup log.</li>
-<li>Confirm the masjid owns each outside account (AWS, Cloudflare, Resend, GitHub) and that at least two trusted people can sign in to each.</li>
+<li>Confirm the masjid owns each outside account (AWS, Cloudflare, GitHub) and that at least two trusted people can sign in to each.</li>
 <li>Check that the off-server backup is configured, that the last weekly restore test passed, and that a copy of the server&rsquo;s secret files is stored somewhere safe and separate (for example the masjid&rsquo;s password manager), never in the repo.</li>
 <li>Make sure there are at least two moderators, and that health and backup alerts go to a mailbox more than one person reads.</li>
 <li>Rotate any secret the previous maintainer knew.</li>
@@ -166,7 +166,7 @@
 <p><strong>Keep secrets out of the chat</strong></p>
 <ul>
   <li>Never paste passwords, API keys, tokens or the SSH key file into Claude or any other chat.</li>
-  <li>Secrets belong only in the server&rsquo;s env files (see &ldquo;Where secrets live&rdquo;). If Claude needs to know a setting exists, give it the name only, for example <code>RESEND_API_KEY</code>.</li>
+  <li>Secrets belong only in the server&rsquo;s env files (see &ldquo;Where secrets live&rdquo;). If Claude needs to know a setting exists, give it the name only, for example <code>AWS_SES_SECRET_ACCESS_KEY</code>.</li>
   <li>If a secret is pasted by mistake, rotate it right away (see &ldquo;Rotating secrets&rdquo;).</li>
   <li>Do not let Claude change the live server, DNS or the database directly unless a trusted maintainer is watching and has said yes to each step.</li>
 </ul>
