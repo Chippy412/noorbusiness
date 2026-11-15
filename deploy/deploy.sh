@@ -76,11 +76,11 @@ chmod -R a+rX "$WEB"
 echo "== nginx"
 install -m 644 deploy/nginx/noorbusiness.conf /etc/nginx/conf.d/noorbusiness.conf
 # The repo config is port 80 only, so the copy above drops certbot's HTTPS
-# block. If a certificate exists, have certbot put it back. The http->https
-# redirect is added only with HTTPS_REDIRECT=1, once port 443 is reachable.
+# block. If a certificate exists, have certbot put it back, with the
+# http->https redirect (set NO_HTTPS_REDIRECT=1 to skip the redirect).
 if [ -d /etc/letsencrypt/live/noorbusiness.org ] && command -v certbot >/dev/null 2>&1; then
   certbot install --non-interactive --cert-name noorbusiness.org --nginx \
-    ${HTTPS_REDIRECT:+--redirect} \
+    $([ -n "${NO_HTTPS_REDIRECT:-}" ] || echo --redirect) \
     || echo "!! certbot could not re-apply HTTPS; run: certbot install --cert-name noorbusiness.org --nginx"
 fi
 nginx -t
