@@ -177,7 +177,7 @@
   }
 
   // Sponsorship state for the caller's listings (and any they pay for), keyed
-  // by business id. (Stripe ids and the team's notes aren't readable here.)
+  // by business id. (Payment ids and the team's notes aren't readable here.)
   async function loadMySponsorships() {
     var result = await window.NiccSupabase
       .from("sponsorships")

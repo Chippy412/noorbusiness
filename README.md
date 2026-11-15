@@ -64,9 +64,6 @@ and isn't something `git clone` gives you.
 | --- | --- |
 | `/api/submit` | Contact form, footer newsletter, and "Report a problem". Verifies Turnstile on the server, rate-limits per sender, writes with the service-role key. |
 | `/api/notify` | Emails volunteers when something needs moderating, and emails owners/reviewers the team's decisions (called by database triggers, see `2026-10-04-notify-triggers.sql`). |
-| `/api/billing/plans` | Sponsorship plans and prices (defined in `api/_lib/plans.js`), and whether paying is switched on. |
-| `/api/billing/checkout`, `/api/billing/portal` | Opens Stripe Checkout / the Stripe billing portal for a listing's owner. |
-| `/api/billing/webhook` | Stripe tells us when a sponsorship starts, renews, changes or ends. |
 | `/api/geocode` | Address or ZIP to map coordinates (US Census geocoder, then OpenStreetMap). Used for a visitor's "distance from" point, by a database trigger when a listing's address changes, and by the moderators' "Find map locations" button. |
 | `/b/<id>` → `/api/listing` | A crawlable, shareable page for each approved listing (title, Open Graph, schema.org). |
 | `/sitemap.xml` → `/api/sitemap` | Home page plus every approved listing. |
@@ -78,7 +75,7 @@ and isn't something `git clone` gives you.
 - `SUPABASE_SERVICE_ROLE_KEY` — Supabase > Project Settings > API (the *secret* key). Needed by `/api/submit`. Until it exists the site falls back to inserting from the browser.
 - `SUPABASE_AUTH_CAPTCHA=1` — set only after enabling Turnstile in Supabase > Authentication > Attack Protection (paste the Turnstile secret there). Then Supabase itself rejects bot sign-ups.
 - Email alerts (optional): `NOTIFY_SECRET` (any long random string), `RESEND_API_KEY`, `NOTIFY_EMAIL_TO` (comma-separated), `NOTIFY_EMAIL_FROM` (a sender verified in Resend). Owners and reviewers are only emailed about decisions once `NOTIFY_EMAIL_FROM` is on a verified domain (not `onboarding@resend.dev`); they always see them on their account page.
-- Sponsorship (optional, see below): `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_SPOTLIGHT`, `STRIPE_PRICE_FEATURED`, and `SITE_URL` if the site isn't at `https://nicc-business.vercel.app`.
+- `SITE_URL` — the public address of the site (defaults to `https://nicc-business.vercel.app`).
 
 **Setting up a fresh Supabase project, in order** (each `.sql` file is run
 once in the SQL editor; all are safe to re-run):
@@ -174,38 +171,16 @@ remove one), All listings (search, filter, notes and history per listing,
 Featured end dates), Activity (every decision and note, with who made it),
 and for moderators, Sponsors and Team.
 
-## Sponsorship (paid placement)
+## Sponsorship
 
-Owners of a live listing can sponsor it from My account. Plans, prices and
-perks are in `api/_lib/plans.js` (placeholder pricing: Spotlight $19/month,
-Featured $39/month). Sponsored listings carry a "Sponsored" label, come first
-in "Recommended" search order, and the Featured plan adds the listing to
-"Featured this month" on the home page. Badges can't be bought.
-
-Until the Stripe variables are set, owners see the plans marked "Coming
-soon" and nothing can be charged. Moderators can still give free placements
-from Moderation > Sponsors.
-
-**Connecting a Stripe account** (e.g. the masjid's), once:
-
-1. In Stripe, create a product for each plan with a monthly recurring price
-   matching `api/_lib/plans.js`. Copy each price id (`price_...`).
-2. Settings > Billing > Customer portal: turn it on, allow cancelling and
-   updating payment methods, and allow switching between the two prices.
-3. Developers > Webhooks > Add endpoint:
-   `https://nicc-business.vercel.app/api/billing/webhook`, events
-   `checkout.session.completed`, `customer.subscription.created`,
-   `customer.subscription.updated`, `customer.subscription.deleted`.
-   Copy its signing secret (`whsec_...`).
-4. In Vercel, set `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`,
-   `STRIPE_PRICE_SPOTLIGHT`, `STRIPE_PRICE_FEATURED`, then redeploy.
-5. Test with Stripe's test mode keys first (card `4242 4242 4242 4242`): buy a
-   plan from My account, check the listing shows "Sponsored", then cancel
-   from Manage billing.
-
-Changing prices later: create new prices in Stripe, update the env vars and
-the numbers in `api/_lib/plans.js`. Existing subscribers stay on their old
-price until moved in Stripe.
+There is no online checkout. The NICC team arranges sponsored placement with
+an owner (payment will go through the masjid's own process, expected to be
+Mohid) and a moderator switches it on from Moderation > Sponsors ("Give
+placement"). Sponsored listings carry a "Sponsored" label, come first in
+"Recommended" search order, and the Featured placement adds the listing to
+"Featured this month" on the home page. Badges can't be bought. The database
+tables behind this (`supabase/migrations/2026-10-11-sponsorship.sql`) are
+unchanged, so an automatic payment flow can be added later.
 
 ## Distances
 
