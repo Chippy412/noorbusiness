@@ -7,7 +7,7 @@ cutover.
 ```
 browser ──► Nginx :80/:443  (deploy/nginx/noorbusiness.conf)
              ├─ /                         static files in /var/www/noorbusiness
-             ├─ /api/*, /b/<id>, /sitemap.xml ─► 127.0.0.1:3000  server/index.js  (systemd: noorbusiness-api)
+             ├─ /api/*, /b/<id>, /sitemap.xml ─► 127.0.0.1:3001  server/index.js  (systemd: noorbusiness-api)
              └─ /rest|auth|storage|realtime/v1 ─► 127.0.0.1:8000  self-hosted Supabase (Docker, /opt/supabase)
 ```
 

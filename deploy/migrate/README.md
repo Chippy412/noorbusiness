@@ -28,7 +28,7 @@ No secret is hardcoded or printed: pass them as environment variables.
   `__NOTIFY_SECRET__`. The import rewrites both on the fly from
   `NOTIFY_BASE_URL` and `NOTIFY_SECRET`. The database calls the API from
   inside the `supabase-db` container, so use the Docker bridge address, e.g.
-  `http://172.17.0.1:3000`, and make sure the API is reachable there.
+  `http://172.17.0.1` (Nginx on port 80 forwards /api/notify to the API).
   `pg_net` ships in the Supabase image.
 - **Freeze writes** on the hosted site while you export, or accept losing
   anything submitted after the export.
@@ -49,7 +49,7 @@ Then on the server (repo checked out with all migrations, including
 
 ```bash
 export NOTIFY_SECRET='...'                     # from /etc/noorbusiness/api.env
-export NOTIFY_BASE_URL='http://172.17.0.1:3000'
+export NOTIFY_BASE_URL='http://172.17.0.1'
 export TARGET_SUPABASE_URL='http://127.0.0.1:8000'
 export TARGET_SERVICE_ROLE_KEY='...'           # self-hosted service_role key
 bash deploy/migrate/import-selfhosted.sh ./export/20261115T120000Z

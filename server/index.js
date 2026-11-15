@@ -140,7 +140,7 @@ function createServer() {
 }
 
 if (require.main === module) {
-  var port = Number(process.env.PORT || 3000);
+  var port = Number(process.env.PORT || 3001);
   var host = process.env.HOST || "127.0.0.1";
   createServer().listen(port, host, function () {
     console.log("[server] NICC Business API on http://" + host + ":" + port);

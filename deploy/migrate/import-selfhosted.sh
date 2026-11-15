@@ -6,7 +6,7 @@
 # Required env:
 #   NOTIFY_SECRET            the NOTIFY_SECRET value from /etc/noorbusiness/api.env
 #   NOTIFY_BASE_URL          where the database reaches the API, as seen from INSIDE
-#                            the supabase-db container, e.g. http://172.17.0.1:3000
+#                            the supabase-db container, e.g. http://172.17.0.1
 #                            (replaces https://nicc-business.vercel.app in the alert triggers)
 #   TARGET_SUPABASE_URL      e.g. http://127.0.0.1:8000
 #   TARGET_SERVICE_ROLE_KEY  self-hosted service_role key

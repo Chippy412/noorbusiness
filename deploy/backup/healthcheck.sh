@@ -96,7 +96,7 @@ check_services() {
 
 check_http() {
   curl -fsS -o /dev/null --max-time 10 http://127.0.0.1/ || fail "http://127.0.0.1/ did not return a success status"
-  curl -fsS -o /dev/null --max-time 10 http://127.0.0.1:3000/healthz || fail "API /healthz (127.0.0.1:3000) failed"
+  curl -fsS -o /dev/null --max-time 10 http://127.0.0.1:3001/healthz || fail "API /healthz (127.0.0.1:3001) failed"
 }
 
 check_containers() {
