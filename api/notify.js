@@ -48,7 +48,7 @@ async function loadNoticeEmail(id) {
 function noticeText(r) {
   return r.title + "." + (r.reason ? "\n\nNote from the volunteer team:\n" + r.reason : "") +
     "\n\nSee your listings and reviews at " + SITE + "/#/account" +
-    "\n\nYou're getting this because you have an account on NICC Business.";
+    "\n\nYou're getting this because you have an account on Noor Business.";
 }
 
 async function loadTeamEmails() {
@@ -85,7 +85,7 @@ module.exports = async function handler(req, res) {
     if (/@resend\.dev>?\s*$/i.test(from)) { res.status(200).json({ ok: true, skipped: true }); return; }
     var person = await loadNoticeEmail(payload.record.id);
     if (!person) { res.status(200).json({ ok: true, skipped: true }); return; }
-    var sent = await send(key, { from: from, to: [person], subject: "[NICC Business] " + String(payload.record.title || "An update on your account").slice(0, 150), text: noticeText(payload.record) });
+    var sent = await send(key, { from: from, to: [person], subject: "[Noor Business] " + String(payload.record.title || "An update on your account").slice(0, 150), text: noticeText(payload.record) });
     res.status(sent ? 200 : 502).json({ ok: sent }); return;
   }
   var okType = payload && (payload.type === "INSERT" || (payload.type === "UPDATE" && payload.table === "business_edits"));
@@ -95,7 +95,7 @@ module.exports = async function handler(req, res) {
 
   var subject = LABELS[payload.table];
   var text = summarize(payload.table, payload.record) + "\n\nModerate it at " + SITE + "/#/admin";
-  var ok = await send(key, { from: from, to: await recipients(process.env, loadTeamEmails), subject: "[NICC Business] " + subject, text: text });
+  var ok = await send(key, { from: from, to: await recipients(process.env, loadTeamEmails), subject: "[Noor Business] " + subject, text: text });
   res.status(ok ? 200 : 502).json({ ok: ok });
 };
 

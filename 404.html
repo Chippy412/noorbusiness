@@ -6,32 +6,32 @@
 <meta name="theme-color" content="#F8F8F2" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#14180F" media="(prefers-color-scheme: dark)">
 <meta name="robots" content="noindex">
-<title>Page not found | NICC Business</title>
+<title>Page not found | Noor Business</title>
 <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32.png">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Manrope:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Figtree:wght@500;700&display=swap">
 <style>
   :root {
-    --sage: #C6D29B; --accent: #4C5F26; --accent-ink: #FFFFFF; --accent-soft: #EBF0DA; --accent-soft-ink: #38471A;
-    --ink: #22271C; --muted: #5C6252; --ground: #F8F8F2; --surface: #FFFFFF; --hairline: #E2E4D4; --star: #C6D29B;
+    --sage: #C6D29B; --accent: #1F4D40; --accent-ink: #FFFFFF; --accent-soft: #E1ECE4; --accent-soft-ink: #1A4136;
+    --ink: #16241F; --muted: #586761; --ground: #F3F6F1; --surface: #FFFFFF; --hairline: #D8E1DA; --star: #C6D29B;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --accent: #BACD82; --accent-ink: #161A0E; --accent-soft: rgba(186,205,130,0.15); --accent-soft-ink: #CFDDA5;
-      --ink: #F0F2E6; --muted: #AEB5A0; --ground: #14180F; --surface: #1B2015; --hairline: #2F3624; --star: #3A4429;
+      --accent: #B6D6C4; --accent-ink: #0B1C17; --accent-soft: rgba(182,214,196,0.14); --accent-soft-ink: #C9E3D4;
+      --ink: #EDF2EC; --muted: #A1B3AA; --ground: #0E1A17; --surface: #14241F; --hairline: #273B34; --star: #2C4A3F;
     }
   }
   * { box-sizing: border-box; margin: 0; }
   body {
     min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: 24px;
-    background: var(--ground); color: var(--ink); font-family: "Manrope", system-ui, sans-serif; line-height: 1.55;
+    background: var(--ground); color: var(--ink); font-family: "Figtree", system-ui, sans-serif; line-height: 1.55;
     overflow-x: hidden;
   }
   main { position: relative; width: min(560px, 100%); text-align: center; animation: rise 0.7s cubic-bezier(0.16,1,0.3,1) backwards; }
   @keyframes rise { from { opacity: 0; transform: translateY(18px); } }
   @keyframes spin-slow { to { transform: rotate(360deg); } }
   .stars { position: absolute; left: 50%; top: -150px; width: 420px; height: 420px; margin-left: -210px; z-index: -1; color: var(--star); opacity: 0.28; animation: spin-slow 90s linear infinite; }
-  .code { font-family: "Bricolage Grotesque", Georgia, serif; font-weight: 700; font-size: clamp(5rem, 22vw, 8.5rem); line-height: 1; letter-spacing: -0.04em; color: var(--accent); }
-  h1 { font-family: "Bricolage Grotesque", Georgia, serif; font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.1rem); line-height: 1.15; margin-top: 12px; text-wrap: balance; }
+  .code { font-family: "Young Serif", Georgia, serif; font-weight: 400; font-synthesis: none; font-size: clamp(5rem, 22vw, 8.5rem); line-height: 1; letter-spacing: -0.04em; color: var(--accent); }
+  h1 { font-family: "Young Serif", Georgia, serif; font-weight: 400; font-synthesis: none; font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.1rem); line-height: 1.15; margin-top: 12px; text-wrap: balance; }
   p { color: var(--muted); margin-top: 12px; text-wrap: pretty; }
   form { display: flex; gap: 8px; margin-top: 28px; padding: 6px; background: var(--surface); border: 1px solid var(--hairline); border-radius: 999px; }
   input { flex: 1; min-width: 0; border: 0; background: none; padding: 0 16px; font: inherit; color: var(--ink); outline: none; }
