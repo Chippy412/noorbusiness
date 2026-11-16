@@ -1,7 +1,7 @@
 # Backups and monitoring
 
 Everything stays inside the masjid's AWS: backups go to the masjid's S3 bucket,
-alerts are plain email through Resend (the same provider the API already uses).
+alerts are plain email through Amazon SES (the same sender the API uses).
 No other SaaS.
 
 | File | What it does |
@@ -35,7 +35,9 @@ Schedules: backup 03:15 America/New_York nightly (+ up to 10 min random delay,
    off-server copies.
 2. On the server: `sudo bash /opt/noorbusiness/deploy/backup/install.sh`
 3. `sudo vi /etc/noorbusiness/backup.env` and fill in `BACKUP_S3_URI`, the AWS
-   keys, and `RESEND_API_KEY` / `ALERT_EMAIL_TO` / `ALERT_EMAIL_FROM`.
+   keys, and `AWS_SES_ACCESS_KEY_ID` / `AWS_SES_SECRET_ACCESS_KEY` (an IAM user
+   with only `ses:SendEmail`), `AWS_SES_REGION`, `ALERT_EMAIL_TO` and
+   `ALERT_EMAIL_FROM` (an address on the verified `noorbusiness.org` identity).
    The file must be mode 600 (the installer sets it).
 4. Run once by hand and watch it:
    ```bash
@@ -69,7 +71,8 @@ Logs: `journalctl -u noorbusiness-backup`, `-u noorbusiness-restore-test`,
 
 ## Alerts
 
-Delivered by the Resend API to `ALERT_EMAIL_TO`. The same problem is emailed at
+Delivered through Amazon SES (the `aws sesv2` CLI if installed, otherwise
+`/opt/noorbusiness/api/_lib/ses.js`) to `ALERT_EMAIL_TO`. The same problem is emailed at
 most once every 6 hours (state in `/var/lib/noorbusiness/alerts`); a new
 problem alerts immediately, and one "RECOVERED" email is sent when everything
 passes again. Thresholds are env-tunable (see `backup.env.example`): disk 85%,

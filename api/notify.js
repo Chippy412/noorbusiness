@@ -2,8 +2,10 @@
 // Emails the volunteers when something needs moderating. Called by the
 // notify_volunteers() database trigger (supabase/migrations/
 // 2026-10-04-notify-triggers.sql) with  Authorization: Bearer <NOTIFY_SECRET>.
-// Env vars (Vercel): NOTIFY_SECRET, RESEND_API_KEY, NOTIFY_EMAIL_TO,
-// NOTIFY_EMAIL_FROM (a sender verified in Resend, or onboarding@resend.dev).
+// Env vars: NOTIFY_SECRET, AWS_SES_ACCESS_KEY_ID, AWS_SES_SECRET_ACCESS_KEY,
+// AWS_SES_REGION (default us-east-1), NOTIFY_EMAIL_TO, NOTIFY_EMAIL_FROM (an
+// address on a verified SES identity, e.g. noorbusiness.org).
+var ses = require("./_lib/ses");
 var html = require("./_lib/html");
 var supa = require("./_lib/supa");
 var SITE = (process.env.SITE_URL || "https://nicc-business.vercel.app").replace(/\/$/, "");
@@ -19,16 +21,10 @@ var LABELS = {
 var REPORT_REASONS = { closed: "Closed or moved", wrong_info: "Wrong information", inappropriate: "Inappropriate", spam: "Spam or fake", other: "Something else" };
 
 // Who gets the alert: NOTIFY_EMAIL_TO, plus every moderator and volunteer on
-// the team once the sender is on a verified domain. Resend's test sender
-// (onboarding@resend.dev) can only deliver to the account owner and rejects
-// the whole email if any other recipient is included, so the team is only
-// added when a real sender is configured.
+// the team.
 async function recipients(env, loadTeam) {
   var list = String(env.NOTIFY_EMAIL_TO || "").split(",").map(function (s) { return s.trim(); }).filter(Boolean);
-  var testSender = /@resend\.dev>?\s*$/i.test(String(env.NOTIFY_EMAIL_FROM || ""));
-  if (!testSender) {
-    try { list = list.concat(await loadTeam()); } catch (e) { /* fall back to NOTIFY_EMAIL_TO */ }
-  }
+  try { list = list.concat(await loadTeam()); } catch (e) { /* fall back to NOTIFY_EMAIL_TO */ }
   var seen = {};
   return list.filter(function (e) {
     var k = String(e).toLowerCase();
@@ -39,7 +35,6 @@ async function recipients(env, loadTeam) {
 }
 
 // A decision for one person (owner_notices, see 2026-10-10-moderation-tools.sql).
-// Only sent from a real sender: Resend's test sender can't reach other people.
 async function loadNoticeEmail(id) {
   if (!supa.serviceKey() || !html.UUID_RE.test(String(id || ""))) return null;
   var r = await supa.rest("rpc/notice_email", { service: true, method: "POST", body: { p_notice: id } });
@@ -75,17 +70,16 @@ module.exports = async function handler(req, res) {
   var auth = req.headers.authorization || "";
   if (!secret || auth !== "Bearer " + secret) { res.status(401).json({ ok: false }); return; }
 
-  var key = process.env.RESEND_API_KEY, to = process.env.NOTIFY_EMAIL_TO, from = process.env.NOTIFY_EMAIL_FROM;
+  var key = process.env.AWS_SES_ACCESS_KEY_ID && process.env.AWS_SES_SECRET_ACCESS_KEY, to = process.env.NOTIFY_EMAIL_TO, from = process.env.NOTIFY_EMAIL_FROM;
   if (!key || !to || !from) { res.status(503).json({ ok: false, error: "not_configured" }); return; }
 
   var payload = req.body;
   if (typeof payload === "string") { try { payload = JSON.parse(payload); } catch (e) { payload = null; } }
 
   if (payload && payload.table === "owner_notices" && payload.type === "INSERT" && payload.record) {
-    if (/@resend\.dev>?\s*$/i.test(from)) { res.status(200).json({ ok: true, skipped: true }); return; }
     var person = await loadNoticeEmail(payload.record.id);
     if (!person) { res.status(200).json({ ok: true, skipped: true }); return; }
-    var sent = await send(key, { from: from, to: [person], subject: "[NICC Business] " + String(payload.record.title || "An update on your account").slice(0, 150), text: noticeText(payload.record) });
+    var sent = await send({ from: from, to: [person], subject: "[NICC Business] " + String(payload.record.title || "An update on your account").slice(0, 150), text: noticeText(payload.record) });
     res.status(sent ? 200 : 502).json({ ok: sent }); return;
   }
   var okType = payload && (payload.type === "INSERT" || (payload.type === "UPDATE" && payload.table === "business_edits"));
@@ -95,22 +89,13 @@ module.exports = async function handler(req, res) {
 
   var subject = LABELS[payload.table];
   var text = summarize(payload.table, payload.record) + "\n\nModerate it at " + SITE + "/#/admin";
-  var ok = await send(key, { from: from, to: await recipients(process.env, loadTeamEmails), subject: "[NICC Business] " + subject, text: text });
+  var ok = await send({ from: from, to: await recipients(process.env, loadTeamEmails), subject: "[NICC Business] " + subject, text: text });
   res.status(ok ? 200 : 502).json({ ok: ok });
 };
 
-async function send(key, email) {
-  try {
-    var r = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: "Bearer " + key, "Content-Type": "application/json" },
-      body: JSON.stringify(email)
-    });
-    if (!r.ok) console.error("notify: Resend rejected the email", r.status, await r.text());
-    return r.ok;
-  } catch (e) {
-    console.error("notify: could not reach Resend", e && e.message);
-    return false;
-  }
+async function send(email) {
+  var r = await ses.sendEmail(email);
+  if (!r.ok) console.error("notify: SES did not send the email:", r.error);
+  return r.ok;
 }
 module.exports._test = { summarize: summarize, esc: html.esc, recipients: recipients, noticeText: noticeText };
