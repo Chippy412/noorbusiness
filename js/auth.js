@@ -86,7 +86,7 @@
         await window.NiccSupabase.auth.mfa.unenroll({ factorId: stale[i].id });
       }
     }
-    var result = await window.NiccSupabase.auth.mfa.enroll({ factorType: "totp", friendlyName: "Noor Business " + Date.now() });
+    var result = await window.NiccSupabase.auth.mfa.enroll({ factorType: "totp", friendlyName: "NICC Business " + Date.now() });
     if (result.error) throw result.error;
     return result.data; // { id, totp: { qr_code, secret, uri } }
   }
