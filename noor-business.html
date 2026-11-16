@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#F8F8F2" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#14180F" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F3F6F1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1A17" media="(prefers-color-scheme: dark)">
 <title>NICC Business</title>
 <meta name="description" content="NICC Business is a community-run directory of Muslim-owned and halal-friendly businesses in Columbus, Ohio. Find local shops and restaurants, or list your own.">
 <link rel="canonical" href="https://nicc-business.vercel.app/">
@@ -38,9 +38,9 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" as="image" type="image/webp" href="images/hero-meal.webp" fetchpriority="high">
-<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:ital,opsz,wght@0,12..96,500;0,12..96,600;0,12..96,700;1,12..96,600&family=Manrope:wght@400;500;600;700;800&family=Amiri:wght@400;700&family=JetBrains+Mono:wght@500&display=swap" onload="this.onload=null;this.rel='stylesheet'">
-<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:ital,opsz,wght@0,12..96,500;0,12..96,600;0,12..96,700;1,12..96,600&family=Manrope:wght@400;500;600;700;800&family=Amiri:wght@400;700&family=JetBrains+Mono:wght@500&display=swap"></noscript>
+<link rel="preload" as="image" type="image/webp" href="images/nicc-aerial.webp" fetchpriority="high">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Figtree:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Amiri:wght@400;700&family=JetBrains+Mono:wght@500&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Figtree:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Amiri:wght@400;700&family=JetBrains+Mono:wght@500&display=swap"></noscript>
 <link rel="manifest" href="manifest.webmanifest">
 <script type="application/ld+json">
 {
@@ -74,94 +74,116 @@
 <style>
   /* ============================================================
      NICC Business
-     Identity: the 8-point star (khatim) from the NICC mark, built as
-     the union of a square and its 45-degree rotation. The same
-     construction generates the ornament pattern used across the site.
+     Concept: Noor means light. The site is the Noor Islamic Cultural
+     Center community's directory, so the identity is evening light:
+     deep evergreen "night" surfaces lit by lamp gold, with the sage of
+     the NICC logo carrying the brand.
 
-     Color: sage #C6D29B is the brand color and carries identity
-     (mark, pattern, tints, badges). It fails contrast as a control
-     color, so interactive elements use deep olive #4C5F26, drawn
-     from the same hue. In dark mode the relationship inverts and
-     sage becomes the accent.
+     Identity mark: the 8-point star (khatim) from the NICC logo, built
+     as the union of a square and its 45-degree rotation. The homepage
+     hero assembles it from those two squares on load.
 
-     Radius: buttons = pill, cards = 18px, inputs = 12px, media = dome
-     arch. One system, applied everywhere.
+     Color roles: evergreen --accent is the control color on light
+     surfaces. Gold is light: glows, focus on night surfaces, and the
+     owner call to action. Gold is never used as text on light ground
+     (it fails contrast there). Sage stays for the mark and pattern.
+
+     Type: Young Serif (display, h1/h2 only, single weight) with Figtree
+     for everything else. Amiri for Arabic.
      ============================================================ */
 
   :root {
+    --font-display: "Young Serif", Georgia, "Times New Roman", serif;
+    --font-body: "Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+    --ease-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
+
     --sage: #C6D29B;
-    --sage-deep: #A3B472;
-    --accent: #4C5F26;
+    --sage-deep: #8FA25C;
+    --gold: #E2AE4A;
+    --gold-bright: #F2C76B;
+    --gold-ink: #241A06;
+    --night: #12302A;
+    --night-2: #0C241F;
+    --night-ink: #EEF3EC;
+    --night-muted: #A9BFB5;
+    --night-line: rgba(238, 243, 236, 0.14);
+
+    --accent: #1F4D40;
     --accent-ink: #FFFFFF;
-    --accent-soft: #EBF0DA;
-    --accent-soft-ink: #38471A;
-    --ink: #22271C;
-    --ink-2: #3F4735;
-    --muted: #5C6252;
-    --ground: #F8F8F2;
+    --accent-soft: #E1ECE4;
+    --accent-soft-ink: #1A4136;
+    --ink: #16241F;
+    --ink-2: #33433C;
+    --muted: #586761;
+    --ground: #F3F6F1;
     --surface: #FFFFFF;
-    --surface-2: #F1F2E7;
-    --hairline: #E2E4D4;
-    --shadow-color: 34 39 28;
-    --focus: #4C5F26;
+    --surface-2: #E9EFEA;
+    --hairline: #D8E1DA;
+    --shadow-color: 18 40 34;
+    --focus: #1F4D40;
     --danger: #A3341F;
-    --nav-bg: rgba(248, 248, 242, 0.86);
+    --nav-bg: rgba(243, 246, 241, 0.86);
     --on-accent-soft: rgba(255, 255, 255, 0.86);
     --on-accent-border: rgba(255, 255, 255, 0.6);
     --logo-text: #A3B472;
-    --pattern-opacity: 0.45;
+    --pattern-opacity: 0.4;
     --pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 100 100'%3E%3Cg fill='none' stroke='%23C6D29B' stroke-width='2.4'%3E%3Crect x='20' y='20' width='60' height='60'/%3E%3Cpath d='M50 8 L92 50 L50 92 L8 50 Z'/%3E%3Cpath d='M38 20 H62 L80 38 V62 L62 80 H38 L20 62 V38 Z'/%3E%3C/g%3E%3C/svg%3E");
     --pattern-on-accent: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 100 100'%3E%3Cg fill='none' stroke='%23FFFFFF' stroke-width='2.4'%3E%3Crect x='20' y='20' width='60' height='60'/%3E%3Cpath d='M50 8 L92 50 L50 92 L8 50 Z'/%3E%3Cpath d='M38 20 H62 L80 38 V62 L62 80 H38 L20 62 V38 Z'/%3E%3C/g%3E%3C/svg%3E");
+    font-synthesis-weight: none;
   }
 
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --sage: #C6D29B;
-      --sage-deep: #D6E0B4;
-      --accent: #BACD82;
-      --accent-ink: #161A0E;
-      --accent-soft: rgba(186, 205, 130, 0.15);
-      --accent-soft-ink: #CFDDA5;
-      --ink: #F0F2E6;
-      --ink-2: #D4DAC4;
-      --muted: #AEB5A0;
-      --ground: #14180F;
-      --surface: #1B2015;
-      --surface-2: #232819;
-      --hairline: #2F3624;
+      --sage-deep: #C9D7A2;
+      --night: #0D221D;
+      --night-2: #091A16;
+      --accent: #B6D6C4;
+      --accent-ink: #0B1C17;
+      --accent-soft: rgba(182, 214, 196, 0.14);
+      --accent-soft-ink: #C9E3D4;
+      --ink: #EDF2EC;
+      --ink-2: #CDD9D1;
+      --muted: #A1B3AA;
+      --ground: #0E1A17;
+      --surface: #14241F;
+      --surface-2: #1B2E28;
+      --hairline: #273B34;
       --shadow-color: 0 0 0;
-      --focus: #BACD82;
+      --focus: #B6D6C4;
       --danger: #F0B4A6;
-      --nav-bg: rgba(20, 24, 15, 0.84);
-      --on-accent-soft: rgba(22, 26, 14, 0.78);
-      --on-accent-border: rgba(22, 26, 14, 0.5);
+      --nav-bg: rgba(14, 26, 23, 0.84);
+      --on-accent-soft: rgba(11, 28, 23, 0.78);
+      --on-accent-border: rgba(11, 28, 23, 0.5);
       --logo-text: #7E8C55;
-      --pattern-opacity: 0.22;
+      --pattern-opacity: 0.2;
     }
   }
 
   :root[data-theme="dark"] {
-    --sage: #C6D29B;
-    --sage-deep: #D6E0B4;
-    --accent: #BACD82;
-    --accent-ink: #161A0E;
-    --accent-soft: rgba(186, 205, 130, 0.15);
-    --accent-soft-ink: #CFDDA5;
-    --ink: #F0F2E6;
-    --ink-2: #D4DAC4;
-    --muted: #AEB5A0;
-    --ground: #14180F;
-    --surface: #1B2015;
-    --surface-2: #232819;
-    --hairline: #2F3624;
+    --sage-deep: #C9D7A2;
+    --night: #0D221D;
+    --night-2: #091A16;
+    --accent: #B6D6C4;
+    --accent-ink: #0B1C17;
+    --accent-soft: rgba(182, 214, 196, 0.14);
+    --accent-soft-ink: #C9E3D4;
+    --ink: #EDF2EC;
+    --ink-2: #CDD9D1;
+    --muted: #A1B3AA;
+    --ground: #0E1A17;
+    --surface: #14241F;
+    --surface-2: #1B2E28;
+    --hairline: #273B34;
     --shadow-color: 0 0 0;
-    --focus: #BACD82;
+    --focus: #B6D6C4;
     --danger: #F0B4A6;
-    --nav-bg: rgba(20, 24, 15, 0.84);
-    --on-accent-soft: rgba(22, 26, 14, 0.78);
-    --on-accent-border: rgba(22, 26, 14, 0.5);
+    --nav-bg: rgba(14, 26, 23, 0.84);
+    --on-accent-soft: rgba(11, 28, 23, 0.78);
+    --on-accent-border: rgba(11, 28, 23, 0.5);
     --logo-text: #7E8C55;
-    --pattern-opacity: 0.22;
+    --pattern-opacity: 0.2;
   }
 
   html.theme-transitioning, html.theme-transitioning * {
@@ -182,15 +204,14 @@
 
   body {
     margin: 0; background: var(--ground); color: var(--ink);
-    font-family: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family: var(--font-body);
     font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased;
   }
 
-  h1, h2, h3, h4 {
-    font-family: "Bricolage Grotesque", "Manrope", sans-serif;
-    color: var(--ink); margin: 0; text-wrap: balance;
-    letter-spacing: -0.012em; line-height: 1.14;
-  }
+  h1, h2, h3, h4 { color: var(--ink); margin: 0; text-wrap: balance; }
+  h1, h2 { font-family: var(--font-display); font-weight: 400; letter-spacing: -0.01em; line-height: 1.12; }
+  h3, h4 { font-family: var(--font-body); font-weight: 700; letter-spacing: -0.005em; line-height: 1.25; }
+  p { text-wrap: pretty; }
   p { margin: 0; }
   a { color: inherit; text-decoration: none; }
   img { max-width: 100%; display: block; }
@@ -234,7 +255,7 @@
   /* ---------- Buttons ---------- */
   .btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    white-space: nowrap; font-family: "Manrope", sans-serif; font-weight: 700;
+    white-space: nowrap; font-family: var(--font-body); font-weight: 700;
     font-size: 0.95rem; padding: 0.85em 1.5em; border-radius: 999px;
     border: 1px solid transparent; cursor: pointer;
     transition: transform 0.35s cubic-bezier(0.16,1,0.3,1), box-shadow 0.35s cubic-bezier(0.16,1,0.3,1), background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
@@ -259,9 +280,9 @@
   .text-link:hover .icon { transform: translateX(3px); }
 
   /* ---------- Brand lockup ---------- */
-  .brand { display: flex; align-items: center; gap: 11px; font-family: "Bricolage Grotesque", sans-serif; font-weight: 700; font-size: 1.05rem; color: var(--ink); }
+  .brand { display: flex; align-items: center; gap: 11px; font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; color: var(--ink); }
   .brand-star { width: 38px; height: 38px; color: var(--sage); flex-shrink: 0; }
-  .brand small { display: block; font-family: "Manrope", sans-serif; font-weight: 600; font-size: 0.68rem; color: var(--muted); letter-spacing: 0.03em; }
+  .brand small { display: block; font-family: var(--font-body); font-weight: 600; font-size: 0.68rem; color: var(--muted); letter-spacing: 0.03em; }
 
   .logo-full { width: 150px; height: 150px; object-fit: contain; }
   .mission .logo-full { margin: 0 auto; }
@@ -317,7 +338,7 @@
   .theme-toggle-mobile {
     width: 100%; justify-content: flex-start; gap: 10px; height: auto; padding: 15px 4px;
     border-radius: 0; border: none; border-bottom: 1px solid var(--hairline); background: none;
-    font-family: "Bricolage Grotesque", sans-serif; font-size: 1.2rem; font-weight: 600; color: var(--ink);
+    font-family: var(--font-display); font-size: 1.2rem; font-weight: 600; color: var(--ink);
   }
   .theme-toggle-mobile svg { width: 20px; height: 20px; }
 
@@ -337,7 +358,7 @@
   .mobile-panel.open > :nth-child(5) { transition-delay: 220ms; } .mobile-panel.open > :nth-child(6) { transition-delay: 260ms; }
   .mobile-panel.open > :nth-child(n+7) { transition-delay: 300ms; }
   @media (min-width: 1001px) { .mobile-panel { display: none; } }
-  .mobile-panel a { padding: 15px 4px; border-bottom: 1px solid var(--hairline); font-family: "Bricolage Grotesque", sans-serif; font-size: 1.2rem; font-weight: 600; }
+  .mobile-panel a { padding: 15px 4px; border-bottom: 1px solid var(--hairline); font-family: var(--font-display); font-size: 1.2rem; font-weight: 600; }
   .mobile-panel .btn { margin-top: 20px; }
   .nav-links a, .saved-chip, .nav-actions .btn, .brand { white-space: nowrap; }
   @media (min-width: 1001px) and (max-width: 1240px) {
@@ -375,63 +396,6 @@
   .arch::after {
     content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
     box-shadow: inset 0 0 0 1px var(--sage);
-  }
-
-  /* ---------- Hero ---------- */
-  .hero { padding: 56px 0 84px; }
-  .hero-grid { display: grid; grid-template-columns: 1.06fr 0.94fr; gap: 56px; align-items: center; }
-  .hero h1 { font-size: clamp(2.1rem, 1rem + 3.4vw, 3.5rem); font-weight: 700; letter-spacing: -0.02em; }
-  .hero-sub { margin-top: 20px; font-size: 1.1rem; color: var(--muted); max-width: 46ch; }
-
-  .search-card {
-    margin-top: 34px; background: var(--surface); border: 1px solid var(--hairline);
-    border-radius: 18px; padding: 10px;
-    box-shadow: 0 24px 48px -24px rgba(var(--shadow-color) / 0.28);
-    display: grid; grid-template-columns: 1fr auto; grid-template-areas: "q q" "c b"; gap: 6px;
-  }
-  .search-field {
-    display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px; min-width: 0;
-    transition: background-color 0.3s ease, box-shadow 0.3s ease;
-  }
-  .search-field:nth-of-type(1) { grid-area: q; }
-  .search-field:nth-of-type(2) { grid-area: c; border-top: 1px solid var(--hairline); }
-  .search-field svg { color: var(--muted); width: 18px; height: 18px; flex-shrink: 0; }
-  .search-field input, .search-field select {
-    border: none; background: none; font: inherit; color: var(--ink);
-    width: 100%; min-width: 0; font-size: 0.92rem; font-family: "Manrope", sans-serif;
-  }
-  .search-field select { appearance: none; cursor: pointer; text-overflow: ellipsis; }
-  .search-field input:focus, .search-field select:focus { outline: none; }
-  .search-field:focus-within { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
-  .search-card .btn { grid-area: b; border-radius: 12px; padding: 0 22px; }
-
-  .hero-visual { position: relative; padding: 18px; }
-  .hero-visual .pattern-bg { position: absolute; inset: 0; border-radius: 24px; }
-  .hero-visual .pattern-bg::before { background-size: 140px 140px; opacity: calc(var(--pattern-opacity) * 1.6); }
-  .hero-photo { aspect-ratio: 4/5; }
-  .hero-photo img { object-position: 50% 45%; }
-  .hero-float {
-    position: absolute; left: 4px; bottom: 38px; background: var(--surface);
-    border: 1px solid var(--hairline); border-radius: 18px; padding: 16px 18px;
-    display: flex; align-items: center; gap: 13px;
-    box-shadow: 0 20px 40px -20px rgba(var(--shadow-color) / 0.34); max-width: 268px;
-  }
-  .hero-float .badge-icon {
-    width: 42px; height: 42px; border-radius: 12px; background: var(--accent-soft);
-    color: var(--accent-soft-ink); display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  }
-  .hero-float .badge-icon svg { width: 22px; height: 22px; }
-  .hero-float strong { font-size: 0.92rem; }
-  .hero-float p { color: var(--muted); font-size: 0.84rem; margin-top: 2px; }
-  @media (max-width: 940px) {
-    .hero-grid { grid-template-columns: 1fr; gap: 44px; }
-    .hero-photo { aspect-ratio: 4/3; }
-    .hero-float { position: relative; left: auto; bottom: auto; max-width: none; margin-top: 14px; }
-  }
-  @media (max-width: 560px) {
-    .search-card { grid-template-columns: 1fr; grid-template-areas: "q" "c" "b"; }
-    .search-field:nth-of-type(2), .search-field:nth-of-type(3) { border-left: none; border-top: 1px solid var(--hairline); }
-    .search-card .btn { width: 100%; padding: 14px; margin-top: 4px; }
   }
 
   /* ---------- New-listing preview ---------- */
@@ -626,7 +590,7 @@
   .steps-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
   .step { position: relative; padding-top: 4px; }
   .step-index {
-    display: block; font-family: "Bricolage Grotesque", sans-serif; font-weight: 700;
+    display: block; font-family: var(--font-display); font-weight: 700;
     font-size: 0.85rem; color: var(--sage-deep); margin-bottom: 6px;
   }
   .step-num {
@@ -836,7 +800,7 @@
   .modal-body { padding: 24px 28px 28px; display: flex; flex-direction: column; gap: 24px; max-height: 65vh; overflow-y: auto; }
   .modal-photo { margin: -24px -28px 0; aspect-ratio: 16/9; overflow: hidden; }
   .modal-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .modal-section h3 { font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-family: "Manrope", sans-serif; font-weight: 700; margin-bottom: 12px; }
+  .modal-section h3 { font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-family: var(--font-body); font-weight: 700; margin-bottom: 12px; }
   .hours-list { display: flex; flex-direction: column; gap: 8px; }
   .hours-row { display: flex; justify-content: space-between; font-size: 0.92rem; }
   .hours-row span:first-child { color: var(--muted); }
@@ -901,7 +865,7 @@
   .faq-q {
     width: 100%; background: none; border: none; cursor: pointer; display: flex; align-items: center;
     justify-content: space-between; gap: 20px; padding: 22px 4px; text-align: left;
-    font-family: "Bricolage Grotesque", sans-serif; font-size: 1.05rem; font-weight: 600; color: var(--ink);
+    font-family: var(--font-display); font-size: 1.05rem; font-weight: 600; color: var(--ink);
   }
   .faq-q .icon { width: 20px; height: 20px; color: var(--accent); transition: transform 0.3s ease; flex-shrink: 0; }
   .faq-q[aria-expanded="true"] .icon { transform: rotate(45deg); }
@@ -941,7 +905,7 @@
   footer { border-top: 1px solid var(--hairline); padding: 60px 0 30px; background: var(--surface); }
   .footer-grid { display: grid; grid-template-columns: 1.5fr 0.8fr 0.8fr 1.2fr; gap: 40px; }
   .footer-brand p { color: var(--muted); margin-top: 14px; max-width: 34ch; font-size: 0.94rem; }
-  .footer-col h4 { font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-family: "Manrope", sans-serif; font-weight: 700; }
+  .footer-col h4 { font-size: 0.92rem; color: var(--muted); font-family: var(--font-body); font-weight: 600; }
   .footer-col ul { margin-top: 16px; display: flex; flex-direction: column; gap: 11px; }
   .footer-col a { color: var(--ink-2); font-size: 0.94rem; }
   .footer-col a:hover { color: var(--accent); }
@@ -970,7 +934,7 @@
   .nav-toggle[data-count]::after { content: attr(data-count); position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-size: 0.68rem; font-weight: 800; line-height: 18px; text-align: center; box-sizing: border-box; }
   .mod { display: grid; grid-template-columns: 216px minmax(0, 1fr); gap: 44px; align-items: start; }
   .mod-rail { position: sticky; top: 104px; }
-  .mod-rail-sum { font-family: "Bricolage Grotesque", sans-serif; font-size: 1.2rem; font-weight: 600; line-height: 1.25; color: var(--ink); margin: 0 12px 14px; }
+  .mod-rail-sum { font-family: var(--font-display); font-size: 1.2rem; font-weight: 600; line-height: 1.25; color: var(--ink); margin: 0 12px 14px; }
   .mod-nav-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border: 0; border-radius: 12px; background: none; color: var(--ink-2); font: inherit; font-weight: 600; font-size: 0.95rem; text-align: left; cursor: pointer; }
   .mod-nav-item:hover { background: var(--surface-2); color: var(--ink); }
   .mod-nav-item[aria-selected="true"] { background: var(--accent-soft); color: var(--accent-soft-ink); }
@@ -1097,7 +1061,7 @@
   .promote-plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
   .promote-plan { display: flex; flex-direction: column; gap: 8px; padding: 14px; border: 1px solid var(--hairline); border-radius: 12px; background: var(--ground); }
   .promote-plan h4 { margin: 0; font-size: 0.98rem; }
-  .promote-price { font-family: "Bricolage Grotesque", sans-serif; font-size: 1.35rem; font-weight: 700; color: var(--ink); }
+  .promote-price { font-family: var(--font-display); font-size: 1.35rem; font-weight: 700; color: var(--ink); }
   .promote-price small { font-family: inherit; font-size: 0.8rem; font-weight: 600; color: var(--muted); }
   .promote-plan ul { margin: 0; padding-left: 18px; color: var(--ink-2); font-size: 0.88rem; }
   .promote-plan .btn { margin-top: auto; align-self: flex-start; }
@@ -1200,17 +1164,7 @@
     dialog.listing-modal[open] { animation-name: sheet-in; }
   }
 
-  .hero h1 { animation: hero-in 0.7s cubic-bezier(0.16,1,0.3,1) backwards; }
-  .hero-sub { animation: hero-in 0.7s cubic-bezier(0.16,1,0.3,1) 0.1s backwards; }
-  .hero .search-card { animation: hero-in 0.7s cubic-bezier(0.16,1,0.3,1) 0.2s backwards; }
-  .hero-trust { animation: hero-in 0.7s cubic-bezier(0.16,1,0.3,1) 0.3s backwards; }
-  .hero-visual { animation: hero-in 0.8s cubic-bezier(0.16,1,0.3,1) 0.15s backwards; }
-  .hero-photo img { animation: hero-zoom 1.8s cubic-bezier(0.16,1,0.3,1) backwards; }
-  .hero-float { animation: hero-in 0.7s cubic-bezier(0.16,1,0.3,1) 0.55s backwards; }
 
-  .hero-trust { display: flex; align-items: center; gap: 8px; margin-top: 16px; font-size: 0.86rem; color: var(--muted); }
-  .hero-trust svg { width: 16px; height: 16px; color: var(--accent); flex-shrink: 0; }
-  .hero-trust strong { color: var(--ink-2); }
 
   .save-btn[aria-pressed="true"] svg { animation: pop 0.4s cubic-bezier(0.34,1.56,0.64,1); }
   .saved-chip:not([hidden]) { animation: fade-in 0.3s ease; }
@@ -1281,7 +1235,7 @@
 
   /* One reading width for long prose pages. */
   .page-head p, .section-head p, .faq-a, .mission p, .value-row p { text-wrap: pretty; }
-  .page-head h1, .section-head h2, .hero h1, .mission h2 { text-wrap: balance; }
+  .page-head h1, .section-head h2, .mission h2 { text-wrap: balance; }
 
 
   /* ---------- Launch polish ---------- */
@@ -1311,9 +1265,6 @@
      through the viewport). The individual translate/scale properties
      compose with the entrance transforms above instead of fighting them. */
   [data-plx] { --p: 0; }
-  .hero-visual .hero-photo img { scale: 1.1; translate: 0 calc(var(--p) * -22px); }
-  .hero-visual .pattern-bg { translate: 0 calc(var(--p) * 16px); }
-  .hero-visual .hero-float { translate: 0 calc(var(--p) * -12px); }
   .split-media .arch img { scale: calc(1.02 + (1 - var(--p)) * 0.045); }
 
   /* Page and card-to-dialog transitions (View Transitions API, where supported). */
@@ -1370,7 +1321,7 @@
 
   /* Print: just the content. */
   @media print {
-    .site-nav, .bottom-bar, .to-top, .toast, footer, .cta-band, .hero-visual, .pill-rail, dialog.listing-modal .modal-close { display: none !important; }
+    .site-nav, .bottom-bar, .to-top, .toast, footer, .cta-band, .nl-visual, .pill-rail, dialog.listing-modal .modal-close { display: none !important; }
     body { padding: 0 !important; background: #fff; color: #000; }
     * { animation: none !important; transition: none !important; box-shadow: none !important; }
     .reveal.pre { opacity: 1 !important; transform: none !important; }
@@ -1379,17 +1330,301 @@
 
   @media (prefers-reduced-motion: reduce) {
     .pill-rail { transition: none; }
-    .hero-visual .hero-photo img, .hero-visual .pattern-bg, .hero-visual .hero-float { translate: none; }
-    .hero-visual .hero-photo img, .split-media .arch img { scale: 1; }
+    .split-media .arch img { scale: 1; }
   }
 
   @media (prefers-reduced-motion: reduce) {
     .page:not([hidden]), #results .listing, #featuredGrid .listing, dialog.listing-modal[open],
-    dialog.listing-modal[open]::backdrop, .hero h1, .hero-sub, .hero .search-card, .hero-trust,
-    .hero-visual, .hero-photo img, .hero-float, .save-btn[aria-pressed="true"] svg, .saved-chip,
+    dialog.listing-modal[open]::backdrop, .save-btn[aria-pressed="true"] svg, .saved-chip,
     #resultCount, .form-status.show, :focus-visible, .empty-state.show, .empty-state.show .e-icon { animation: none !important; }
     .listing-art img { transition: none; }
     .faq-a, .to-top, .bottom-bar a, .bottom-bar button { transition: none; }
+  }
+
+  /* ============================================================
+     Homepage: "Noor means light"
+     One orchestrated moment on first load: the NICC star assembles
+     from its two squares around a real photo of the center, a gold
+     outline draws, and light opens up behind it. Everything else on
+     the page answers the visitor (hover, focus, scroll into the
+     owner steps) rather than moving on its own.
+     ============================================================ */
+
+  /* ---------- Hero ---------- */
+  .nl-hero {
+    position: relative; isolation: isolate; overflow: hidden;
+    background: var(--night); color: var(--night-ink); padding: 76px 0 92px;
+  }
+  .nl-hero::before {
+    content: ""; position: absolute; inset: 0; z-index: -2; pointer-events: none;
+    background-image: var(--pattern); background-size: 120px 120px; opacity: 0.08;
+    -webkit-mask-image: radial-gradient(ellipse 70% 80% at 78% 50%, #000 0%, transparent 72%);
+    mask-image: radial-gradient(ellipse 70% 80% at 78% 50%, #000 0%, transparent 72%);
+  }
+  .nl-hero-glow {
+    position: absolute; z-index: -1; pointer-events: none;
+    width: 980px; height: 980px; right: -240px; top: 50%; margin-top: -490px;
+    background: radial-gradient(circle, rgba(242, 199, 107, 0.34) 0%, rgba(226, 174, 74, 0.13) 30%, rgba(226, 174, 74, 0) 62%);
+  }
+  .nl-hero-grid { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr); gap: 64px; align-items: center; }
+  .nl-hero h1 { color: var(--night-ink); font-size: clamp(2.4rem, 1.3rem + 3.4vw, 3.9rem); line-height: 1.04; letter-spacing: -0.018em; }
+  .nl-line { display: block; }
+  .nl-sub { margin-top: 24px; font-size: clamp(1.03rem, 0.96rem + 0.3vw, 1.16rem); line-height: 1.62; color: var(--night-muted); max-width: 50ch; }
+  .nl-hero :focus-visible { outline-color: var(--gold-bright); }
+
+  /* Search: a light card set into the night surface. Outer radius 20 =
+     inner 12 + padding 8, so the fields nest concentrically. */
+  .search-card {
+    margin-top: 34px; background: var(--surface); color: var(--ink);
+    border-radius: 20px; padding: 8px; max-width: 640px;
+    display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr) auto; gap: 4px;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 32px 64px -32px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.12);
+  }
+  .search-field {
+    position: relative; display: flex; align-items: center; gap: 10px; min-width: 0;
+    padding: 14px 14px; border-radius: 12px; transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .search-field + .search-field::before {
+    content: ""; position: absolute; left: -2px; top: 12px; bottom: 12px; width: 1px; background: var(--hairline);
+  }
+  .search-field svg { color: var(--muted); width: 18px; height: 18px; flex-shrink: 0; }
+  .search-field input, .search-field select {
+    border: none; background: none; font: inherit; font-size: 0.98rem; color: var(--ink); width: 100%; min-width: 0; padding: 0;
+  }
+  .search-field select { appearance: none; -webkit-appearance: none; cursor: pointer; text-overflow: ellipsis; }
+  .search-field input:focus, .search-field select:focus { outline: none; }
+  .search-field:focus-within { background: var(--accent-soft); box-shadow: inset 0 0 0 1.5px var(--accent); }
+  .search-field:focus-within::before, .search-field:focus-within + .search-field::before { opacity: 0; }
+  .search-card .btn { border-radius: 12px; padding: 0 24px; min-height: 48px; }
+
+  .nl-hint {
+    position: absolute; left: 42px; right: 12px; top: 50%; transform: translateY(-50%);
+    color: var(--muted); font-size: 0.98rem; pointer-events: none;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: opacity 0.15s ease;
+  }
+  .nl-hint-word { display: inline-block; color: var(--ink-2); font-weight: 600; transition: transform 0.32s var(--ease-out), opacity 0.32s var(--ease-out); }
+  .nl-hint-word.is-out { opacity: 0; transform: translateY(-60%); transition-duration: 0.2s; }
+  .nl-hint-word.is-pre { opacity: 0; transform: translateY(60%); transition: none; }
+  .nl-q:focus-within .nl-hint, .nl-q.has-value .nl-hint { opacity: 0; }
+
+  .nl-popular { margin-top: 20px; display: flex; align-items: center; gap: 10px 12px; flex-wrap: wrap; }
+  .nl-popular-label { font-size: 0.9rem; font-weight: 600; color: var(--night-muted); }
+  .nl-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .nl-chip {
+    font: inherit; font-size: 0.88rem; font-weight: 600; min-height: 40px; padding: 8px 15px;
+    color: var(--night-ink); background: rgba(238, 243, 236, 0.06); border: 1px solid var(--night-line);
+    border-radius: 999px; cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.15s var(--ease-out);
+  }
+  .nl-chip:active { transform: scale(0.97); }
+  @media (hover: hover) and (pointer: fine) {
+    .nl-chip:hover { color: var(--gold-bright); border-color: rgba(242, 199, 107, 0.55); background: rgba(242, 199, 107, 0.08); }
+  }
+
+  /* The star: a square layer and a diamond layer showing the same photo.
+     Their union is the NICC khatim. */
+  .nl-visual { position: relative; margin: 0; justify-self: center; width: min(100%, 520px); }
+  .nl-star { position: relative; aspect-ratio: 1; }
+  .nl-layer { position: absolute; inset: 0; }
+  .nl-layer img { width: 100%; height: 100%; object-fit: cover; object-position: 56% 50%; }
+  .nl-square { clip-path: polygon(14.29% 14.29%, 85.71% 14.29%, 85.71% 85.71%, 14.29% 85.71%); }
+  .nl-diamond { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
+  .nl-outline { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+  .nl-outline path {
+    /* No non-scaling-stroke here: it breaks pathLength-based dashing,
+       which the draw-on animation relies on. 0.3 units is ~1.5px at full size. */
+    fill: none; stroke: var(--gold); stroke-width: 0.3; stroke-linejoin: round;
+    stroke-dasharray: 1; stroke-dashoffset: 0;
+  }
+  .nl-ring { position: absolute; inset: -9%; pointer-events: none; opacity: 0.5; }
+  .nl-ring svg { width: 100%; height: 100%; overflow: visible; transform: rotate(22.5deg); }
+  .nl-ring path { fill: none; stroke: var(--sage); stroke-width: 1; vector-effect: non-scaling-stroke; stroke-dasharray: 2 6; }
+  .nl-visual figcaption { margin-top: 22px; text-align: center; font-size: 0.86rem; color: var(--night-muted); }
+
+  /* First-load sequence. JS adds .nl-played after it finishes so the
+     star doesn't rebuild every time someone navigates back home. */
+  @keyframes nl-rise { from { opacity: 0; transform: translateY(18px); } }
+  @keyframes nl-fade { from { opacity: 0; } }
+  @keyframes nl-square-in {
+    from { clip-path: polygon(50% 50%, 50% 50%, 50% 50%, 50% 50%); }
+  }
+  @keyframes nl-diamond-in {
+    0% { clip-path: polygon(50% 50%, 50% 50%, 50% 50%, 50% 50%); animation-timing-function: cubic-bezier(0.19, 1, 0.22, 1); }
+    40% { clip-path: polygon(14.29% 14.29%, 85.71% 14.29%, 85.71% 85.71%, 14.29% 85.71%); animation-timing-function: cubic-bezier(0.645, 0.045, 0.355, 1); }
+    100% { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
+  }
+  @keyframes nl-draw { from { stroke-dashoffset: 1; } }
+  @keyframes nl-glow { from { opacity: 0; transform: scale(0.7); } }
+  @keyframes nl-spin { to { transform: rotate(382.5deg); } }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .nl-hero:not(.nl-played) .nl-line:nth-child(1) { animation: nl-rise 0.8s var(--ease-out-expo) 0.1s backwards; }
+    .nl-hero:not(.nl-played) .nl-line:nth-child(2) { animation: nl-rise 0.8s var(--ease-out-expo) 0.2s backwards; }
+    .nl-hero:not(.nl-played) .nl-sub { animation: nl-rise 0.8s var(--ease-out-expo) 0.32s backwards; }
+    .nl-hero:not(.nl-played) .search-card { animation: nl-rise 0.8s var(--ease-out-expo) 0.44s backwards; }
+    .nl-hero:not(.nl-played) .nl-popular { animation: nl-fade 0.8s ease-out 0.62s backwards; }
+    .nl-hero:not(.nl-played) .nl-square { animation: nl-square-in 0.6s var(--ease-out-expo) 0.15s backwards; }
+    .nl-hero:not(.nl-played) .nl-diamond { animation: nl-diamond-in 1.5s 0.15s backwards; }
+    .nl-hero:not(.nl-played) .nl-outline path { animation: nl-draw 1.2s var(--ease-in-out) 1.25s backwards; }
+    .nl-hero:not(.nl-played) .nl-hero-glow { animation: nl-glow 1.8s var(--ease-out) 1.1s backwards; }
+    .nl-hero:not(.nl-played) .nl-visual figcaption { animation: nl-fade 0.8s ease-out 1.8s backwards; }
+    .nl-hero:not(.nl-played) .nl-ring { animation: nl-fade 1s ease-out 1.6s backwards; }
+    .nl-ring svg { animation: nl-spin 160s linear infinite; }
+  }
+
+  @media (max-width: 960px) {
+    .nl-hero { padding: 52px 0 64px; }
+    .nl-hero-grid { grid-template-columns: 1fr; gap: 48px; }
+    .nl-visual { width: min(82%, 420px); }
+    .nl-hero-glow { right: 50%; margin-right: -490px; top: auto; bottom: -560px; margin-top: 0; }
+  }
+  @media (max-width: 640px) {
+    .search-card { grid-template-columns: 1fr; }
+    .search-field + .search-field::before { left: 12px; right: 12px; top: -2px; bottom: auto; width: auto; height: 1px; }
+    .search-card .btn { width: 100%; margin-top: 4px; }
+  }
+
+  /* ---------- What this is ---------- */
+  section.nl-facts { padding: 0; background: var(--surface); border-bottom: 1px solid var(--hairline); }
+  .nl-facts-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .nl-fact { display: flex; gap: 14px; padding: 32px 28px; }
+  .nl-fact + .nl-fact { border-left: 1px solid var(--hairline); }
+  .nl-fact:first-child { padding-left: 0; }
+  .nl-fact > svg { width: 18px; height: 18px; color: var(--sage-deep); flex-shrink: 0; margin-top: 2px; }
+  .nl-fact h2 { font-family: var(--font-body); font-weight: 700; font-size: 1.02rem; letter-spacing: 0; line-height: 1.3; }
+  .nl-fact p { margin-top: 5px; color: var(--muted); font-size: 0.94rem; line-height: 1.55; max-width: 36ch; }
+  @media (max-width: 860px) {
+    .nl-facts-row { grid-template-columns: 1fr; }
+    .nl-fact, .nl-fact:first-child { padding: 22px 0; }
+    .nl-fact + .nl-fact { border-left: none; border-top: 1px solid var(--hairline); }
+  }
+
+  /* ---------- Shared homepage section head ---------- */
+  .nl-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px 32px; flex-wrap: wrap; margin-bottom: 36px; }
+  .nl-head h2 { font-size: clamp(1.95rem, 1.3rem + 1.9vw, 2.75rem); }
+  .nl-head-sub { margin-top: 10px; color: var(--muted); max-width: 52ch; }
+
+  /* ---------- Categories: a typographic index ---------- */
+  section.nl-cats { padding: 88px 0 72px; }
+  .nl-cat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 48px; border-top: 1px solid var(--hairline); }
+  .nl-cat {
+    display: flex; align-items: center; gap: 18px; width: 100%; text-align: left; cursor: pointer;
+    font: inherit; color: var(--ink); background: none; border: none; border-bottom: 1px solid var(--hairline);
+    padding: 20px 4px;
+  }
+  .nl-cat-icon {
+    width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--accent-soft); color: var(--accent);
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  .nl-cat-icon svg { width: 22px; height: 22px; }
+  .nl-cat-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+  .nl-cat-name { font-family: var(--font-display); font-size: 1.32rem; line-height: 1.2; }
+  .nl-cat-eg { color: var(--muted); font-size: 0.92rem; }
+  .nl-cat-arrow { width: 20px; height: 20px; color: var(--accent); opacity: 0; transform: translateX(-8px); transition: opacity 0.2s ease, transform 0.25s var(--ease-out); }
+  .nl-cat:focus-visible { outline-offset: -2px; border-radius: 12px; }
+  .nl-cat:focus-visible .nl-cat-arrow { opacity: 1; transform: none; }
+  .nl-cat:focus-visible .nl-cat-icon { background: var(--accent); color: var(--accent-ink); }
+  @media (hover: hover) and (pointer: fine) {
+    .nl-cat:hover .nl-cat-icon { background: var(--accent); color: var(--accent-ink); }
+    .nl-cat:hover .nl-cat-arrow { opacity: 1; transform: none; }
+  }
+  @media (max-width: 760px) {
+    section.nl-cats { padding: 64px 0 48px; }
+    .nl-cat-grid { grid-template-columns: 1fr; }
+    .nl-cat-arrow { opacity: 1; transform: none; }
+  }
+
+  /* ---------- Featured ---------- */
+  section.nl-featured { padding: 40px 0 88px; }
+  section.nl-featured[hidden] { display: none; }
+
+  /* ---------- Business owners ---------- */
+  section.nl-owners { padding: 0 0 96px; }
+  .nl-owners-panel {
+    position: relative; isolation: isolate; overflow: hidden;
+    background: var(--night); color: var(--night-ink); border-radius: 28px;
+    padding: clamp(36px, 5vw, 68px);
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 56px; align-items: center;
+  }
+  .nl-owners-panel::before {
+    content: ""; position: absolute; inset: 0; z-index: -2; pointer-events: none;
+    background-image: var(--pattern); background-size: 96px 96px; opacity: 0.07;
+  }
+  .nl-owners-panel::after {
+    content: ""; position: absolute; z-index: -1; pointer-events: none; width: 720px; height: 720px; left: -260px; bottom: -420px;
+    background: radial-gradient(circle, rgba(242, 199, 107, 0.26) 0%, rgba(226, 174, 74, 0) 62%);
+  }
+  .nl-owners-panel :focus-visible { outline-color: var(--gold-bright); }
+  .nl-owners h2 { color: var(--night-ink); font-size: clamp(1.95rem, 1.3rem + 1.9vw, 2.75rem); max-width: 16ch; }
+  .nl-owners-copy > p { margin-top: 18px; color: var(--night-muted); font-size: 1.05rem; max-width: 46ch; }
+  .nl-owners-actions { display: flex; align-items: center; gap: 14px 24px; flex-wrap: wrap; margin-top: 30px; }
+  .btn-gold { background: var(--gold); color: var(--gold-ink); }
+  @media (hover: hover) and (pointer: fine) {
+    .btn-gold:hover { background: var(--gold-bright); transform: translateY(-2px); box-shadow: 0 14px 28px -12px rgba(226, 174, 74, 0.55); }
+  }
+  .nl-link-light {
+    color: var(--night-ink); font-weight: 600; text-decoration: underline; text-underline-offset: 4px;
+    text-decoration-color: rgba(238, 243, 236, 0.35); transition: text-decoration-color 0.2s ease;
+  }
+  .nl-link-light:hover { text-decoration-color: var(--gold-bright); }
+
+  /* A real sequence, so it's numbered. A gold line runs down through the
+     steps when the panel scrolls into view, lighting each one in turn. */
+  .nl-steps { list-style: none; margin: 0; padding: 0; position: relative; display: flex; flex-direction: column; gap: 30px; }
+  .nl-steps::before, .nl-steps::after {
+    content: ""; position: absolute; left: 19px; top: 20px; bottom: 20px; width: 2px; border-radius: 2px;
+  }
+  .nl-steps::before { background: var(--night-line); }
+  .nl-steps::after { background: var(--gold); transform: scaleY(0); transform-origin: top; transition: transform 1.3s var(--ease-in-out) 0.15s; }
+  .nl-steps.is-in::after { transform: scaleY(1); }
+  .nl-step { position: relative; z-index: 1; display: flex; gap: 18px; }
+  .nl-step-dot {
+    width: 40px; height: 40px; border-radius: 999px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.95rem; font-variant-numeric: tabular-nums;
+    background: var(--night-2); color: var(--night-muted); border: 1.5px solid var(--night-line);
+    transition: background-color 0.35s ease, border-color 0.35s ease, color 0.35s ease, transform 0.35s var(--ease-out);
+  }
+  .nl-steps.is-in .nl-step-dot { background: var(--gold); border-color: var(--gold); color: var(--gold-ink); }
+  .nl-steps.is-in .nl-step:nth-child(1) .nl-step-dot { transition-delay: 0.1s; }
+  .nl-steps.is-in .nl-step:nth-child(2) .nl-step-dot { transition-delay: 0.75s; }
+  .nl-steps.is-in .nl-step:nth-child(3) .nl-step-dot { transition-delay: 1.4s; }
+  .nl-step h3 { color: var(--night-ink); font-size: 1.1rem; padding-top: 8px; }
+  .nl-step p { margin-top: 5px; color: var(--night-muted); font-size: 0.96rem; max-width: 40ch; }
+  @media (max-width: 900px) {
+    section.nl-owners { padding-bottom: 72px; }
+    .nl-owners-panel { grid-template-columns: 1fr; gap: 40px; border-radius: 24px; }
+  }
+
+  /* ---------- Noor means light ---------- */
+  section.nl-noor { padding: 24px 0 104px; }
+  .nl-noor-grid { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 24px 64px; align-items: center; max-width: 1000px; }
+  .nl-noor-word { font-family: "Amiri", serif; font-weight: 700; font-size: clamp(6.5rem, 4rem + 9vw, 11.5rem); line-height: 1; color: var(--sage-deep); padding: 0 8px; }
+  .nl-noor h2 { font-size: clamp(1.95rem, 1.3rem + 1.9vw, 2.75rem); }
+  .nl-noor-copy > p { margin-top: 16px; color: var(--ink-2); font-size: 1.06rem; line-height: 1.65; max-width: 56ch; }
+  .nl-noor-copy > p.nl-noor-note { color: var(--muted); font-size: 0.94rem; }
+  .nl-noor-copy .text-link { margin-top: 22px; }
+  @media (max-width: 760px) {
+    section.nl-noor { padding: 8px 0 80px; }
+    .nl-noor-grid { grid-template-columns: 1fr; }
+    .nl-noor-word { padding: 0; }
+  }
+
+  /* ---------- Footer: the night surface again, bookending the hero ---------- */
+  footer {
+    background: var(--night); border-top: none; color: var(--night-ink);
+    --ink: var(--night-ink); --ink-2: #C9D6CD; --muted: var(--night-muted);
+    --hairline: var(--night-line); --ground: rgba(238, 243, 236, 0.06);
+    --accent: var(--gold); --accent-ink: var(--gold-ink); --accent-soft: rgba(242, 199, 107, 0.18);
+    --focus: var(--gold-bright);
+  }
+  footer .brand { color: var(--night-ink); }
+  footer .footer-col a:hover, footer .footer-legal a:hover { color: var(--gold-bright); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nl-hint-word, .nl-chip, .nl-cat-icon, .nl-cat-arrow, .nl-steps::after, .nl-step-dot, .btn-gold, .nl-link-light { transition: none; }
   }
 </style>
 
@@ -1445,18 +1680,13 @@
   <symbol id="i-rows" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="5" rx="1.5"/><rect x="4" y="14" width="16" height="5" rx="1.5"/></symbol>
   <symbol id="i-square" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="12" cy="12" r="3.2"/></symbol>
   <symbol id="i-wave" viewBox="0 0 24 24"><path d="M3 12c2-4 4-4 6 0s4 4 6 0 4-4 6 0"/></symbol>
+  <symbol id="i-utensils" viewBox="0 0 24 24"><path d="M5 3v5a2.5 2.5 0 0 0 5 0V3M7.5 3v18"/><path d="M18 21V3c-2.2 1.2-3.5 4-3.5 7.5V14H18"/></symbol>
+  <symbol id="i-health" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><path d="M12 8.5v7M8.5 12h7"/></symbol>
   <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v3M12 18.5v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2.5 12h3M18.5 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></symbol>
   <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5z"/></symbol>
 </svg>
 
 <a class="skip-link" href="#main">Skip to content</a>
-
-<div class="announce">
-  <div class="wrap">
-    <span>A growing directory for Columbus's halal-friendly and Muslim-owned businesses.</span>
-    <a href="#/explore" data-route="explore">Browse the directory <svg class="icon"><use href="#i-arrow-right"/></svg></a>
-  </div>
-</div>
 
 <header class="site-nav">
   <div class="wrap nav-inner">
@@ -1503,19 +1733,21 @@
 
   <!-- ============ HOME ============ -->
   <div class="page" id="page-home">
-    <section class="hero">
-      <div class="wrap hero-grid">
-        <div>
-          <h1>Find Muslim-owned and halal-friendly businesses in Columbus.</h1>
-          <p class="hero-sub">A community directory for Muslim owned and halal friendly restaurants, shops, and services across central Ohio.</p>
+    <section class="nl-hero" aria-labelledby="homeTitle">
+      <div class="nl-hero-glow" aria-hidden="true"></div>
+      <div class="wrap nl-hero-grid">
+        <div class="nl-hero-copy">
+          <h1 id="homeTitle"><span class="nl-line">The Noor community&rsquo;s</span> <span class="nl-line">guide to local businesses.</span></h1>
+          <p class="nl-sub">Muslim-owned and halal-friendly restaurants, grocers, clinics and services across Columbus, gathered by volunteers from the Noor Islamic Cultural Center (NICC).</p>
           <form class="search-card" role="search" aria-label="Find a business" id="heroSearch">
-            <label class="search-field">
-              <svg class="icon"><use href="#i-search"/></svg>
+            <label class="search-field nl-q">
+              <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
               <span class="sr-only">What are you looking for</span>
-              <input type="text" placeholder="What are you looking for?" id="heroQuery">
+              <input type="text" id="heroQuery" autocomplete="off" enterkeyhint="search">
+              <span class="nl-hint" aria-hidden="true">Try <span class="nl-hint-word" id="heroHintWord">a halal butcher</span></span>
             </label>
             <label class="search-field">
-              <svg class="icon"><use href="#i-tag"/></svg>
+              <svg class="icon" aria-hidden="true"><use href="#i-tag"/></svg>
               <span class="sr-only">Category</span>
               <select id="heroCategory">
                 <option value="">Any category</option>
@@ -1529,153 +1761,111 @@
                 <option>Auto &amp; Repair</option>
               </select>
             </label>
-            <button type="submit" class="btn btn-primary"><svg class="icon"><use href="#i-search"/></svg> Search</button>
+            <button type="submit" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg> Search</button>
           </form>
-          <p class="hero-trust" id="heroTrust"><svg class="icon"><use href="#i-users"/></svg><span>Listings come from the owners. A volunteer reads each one before it appears.</span></p>
-        </div>
-        <div class="hero-visual" data-plx>
-          <div class="pattern-bg"></div>
-          <div class="arch hero-photo"><picture><source type="image/webp" srcset="images/hero-meal.webp"><img src="images/hero-meal.jpg" width="1200" height="1800" fetchpriority="high" decoding="async" alt="A spread of grilled halal meats, vegetables and sauces"></picture></div>
-          <div class="hero-float">
-            <span class="badge-icon"><svg class="icon"><use href="#i-users"/></svg></span>
-            <div>
-              <strong>Community run</strong>
-              <p>Volunteers read every listing before it goes live.</p>
+          <div class="nl-popular">
+            <span class="nl-popular-label" id="popularLabel">Popular:</span>
+            <div class="nl-chips" role="group" aria-labelledby="popularLabel">
+              <button class="nl-chip" type="button" data-quick-cat="Restaurants">Restaurants</button>
+              <button class="nl-chip" type="button" data-quick-cat="Grocery">Grocery</button>
+              <button class="nl-chip" type="button" data-quick-cat="Modest Wear">Modest wear</button>
+              <button class="nl-chip" type="button" data-quick-cat="Education">Quran &amp; tutoring</button>
+              <button class="nl-chip" type="button" data-quick-badge="women">Women owned</button>
             </div>
           </div>
         </div>
+
+        <figure class="nl-visual">
+          <div class="nl-ring" aria-hidden="true">
+            <svg viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M50 0 L64.29 14.29 L85.71 14.29 L85.71 35.71 L100 50 L85.71 64.29 L85.71 85.71 L64.29 85.71 L50 100 L35.71 85.71 L14.29 85.71 L14.29 64.29 L0 50 L14.29 35.71 L14.29 14.29 L35.71 14.29 Z"/></svg>
+          </div>
+          <div class="nl-star">
+            <div class="nl-layer nl-square"><picture><source type="image/webp" srcset="images/nicc-aerial.webp"><img src="images/nicc-aerial.jpg" width="1800" height="1013" fetchpriority="high" decoding="async" alt="Aerial view of the Noor Islamic Cultural Center, its two domes and pond, in Columbus"></picture></div>
+            <div class="nl-layer nl-diamond" aria-hidden="true"><picture><source type="image/webp" srcset="images/nicc-aerial.webp"><img src="images/nicc-aerial.jpg" width="1800" height="1013" decoding="async" alt=""></picture></div>
+            <svg class="nl-outline" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M50 0 L64.29 14.29 L85.71 14.29 L85.71 35.71 L100 50 L85.71 64.29 L85.71 85.71 L64.29 85.71 L50 100 L35.71 85.71 L14.29 85.71 L14.29 64.29 L0 50 L14.29 35.71 L14.29 14.29 L35.71 14.29 Z"/></svg>
+          </div>
+          <figcaption>The Noor Islamic Cultural Center, Columbus</figcaption>
+        </figure>
       </div>
     </section>
 
-    <section class="tight">
-      <div class="wrap">
-        <div class="pill-rail">
-          <button class="pill" data-quick-cat="Restaurants"><svg class="icon"><use href="#i-heart"/></svg> Restaurants</button>
-          <button class="pill" data-quick-cat="Grocery"><svg class="icon"><use href="#i-basket"/></svg> Grocery</button>
-          <button class="pill" data-quick-cat="Modest Wear"><svg class="icon"><use href="#i-shirt"/></svg> Modest wear</button>
-          <button class="pill" data-quick-badge="community"><svg class="icon"><use href="#i-mosque"/></svg> Community clinic</button>
-          <button class="pill" data-quick-cat="Education"><svg class="icon"><use href="#i-book"/></svg> Quran &amp; tutoring</button>
-          <button class="pill" data-quick-badge="women"><svg class="icon"><use href="#i-users"/></svg> Women owned</button>
+    <section class="nl-facts" aria-label="How the directory works">
+      <div class="wrap nl-facts-row">
+        <div class="nl-fact">
+          <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#i-star-mark"/></svg>
+          <div><h2>Free for everyone</h2><p>Browse and save listings without an account. Listing a business is free too.</p></div>
+        </div>
+        <div class="nl-fact">
+          <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#i-star-mark"/></svg>
+          <div><h2>Read by a volunteer</h2><p>Owners write their own listings. An NICC volunteer reads every one before it appears.</p></div>
+        </div>
+        <div class="nl-fact">
+          <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#i-star-mark"/></svg>
+          <div><h2>Honest placement</h2><p>Badges can&rsquo;t be bought, and sponsored listings are always labeled.</p></div>
         </div>
       </div>
     </section>
 
-    <section>
+    <section class="nl-cats" aria-labelledby="catsTitle">
       <div class="wrap">
-        <div class="section-head">
-          <h2>Featured this month.</h2>
-          <p>Businesses the community keeps coming back to.</p>
+        <div class="nl-head">
+          <h2 id="catsTitle">Browse by category</h2>
+          <a class="text-link" href="#/explore" data-route="explore">See all businesses <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+        </div>
+        <div class="nl-cat-grid">
+          <button class="nl-cat" type="button" data-quick-cat="Restaurants"><span class="nl-cat-icon"><svg class="icon" aria-hidden="true"><use href="#i-utensils"/></svg></span><span class="nl-cat-text"><span class="nl-cat-name">Restaurants</span><span class="nl-cat-eg">Levantine, Somali, Desi, Turkish and more</span></span><svg class="icon nl-cat-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+          <button class="nl-cat" type="button" data-quick-cat="Grocery"><span class="nl-cat-icon"><svg class="icon" aria-hidden="true"><use href="#i-basket"/></svg></span><span class="nl-cat-text"><span class="nl-cat-name">Grocery</span><span class="nl-cat-eg">Halal butchers and international markets</span></span><svg class="icon nl-cat-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+          <button class="nl-cat" type="button" data-quick-cat="Modest Wear"><span class="nl-cat-icon"><svg class="icon" aria-hidden="true"><use href="#i-shirt"/></svg></span><span class="nl-cat-text"><span class="nl-cat-name">Modest Wear</span><span class="nl-cat-eg">Abayas, thobes and hijabs</span></span><svg class="icon nl-cat-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+          <button class="nl-cat" type="button" data-quick-cat="Education"><span class="nl-cat-icon"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg></span><span class="nl-cat-text"><span class="nl-cat-name">Education</span><span class="nl-cat-eg">Quran classes, tutoring and weekend school</span></span><svg class="icon nl-cat-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+          <button class="nl-cat" type="button" data-quick-cat="Health &amp; Wellness"><span class="nl-cat-icon"><svg class="icon" aria-hidden="true"><use href="#i-health"/></svg></span><span class="nl-cat-text"><span class="nl-cat-name">Health &amp; Wellness</span><span class="nl-cat-eg">Clinics, dentists and pharmacies</span></span><svg class="icon nl-cat-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+          <button class="nl-cat" type="button" data-quick-cat="Professional Services"><span class="nl-cat-icon"><svg class="icon" aria-hidden="true"><use href="#i-briefcase"/></svg></span><span class="nl-cat-text"><span class="nl-cat-name">Professional Services</span><span class="nl-cat-eg">Tax, legal, insurance and real estate</span></span><svg class="icon nl-cat-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+          <button class="nl-cat" type="button" data-quick-cat="Home &amp; Living"><span class="nl-cat-icon"><svg class="icon" aria-hidden="true"><use href="#i-sofa"/></svg></span><span class="nl-cat-text"><span class="nl-cat-name">Home &amp; Living</span><span class="nl-cat-eg">Furniture, contractors and repair</span></span><svg class="icon nl-cat-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+          <button class="nl-cat" type="button" data-quick-cat="Auto &amp; Repair"><span class="nl-cat-icon"><svg class="icon" aria-hidden="true"><use href="#i-car"/></svg></span><span class="nl-cat-text"><span class="nl-cat-name">Auto &amp; Repair</span><span class="nl-cat-eg">Mechanics, body shops and detailing</span></span><svg class="icon nl-cat-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="nl-featured" id="featuredSection" aria-labelledby="featuredTitle">
+      <div class="wrap">
+        <div class="nl-head">
+          <div>
+            <h2 id="featuredTitle">Featured businesses</h2>
+            <p class="nl-head-sub" id="featuredSub">A few places worth knowing about. Sponsored ones are always labeled.</p>
+          </div>
+          <a class="text-link" href="#/explore" data-route="explore">See all businesses <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
         </div>
         <div class="listing-grid" id="featuredGrid"></div>
-        <p style="margin-top:26px"><a class="text-link" href="#/explore" data-route="explore">See every listing <svg class="icon"><use href="#i-arrow-right"/></svg></a></p>
       </div>
     </section>
 
-    <section>
+    <section class="nl-owners" aria-labelledby="ownersTitle">
       <div class="wrap">
-        <div class="section-head">
-          <h2>Explore by category.</h2>
-          <p>Eight starting points, built around how the community actually shops.</p>
-        </div>
-        <div class="category-layout">
-          <button class="category-photo" data-quick-cat="Restaurants">
-            <picture><source type="image/webp" srcset="images/category-restaurants.webp"><img loading="lazy" decoding="async" src="images/category-restaurants.jpg" width="780" height="780" alt="Lentil soup, hummus, tabbouleh and flatbread on a table"></picture>
-            <span class="cat-icon"><svg class="icon"><use href="#i-heart"/></svg></span>
-            <h3>Restaurants</h3>
-            <span>Levantine, Somali, Desi, Turkish, and more</span>
-          </button>
-          <div class="cat-list reveal">
-            <button class="cat-row" data-quick-cat="Grocery"><span class="cat-icon"><svg class="icon"><use href="#i-basket"/></svg></span><div><h3>Grocery</h3><span>Butchers and markets</span></div></button>
-            <button class="cat-row" data-quick-cat="Modest Wear"><span class="cat-icon"><svg class="icon"><use href="#i-shirt"/></svg></span><div><h3>Modest Wear</h3><span>Abayas, thobes, hijabs</span></div></button>
-            <button class="cat-row" data-quick-cat="Education"><span class="cat-icon"><svg class="icon"><use href="#i-book"/></svg></span><div><h3>Education</h3><span>Quran, tutoring, weekend school</span></div></button>
-            <button class="cat-row" data-quick-cat="Health &amp; Wellness"><span class="cat-icon"><svg class="icon"><use href="#i-heart"/></svg></span><div><h3>Health &amp; Wellness</h3><span>Clinics and dentists</span></div></button>
-            <button class="cat-row" data-quick-cat="Professional Services"><span class="cat-icon"><svg class="icon"><use href="#i-briefcase"/></svg></span><div><h3>Professional Services</h3><span>Tax, legal, insurance</span></div></button>
-            <button class="cat-row" data-quick-cat="Home &amp; Living"><span class="cat-icon"><svg class="icon"><use href="#i-sofa"/></svg></span><div><h3>Home &amp; Living</h3><span>Furniture and repair</span></div></button>
-            <button class="cat-row" data-quick-cat="Auto &amp; Repair"><span class="cat-icon"><svg class="icon"><use href="#i-car"/></svg></span><div><h3>Auto &amp; Repair</h3><span>Mechanics and detailing</span></div></button>
+        <div class="nl-owners-panel">
+          <div class="nl-owners-copy">
+            <h2 id="ownersTitle">Own a business? Let your neighbors find you.</h2>
+            <p>Listing is free. Add your hours, photos and contact details, then keep them current and reply to reviews from your own account.</p>
+            <div class="nl-owners-actions">
+              <a href="#/list" data-route="list" class="btn btn-gold">List your business</a>
+              <a href="#/faq" data-route="faq" class="nl-link-light">Read the owner FAQ</a>
+            </div>
           </div>
+          <ol class="nl-steps" id="ownerSteps">
+            <li class="nl-step"><span class="nl-step-dot" aria-hidden="true">1</span><div><h3>Tell us about your business</h3><p>Name, category, neighborhood and a short description. It takes a few minutes.</p></div></li>
+            <li class="nl-step"><span class="nl-step-dot" aria-hidden="true">2</span><div><h3>A volunteer reads it</h3><p>Someone who knows your part of the city checks the details, usually within two business days.</p></div></li>
+            <li class="nl-step"><span class="nl-step-dot" aria-hidden="true">3</span><div><h3>Your listing goes live</h3><p>Neighbors can find you in search, and you can edit your listing yourself any time.</p></div></li>
+          </ol>
         </div>
       </div>
     </section>
 
-    <div class="star-divider" aria-hidden="true">
-      <svg viewBox="0 0 100 100"><use href="#i-star-mark"/></svg>
-      <svg viewBox="0 0 100 100"><use href="#i-star-mark"/></svg>
-      <svg viewBox="0 0 100 100"><use href="#i-star-mark"/></svg>
-      <svg viewBox="0 0 100 100" class="mark"><use href="#i-star-mark"/></svg>
-      <svg viewBox="0 0 100 100"><use href="#i-star-mark"/></svg>
-      <svg viewBox="0 0 100 100"><use href="#i-star-mark"/></svg>
-      <svg viewBox="0 0 100 100"><use href="#i-star-mark"/></svg>
-    </div>
-
-    <section class="steps-band">
-      <div class="wrap">
-        <div class="section-head"><h2>Finding the right place takes three steps.</h2></div>
-        <div class="steps-row">
-          <div class="step reveal">
-            <span class="step-index">01</span>
-            <div class="step-num"><svg class="icon"><use href="#i-search"/></svg></div>
-            <h3>Search your neighborhood</h3>
-            <p>Filter by category, part of the city, and the things that matter to your family.</p>
-          </div>
-          <div class="step reveal">
-            <span class="step-index">02</span>
-            <div class="step-num"><svg class="icon"><use href="#i-shield"/></svg></div>
-            <h3>Check the details</h3>
-            <p>Open a listing to see its badges, hours, reviews, and how to reach the business.</p>
-          </div>
-          <div class="step reveal">
-            <span class="step-index">03</span>
-            <div class="step-num"><svg class="icon"><use href="#i-arrow-right"/></svg></div>
-            <h3>Visit or reach out</h3>
-            <p>Hours, area, and contact details sit on every listing.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section>
-      <div class="wrap split">
-        <div data-plx class="split-media reveal">
-          <div class="pattern-bg"></div>
-          <div class="arch"><picture><source type="image/webp" srcset="images/community.webp"><img loading="lazy" decoding="async" src="images/community.jpg" width="760" height="950" alt="A bowl of dates beside a lit candle"></picture></div>
-        </div>
-        <div>
-          <h2 style="font-size:clamp(1.6rem,1.2rem + 1.4vw,2.3rem)">Built for this community, not for ad revenue.</h2>
-          <div class="value-list">
-            <div class="value-item">
-              <span class="v-icon"><svg class="icon"><use href="#i-shield"/></svg></span>
-              <div><h3>Read by volunteers</h3><p>Every listing is read by a community volunteer before it appears, and you can contact us about anything that looks wrong.</p></div>
-            </div>
-            <div class="value-item">
-              <span class="v-icon"><svg class="icon"><use href="#i-mosque"/></svg></span>
-              <div><h3>Filters that matter here</h3><p>Prayer space, women owned, family run, and community service are filters, not footnotes buried in a description.</p></div>
-            </div>
-            <div class="value-item">
-              <span class="v-icon"><svg class="icon"><use href="#i-storefront"/></svg></span>
-              <div><h3>Small businesses first</h3><p>National chains do not outrank the family shop that has been on the same corner for a decade.</p></div>
-            </div>
-            <div class="value-item">
-              <span class="v-icon"><svg class="icon"><use href="#i-users"/></svg></span>
-              <div><h3>Reviews from neighbors</h3><p>Reviews are moderated by people who know the area, and owners can reply in public.</p></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section>
-      <div class="wrap">
-        <div class="cta-band reveal">
-          <div class="cta-inner">
-            <div>
-              <h2>Ready for more neighbors to find you?</h2>
-              <p>Add your business in a few minutes. Listing is free while the directory is growing.</p>
-            </div>
-            <div class="cta-actions">
-              <a href="#/list" data-route="list" class="btn btn-on-accent">List your business</a>
-              <a href="#/explore" data-route="explore" class="btn btn-outline-light">Browse the directory</a>
-            </div>
-          </div>
+    <section class="nl-noor" aria-labelledby="noorTitle">
+      <div class="wrap nl-noor-grid">
+        <p class="nl-noor-word arabic" lang="ar" aria-hidden="true">&#1606;&#1608;&#1585;</p>
+        <div class="nl-noor-copy">
+          <h2 id="noorTitle">Noor means light.</h2>
+          <p>Finding the right butcher, clinic or tutor shouldn&rsquo;t take three group chats and a drive across town. NICC Business is a small volunteer project that makes those answers easy to find and honest to trust.</p>
+          <p class="nl-noor-note">We&rsquo;re a directory, not a halal certifier. Owners describe their own businesses, so ask each one about its sourcing.</p>
+          <a class="text-link" href="#/about" data-route="about">About the project <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
         </div>
       </div>
     </section>
@@ -2863,7 +3053,22 @@
 
   function renderListingCollections() {
     if (featuredGrid) {
-      featuredGrid.innerHTML = featuredListings().map(cardHtml).join("");
+      // With no picks or sponsors yet, show the newest listings instead of
+      // an empty heading; hide the section entirely if there's nothing.
+      var feat = featuredListings();
+      var featSection = document.getElementById("featuredSection");
+      var featTitle = document.getElementById("featuredTitle");
+      var featSub = document.getElementById("featuredSub");
+      if (feat.length) {
+        if (featTitle) featTitle.textContent = "Featured businesses";
+        if (featSub) featSub.textContent = "A few places worth knowing about. Sponsored ones are always labeled.";
+      } else {
+        feat = LISTINGS.slice().sort(function (a, b) { return String(b.created || "").localeCompare(String(a.created || "")); }).slice(0, 3);
+        if (featTitle) featTitle.textContent = "New in the directory";
+        if (featSub) featSub.textContent = "The latest businesses to join, each read by a volunteer first.";
+      }
+      if (featSection) featSection.hidden = feat.length === 0;
+      featuredGrid.innerHTML = feat.map(cardHtml).join("");
     }
     if (results) {
       results.innerHTML = LISTINGS.map(cardHtml).join("");
@@ -3535,6 +3740,61 @@
   });
 
   /* ============ Hero search hands off to Explore ============ */
+  /* ============ Homepage: intro once, rotating search examples, owner steps ============ */
+  (function () {
+    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // The star assembles on first view only; after that, coming back home is instant.
+    var hero = document.querySelector(".nl-hero");
+    var outline = hero && hero.querySelector(".nl-outline path");
+    if (hero) {
+      if (reduce || !outline) hero.classList.add("nl-played");
+      else outline.addEventListener("animationend", function () { hero.classList.add("nl-played"); }, { once: true });
+    }
+
+    // Real examples cycle in the empty search box so people see what they can find.
+    var q = document.getElementById("heroQuery");
+    var qLabel = q && q.closest(".nl-q");
+    var word = document.getElementById("heroHintWord");
+    if (q && qLabel) {
+      var syncHint = function () { qLabel.classList.toggle("has-value", q.value.trim() !== ""); };
+      q.addEventListener("input", syncHint);
+      syncHint();
+    }
+    if (q && word && !reduce) {
+      var examples = ["a halal butcher", "a family dentist", "a Quran tutor", "modest wear", "a tax preparer", "a mechanic", "Somali food"];
+      var exIndex = 0;
+      setInterval(function () {
+        var home = document.getElementById("page-home");
+        if (document.hidden || !home || home.hidden || q.value || document.activeElement === q) return;
+        word.classList.add("is-out");
+        setTimeout(function () {
+          exIndex = (exIndex + 1) % examples.length;
+          word.textContent = examples[exIndex];
+          word.classList.remove("is-out");
+          word.classList.add("is-pre");
+          void word.offsetWidth;
+          word.classList.remove("is-pre");
+        }, 200);
+      }, 2800);
+    }
+
+    // The owner steps light up in order when the panel scrolls into view.
+    var steps = document.getElementById("ownerSteps");
+    if (steps) {
+      if (reduce || !("IntersectionObserver" in window)) {
+        steps.classList.add("is-in");
+      } else {
+        var stepsIo = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) { steps.classList.add("is-in"); stepsIo.disconnect(); }
+          });
+        }, { threshold: 0.45 });
+        stepsIo.observe(steps);
+      }
+    }
+  })();
+
   var heroSearch = document.getElementById("heroSearch");
   if (heroSearch) {
     var heroQueryInput = document.getElementById("heroQuery");

@@ -6,11 +6,11 @@
   // already in noor-business.html. Kept here so a business's card icon
   // follows its category without storing a redundant column in the DB.
   var CATEGORY_ICONS = {
-    "Restaurants": "i-heart",
+    "Restaurants": "i-utensils",
     "Grocery": "i-basket",
     "Modest Wear": "i-shirt",
     "Education": "i-book",
-    "Health & Wellness": "i-heart",
+    "Health & Wellness": "i-health",
     "Professional Services": "i-briefcase",
     "Home & Living": "i-sofa",
     "Auto & Repair": "i-car"
