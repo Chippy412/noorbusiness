@@ -21,8 +21,7 @@ function page(title, desc, canonical, image, jsonLd, body, status) {
     '<meta property="og:url" content="' + h.esc(canonical) + '"><meta property="og:image" content="' + h.esc(image) + '">' +
     '<meta name="twitter:card" content="summary_large_image">' +
     (jsonLd ? '<script type="application/ld+json">' + JSON.stringify(jsonLd).replace(/</g, "\\u003c") + "</script>" : "") +
-    "<style>:root{color-scheme:light dark;--bg:#fbfaf5;--ink:#1d2410;--muted:#5d6650;--accent:#4c5f26;--card:#fff;--line:#dfe3d0}" +
-    "@media(prefers-color-scheme:dark){:root{--bg:#12150c;--ink:#eef1e2;--muted:#a7b093;--accent:#c6d29b;--card:#1a1e12;--line:#2d3320}}" +
+    "<style>:root{color-scheme:light;--bg:#fbfaf5;--ink:#1d2410;--muted:#5d6650;--accent:#4c5f26;--card:#fff;--line:#dfe3d0}" +
     "body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,Segoe UI,sans-serif}" +
     "main{max-width:720px;margin:0 auto;padding:32px 16px 64px}a{color:var(--accent)}" +
     "h1{font-size:2rem;line-height:1.15;margin:.2em 0 .1em;text-wrap:balance}.meta{color:var(--muted);margin:0 0 20px}" +

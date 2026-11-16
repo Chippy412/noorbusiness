@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#F8F8F2" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#14180F" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F8F8F2">
 <title>NICC Business</title>
 <meta name="description" content="NICC Business is a community-run directory of Muslim-owned and halal-friendly businesses in Columbus, Ohio. Find local shops and restaurants, or list your own.">
 <link rel="canonical" href="https://nicc-business.vercel.app/">
@@ -25,16 +24,6 @@
 <meta name="twitter:image" content="https://nicc-business.vercel.app/images/og-image.jpg">
 <script>
   window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
-</script>
-<script>
-  (function () {
-    try {
-      var saved = localStorage.getItem("nicc-theme");
-      if (saved === "light" || saved === "dark") {
-        document.documentElement.setAttribute("data-theme", saved);
-      }
-    } catch (e) { /* private mode */ }
-  })();
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -81,8 +70,7 @@
      Color: sage #C6D29B is the brand color and carries identity
      (mark, pattern, tints, badges). It fails contrast as a control
      color, so interactive elements use deep olive #4C5F26, drawn
-     from the same hue. In dark mode the relationship inverts and
-     sage becomes the accent.
+     from the same hue.
 
      Radius: buttons = pill, cards = 18px, inputs = 12px, media = dome
      arch. One system, applied everywhere.
@@ -114,67 +102,8 @@
     --pattern-on-accent: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 100 100'%3E%3Cg fill='none' stroke='%23FFFFFF' stroke-width='2.4'%3E%3Crect x='20' y='20' width='60' height='60'/%3E%3Cpath d='M50 8 L92 50 L50 92 L8 50 Z'/%3E%3Cpath d='M38 20 H62 L80 38 V62 L62 80 H38 L20 62 V38 Z'/%3E%3C/g%3E%3C/svg%3E");
   }
 
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --sage: #C6D29B;
-      --sage-deep: #D6E0B4;
-      --accent: #BACD82;
-      --accent-ink: #161A0E;
-      --accent-soft: rgba(186, 205, 130, 0.15);
-      --accent-soft-ink: #CFDDA5;
-      --ink: #F0F2E6;
-      --ink-2: #D4DAC4;
-      --muted: #AEB5A0;
-      --ground: #14180F;
-      --surface: #1B2015;
-      --surface-2: #232819;
-      --hairline: #2F3624;
-      --shadow-color: 0 0 0;
-      --focus: #BACD82;
-      --danger: #F0B4A6;
-      --nav-bg: rgba(20, 24, 15, 0.84);
-      --on-accent-soft: rgba(22, 26, 14, 0.78);
-      --on-accent-border: rgba(22, 26, 14, 0.5);
-      --logo-text: #7E8C55;
-      --pattern-opacity: 0.22;
-    }
-  }
-
-  :root[data-theme="dark"] {
-    --sage: #C6D29B;
-    --sage-deep: #D6E0B4;
-    --accent: #BACD82;
-    --accent-ink: #161A0E;
-    --accent-soft: rgba(186, 205, 130, 0.15);
-    --accent-soft-ink: #CFDDA5;
-    --ink: #F0F2E6;
-    --ink-2: #D4DAC4;
-    --muted: #AEB5A0;
-    --ground: #14180F;
-    --surface: #1B2015;
-    --surface-2: #232819;
-    --hairline: #2F3624;
-    --shadow-color: 0 0 0;
-    --focus: #BACD82;
-    --danger: #F0B4A6;
-    --nav-bg: rgba(20, 24, 15, 0.84);
-    --on-accent-soft: rgba(22, 26, 14, 0.78);
-    --on-accent-border: rgba(22, 26, 14, 0.5);
-    --logo-text: #7E8C55;
-    --pattern-opacity: 0.22;
-  }
-
-  html.theme-transitioning, html.theme-transitioning * {
-    transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease, fill 0.25s ease, stroke 0.25s ease, box-shadow 0.25s ease !important;
-  }
-
   * { box-sizing: border-box; }
-  html { color-scheme: light dark; scroll-behavior: smooth; }
-  /* When someone picks a theme with the toggle, the browser's own colors
-     (default text, form controls, scrollbars) must follow it, not the
-     operating system's setting. */
-  :root[data-theme="dark"] { color-scheme: dark; }
-  :root[data-theme="light"] { color-scheme: light; }
+  html { color-scheme: light; scroll-behavior: smooth; }
   /* No 300ms tap delay / double-tap zoom on controls; the open listing popup shouldn't scroll the page behind it. */
   a, button, summary, label.toggle, select { touch-action: manipulation; }
   .listing-modal { overscroll-behavior: contain; }
@@ -199,6 +128,9 @@
 
   .wrap { max-width: 1240px; margin: 0 auto; padding: 0 24px; }
   .wrap-narrow { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+
+  ::selection { background: var(--sage); color: var(--ink); }
+  input, textarea { caret-color: var(--accent); }
 
   .icon {
     width: 1em; height: 1em; stroke: currentColor; fill: none;
@@ -307,20 +239,6 @@
   .saved-chip[hidden] { display: none; }
   .saved-chip .count { font-weight: 700; }
 
-  .theme-toggle {
-    display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px;
-    border-radius: 999px; border: 1px solid var(--hairline); background: var(--surface);
-    color: var(--ink-2); cursor: pointer; flex-shrink: 0;
-  }
-  .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
-  .theme-toggle svg { width: 18px; height: 18px; }
-  .theme-toggle-mobile {
-    width: 100%; justify-content: flex-start; gap: 10px; height: auto; padding: 15px 4px;
-    border-radius: 0; border: none; border-bottom: 1px solid var(--hairline); background: none;
-    font-family: "Bricolage Grotesque", sans-serif; font-size: 1.2rem; font-weight: 600; color: var(--ink);
-  }
-  .theme-toggle-mobile svg { width: 20px; height: 20px; }
-
   .nav-toggle { display: none; background: none; border: none; color: var(--ink); padding: 8px; cursor: pointer; }
   .nav-toggle svg { width: 24px; height: 24px; }
   .mobile-panel {
@@ -410,23 +328,9 @@
   .hero-visual .pattern-bg::before { background-size: 140px 140px; opacity: calc(var(--pattern-opacity) * 1.6); }
   .hero-photo { aspect-ratio: 4/5; }
   .hero-photo img { object-position: 50% 45%; }
-  .hero-float {
-    position: absolute; left: 4px; bottom: 38px; background: var(--surface);
-    border: 1px solid var(--hairline); border-radius: 18px; padding: 16px 18px;
-    display: flex; align-items: center; gap: 13px;
-    box-shadow: 0 20px 40px -20px rgba(var(--shadow-color) / 0.34); max-width: 268px;
-  }
-  .hero-float .badge-icon {
-    width: 42px; height: 42px; border-radius: 12px; background: var(--accent-soft);
-    color: var(--accent-soft-ink); display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  }
-  .hero-float .badge-icon svg { width: 22px; height: 22px; }
-  .hero-float strong { font-size: 0.92rem; }
-  .hero-float p { color: var(--muted); font-size: 0.84rem; margin-top: 2px; }
   @media (max-width: 940px) {
     .hero-grid { grid-template-columns: 1fr; gap: 44px; }
     .hero-photo { aspect-ratio: 4/3; }
-    .hero-float { position: relative; left: auto; bottom: auto; max-width: none; margin-top: 14px; }
   }
   @media (max-width: 560px) {
     .search-card { grid-template-columns: 1fr; grid-template-areas: "q" "c" "b"; }
@@ -480,7 +384,7 @@
     background: var(--surface); font-size: 0.9rem; font-weight: 600; color: var(--ink-2);
     transition: border-color 0.2s ease, color 0.2s ease, transform 0.25s ease; cursor: pointer;
   }
-  .pill:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-2px); }
+  .pill:hover { border-color: var(--accent); color: var(--accent); }
   .pill svg { width: 16px; height: 16px; }
 
   /* ---------- Listing cards ---------- */
@@ -599,7 +503,6 @@
   .category-photo:hover { transform: translateY(-4px); }
   .category-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
   .category-photo::before { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(20,24,15,0.88) 0%, rgba(20,24,15,0.1) 68%); z-index: -1; }
-  .category-photo .cat-icon { background: rgba(255,255,255,0.2); color: #fff; margin-bottom: 4px; }
   .category-photo h3 { color: #fff; font-size: 1.3rem; }
   .category-photo span { color: rgba(255,255,255,0.82); font-size: 0.88rem; }
 
@@ -625,16 +528,13 @@
   .steps-band { background: var(--surface); border-top: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline); }
   .steps-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
   .step { position: relative; padding-top: 4px; }
-  .step-index {
-    display: block; font-family: "Bricolage Grotesque", sans-serif; font-weight: 700;
-    font-size: 0.85rem; color: var(--sage-deep); margin-bottom: 6px;
-  }
   .step-num {
     width: 52px; height: 52px; border-radius: 999px; background: var(--ground);
     border: 1px solid var(--sage); display: flex; align-items: center; justify-content: center;
     color: var(--accent); position: relative; z-index: 1; margin-bottom: 18px;
+    font-family: "Bricolage Grotesque", sans-serif; font-weight: 700; font-size: 1.3rem; line-height: 1;
+    font-variant-numeric: tabular-nums;
   }
-  .step-num svg { width: 22px; height: 22px; }
   .step h3 { font-size: 1.12rem; font-weight: 700; }
   .step p { margin-top: 8px; color: var(--muted); font-size: 0.97rem; max-width: 32ch; }
   @media (max-width: 800px) {
@@ -917,7 +817,9 @@
   .benefit-row { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline); }
   .benefit { padding: 32px 28px 32px 0; }
   .benefit + .benefit { padding-left: 28px; border-left: 1px solid var(--hairline); }
-  .benefit .v-icon { margin-bottom: 16px; }
+  .benefit { display: grid; grid-template-columns: 44px minmax(0, 1fr); column-gap: 16px; align-content: start; }
+  .benefit .v-icon { grid-row: span 2; }
+  .benefit h3 { align-self: center; }
   .benefit h3 { font-size: 1.05rem; font-weight: 700; }
   .benefit p { color: var(--muted); font-size: 0.95rem; margin-top: 7px; }
   @media (max-width: 800px) {
@@ -1011,7 +913,7 @@
   .mod-empty p { margin: 0; }
   .mod-empty-title { color: var(--ink); font-size: 1.05rem; font-weight: 700; margin-bottom: 4px !important; }
   .mod-loading { color: var(--muted); }
-  /* Guide: long-form docs inside .mod-main. Colours come from the theme variables, so light and dark both work. */
+  /* Guide: long-form docs inside .mod-main. */
   .mod-guide-wrap { max-width: 68ch; color: var(--ink-2); line-height: 1.65; overflow-wrap: anywhere; }
   .mod-guide-wrap h3 { font-size: 1.35rem; line-height: 1.25; color: var(--ink); margin: 2.2em 0 0.6em; scroll-margin-top: 110px; }
   .mod-guide-wrap h4 { font-size: 1.05rem; line-height: 1.3; color: var(--ink); margin: 1.7em 0 0.4em; scroll-margin-top: 110px; }
@@ -1179,7 +1081,6 @@
   @keyframes pop { 0% { transform: scale(0.6); } 55% { transform: scale(1.25); } 100% { transform: scale(1); } }
   @keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); } 100% { box-shadow: 0 0 0 12px transparent; } }
   @keyframes msg-in { from { opacity: 0; transform: translateY(-6px); } }
-  @keyframes float-y { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 
   .page:not([hidden]) { animation: page-in 0.38s cubic-bezier(0.16,1,0.3,1) backwards; }
 
@@ -1206,7 +1107,6 @@
   .hero-trust { animation: hero-in 0.7s cubic-bezier(0.16,1,0.3,1) 0.3s backwards; }
   .hero-visual { animation: hero-in 0.8s cubic-bezier(0.16,1,0.3,1) 0.15s backwards; }
   .hero-photo img { animation: hero-zoom 1.8s cubic-bezier(0.16,1,0.3,1) backwards; }
-  .hero-float { animation: hero-in 0.7s cubic-bezier(0.16,1,0.3,1) 0.55s backwards; }
 
   .hero-trust { display: flex; align-items: center; gap: 8px; margin-top: 16px; font-size: 0.86rem; color: var(--muted); }
   .hero-trust svg { width: 16px; height: 16px; color: var(--accent); flex-shrink: 0; }
@@ -1219,11 +1119,9 @@
 
   .form-status.show { animation: msg-in 0.3s cubic-bezier(0.16,1,0.3,1); }
   .empty-state.show { animation: fade-in 0.4s ease; }
-  .empty-state.show .e-icon { animation: float-y 3.2s ease-in-out infinite; }
 
   .pill, .cat-row .cat-icon, .listing .text-link { transition: border-color 0.2s ease, color 0.2s ease, transform 0.25s ease, background-color 0.2s ease; }
   .pill:active { transform: scale(0.96); }
-  .cat-row:hover .cat-icon { transform: scale(1.08) rotate(-4deg); }
 
   /* Photos fade in once loaded instead of popping in over the placeholder. */
   .listing-art img { opacity: 0; transition: opacity 0.5s ease, transform 0.4s ease; }
@@ -1313,7 +1211,6 @@
   [data-plx] { --p: 0; }
   .hero-visual .hero-photo img { scale: 1.1; translate: 0 calc(var(--p) * -22px); }
   .hero-visual .pattern-bg { translate: 0 calc(var(--p) * 16px); }
-  .hero-visual .hero-float { translate: 0 calc(var(--p) * -12px); }
   .split-media .arch img { scale: calc(1.02 + (1 - var(--p)) * 0.045); }
 
   /* Page and card-to-dialog transitions (View Transitions API, where supported). */
@@ -1331,12 +1228,6 @@
 
 
   /* ---------- More motion ---------- */
-  /* Scroll progress bar (scroll-driven animation; absent where unsupported). */
-  .scroll-progress { display: none; }
-  @supports (animation-timeline: scroll()) {
-    .scroll-progress { display: block; position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 60; background: var(--accent); transform-origin: 0 50%; transform: scaleX(0); pointer-events: none; animation: progress-grow linear both; animation-timeline: scroll(root); }
-    @keyframes progress-grow { to { transform: scaleX(1); } }
-  }
 
   /* Sliding nav underline. */
   .nav-links { position: relative; }
@@ -1348,24 +1239,147 @@
   @keyframes pop-in { from { opacity: 0; transform: translateY(-6px) scale(0.97); } }
   .pop-panel:not([hidden]) { animation: pop-in 0.22s cubic-bezier(0.16,1,0.3,1); transform-origin: top right; }
 
-  /* Button light sweep, card spotlight, softer pills and rows. */
-  .btn-primary { position: relative; overflow: hidden; isolation: isolate; }
-  .btn-primary::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.26) 50%, transparent 70%); transform: translateX(-130%); transition: transform 0.8s cubic-bezier(0.16,1,0.3,1); }
-  .btn-primary:hover::before { transform: translateX(130%); }
-  .pill:hover { transform: translateY(-2px); border-color: var(--accent); color: var(--accent); }
-  @media (hover: hover) {
-    .listing:hover { background-image: radial-gradient(360px circle at var(--mx, 50%) var(--my, 0%), color-mix(in srgb, var(--accent) 9%, transparent), transparent 62%); }
-  }
-  .footer-col a, .footer-legal a { transition: color 0.2s ease, transform 0.25s cubic-bezier(0.16,1,0.3,1); display: inline-block; }
-  .footer-col a:hover, .footer-legal a:hover { color: var(--accent); transform: translateX(3px); }
+  .footer-col a, .footer-legal a { transition: color 0.2s ease; display: inline-block; }
+  .footer-col a:hover, .footer-legal a:hover { color: var(--accent); }
 
   /* Card reflow when filtering, sorting or switching view. */
   html.vt-flip::view-transition-old(root), html.vt-flip::view-transition-new(root) { animation: none; }
   html.vt-flip #results .listing, html.vt-flip #featuredGrid .listing { animation: none !important; }
 
   @media (prefers-reduced-motion: reduce) {
-    .mobile-panel, .mobile-panel > *, .nav-ind, .btn-primary::before, .footer-col a, .footer-legal a { transition: none; }
-    .scroll-progress, .pop-panel:not([hidden]) { animation: none !important; }
+    .mobile-panel, .mobile-panel > *, .nav-ind, .footer-col a, .footer-legal a { transition: none; }
+    .pop-panel:not([hidden]) { animation: none !important; }
+  }
+
+  /* ---------- Phone ----------
+     The phone is the main way people reach this site, so it gets its own
+     layout rather than the desktop one squeezed: a shorter header, tighter
+     section rhythm, swipeable featured row, edge-to-edge rails, compact
+     steps, a bottom-sheet listing dialog, and 16px inputs (iOS zooms the
+     page on focus below that). */
+  @media (max-width: 1000px) {
+    .site-nav { height: 64px; }
+    .mobile-panel { inset: 64px 0 0 0; }
+    .nav-toggle { width: 44px; height: 44px; align-items: center; justify-content: center; margin-right: -10px; }
+  }
+  @media (max-width: 640px) {
+    .wrap, .wrap-narrow { padding: 0 20px; }
+    .announce { display: none; }
+    .site-nav { height: 60px; }
+    .mobile-panel { inset: 60px 0 0 0; padding: 8px 20px 32px; }
+    .mobile-panel a { padding: 14px 2px; font-size: 1.15rem; }
+    .brand { gap: 9px; font-size: 1rem; }
+    .brand-mark-full { width: 38px; height: 38px; }
+    .brand small { font-size: 0.66rem; letter-spacing: 0.02em; }
+
+    section { padding: 48px 0; }
+    section.tight { padding: 24px 0; }
+    .section-head { margin-bottom: 22px; }
+    .section-head h2 { font-size: 1.6rem; }
+    .section-head p { font-size: 1rem; margin-top: 8px; }
+    .page-head { padding: 30px 0 22px; }
+    .page-head h1 { font-size: 1.9rem; }
+    .page-head p { font-size: 1rem; margin-top: 10px; }
+
+    .hero { padding: 26px 0 36px; }
+    .hero-grid { gap: 26px; }
+    .hero h1 { font-size: 2.05rem; line-height: 1.08; letter-spacing: -0.025em; }
+    .hero-sub { font-size: 1rem; margin-top: 14px; }
+    .search-card { margin-top: 22px; padding: 8px; }
+    .search-field { padding: 13px 12px; }
+    .hero-trust { align-items: flex-start; font-size: 0.84rem; }
+    .hero-trust svg { margin-top: 2px; }
+    .hero-visual, .split-media { padding: 0; }
+    .hero-visual .pattern-bg, .split-media .pattern-bg { display: none; }
+    .hero-photo { aspect-ratio: 5/4; }
+
+    .pill-rail { margin: 0 -20px; padding: 4px 20px 10px; scroll-padding-inline: 20px; }
+    .pill { padding: 11px 16px; }
+
+    #featuredGrid {
+      display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory;
+      margin: 0 -20px; padding: 2px 20px 14px; scroll-padding-inline: 20px; scrollbar-width: none;
+    }
+    #featuredGrid::-webkit-scrollbar { display: none; }
+    #featuredGrid .listing { flex: 0 0 84%; scroll-snap-align: start; }
+    .listing-grid { gap: 16px; }
+    .listing-art { aspect-ratio: 16/9; }
+    .listing-art .art-badge { width: 60px; height: 60px; box-shadow: 0 10px 22px -12px rgba(var(--shadow-color) / 0.55); }
+    .listing-art .art-badge svg { width: 28px; height: 28px; }
+    .listing-body { padding: 16px; gap: 8px; }
+    .listing-foot { padding-top: 10px; }
+    .save-btn { width: 40px; height: 40px; top: 10px; right: 10px; }
+
+    .category-layout { gap: 18px; }
+    .category-photo { min-height: 190px; padding: 20px; }
+    .cat-row { padding: 12px 2px; }
+    .cat-row:hover { padding-left: 2px; }
+
+    .star-divider { gap: 14px; padding: 0 0 8px; }
+    .star-divider svg:first-child, .star-divider svg:last-child { display: none; }
+
+    .steps-row { gap: 20px; }
+    .step { display: grid; grid-template-columns: 44px minmax(0, 1fr); column-gap: 16px; padding-top: 0; }
+    .step-num { width: 44px; height: 44px; margin: 0; grid-row: span 2; font-size: 1.1rem; }
+    .step h3 { align-self: center; font-size: 1.05rem; }
+    .step p { margin-top: 4px; font-size: 0.95rem; max-width: none; }
+
+    .split { gap: 26px; }
+    .split-media .arch { aspect-ratio: 4/3; }
+    .value-list { gap: 18px; margin-top: 20px; }
+    .value-item { gap: 14px; }
+    .v-icon { width: 40px; height: 40px; border-radius: 11px; }
+    .v-icon svg { width: 19px; height: 19px; }
+
+    .cta-band { padding: 30px 22px; border-radius: 20px; }
+    .cta-inner { gap: 22px; }
+    .cta-actions { width: 100%; flex-direction: column; gap: 10px; }
+    .cta-actions .btn { width: 100%; }
+
+    .filter-panel { padding: 14px; gap: 12px; border-radius: 16px; }
+    /* Grid and list collapse to the same single column here, so the toggle does nothing. */
+    .results-bar { margin: 18px 0 14px; flex-wrap: nowrap; }
+    .results-tools .view-toggle { display: none; }
+    .results-tools .field { max-width: 170px !important; }
+    .empty-state { padding: 40px 18px; }
+
+    .form-card { padding: 20px 16px; }
+    .mission { padding: 30px 20px; }
+    .mission .arabic { font-size: 2.6rem; }
+    .faq-group + .faq-group { margin-top: 36px; }
+    .faq-q { padding: 18px 2px; font-size: 1rem; }
+    .benefit { padding: 22px 0; grid-template-columns: 40px minmax(0, 1fr); column-gap: 14px; }
+    .value-row { padding: 22px 0; gap: 14px; }
+
+    footer { padding: 40px 0 24px; }
+    .footer-grid { grid-template-columns: 1fr 1fr; gap: 28px 20px; }
+    .footer-brand, .footer-grid > .footer-col:last-child { grid-column: 1 / -1; }
+    .subscribe-form { max-width: none; }
+    .footer-bottom { margin-top: 32px; flex-direction: column; align-items: flex-start; gap: 12px; }
+
+    .field input, .field select, .field textarea, .search-field input, .search-field select,
+    .subscribe-row input, .nf-search input, .mod-row select, .mod-reason textarea, .mod-note-form textarea { font-size: 16px; }
+
+    dialog.listing-modal {
+      width: 100%; max-width: none; max-height: 92dvh; margin: auto 0 0;
+      border-radius: 22px 22px 0 0; border-bottom: 0; display: none; flex-direction: column;
+    }
+    dialog.listing-modal[open] { display: flex; }
+    dialog.listing-modal > form { display: flex; flex-direction: column; min-height: 0; }
+    .modal-head { padding: 18px 20px 14px; gap: 14px; }
+    .modal-head h2 { font-size: 1.3rem; }
+    .modal-body { padding: 20px; gap: 20px; max-height: none; flex: 1; min-height: 0; }
+    .modal-photo { margin: -20px -20px 0; }
+    .modal-foot {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+      padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
+    }
+    .modal-foot .btn { width: 100%; white-space: normal; text-align: center; padding: 0.8em 0.9em; font-size: 0.88rem; line-height: 1.25; }
+    #listingModal .modal-foot .btn-primary, #listingModal .modal-foot .btn:last-child:nth-child(even) { grid-column: 1 / -1; }
+  }
+  @media (max-width: 380px) {
+    .hero h1 { font-size: 1.85rem; }
+    #featuredGrid .listing { flex-basis: 88%; }
   }
 
   /* Print: just the content. */
@@ -1379,15 +1393,15 @@
 
   @media (prefers-reduced-motion: reduce) {
     .pill-rail { transition: none; }
-    .hero-visual .hero-photo img, .hero-visual .pattern-bg, .hero-visual .hero-float { translate: none; }
+    .hero-visual .hero-photo img, .hero-visual .pattern-bg { translate: none; }
     .hero-visual .hero-photo img, .split-media .arch img { scale: 1; }
   }
 
   @media (prefers-reduced-motion: reduce) {
     .page:not([hidden]), #results .listing, #featuredGrid .listing, dialog.listing-modal[open],
     dialog.listing-modal[open]::backdrop, .hero h1, .hero-sub, .hero .search-card, .hero-trust,
-    .hero-visual, .hero-photo img, .hero-float, .save-btn[aria-pressed="true"] svg, .saved-chip,
-    #resultCount, .form-status.show, :focus-visible, .empty-state.show, .empty-state.show .e-icon { animation: none !important; }
+    .hero-visual, .hero-photo img, .save-btn[aria-pressed="true"] svg, .saved-chip,
+    #resultCount, .form-status.show, :focus-visible, .empty-state.show { animation: none !important; }
     .listing-art img { transition: none; }
     .faq-a, .to-top, .bottom-bar a, .bottom-bar button { transition: none; }
   }
@@ -1395,7 +1409,6 @@
 
 </head>
 <body>
-<div class="scroll-progress" aria-hidden="true"></div>
 <noscript>
   <div style="max-width:560px;margin:48px auto;padding:0 20px;font-family:system-ui,sans-serif;line-height:1.5;color:#14180f">
     <h1 style="font-size:1.5rem">NICC Business needs JavaScript</h1>
@@ -1445,8 +1458,6 @@
   <symbol id="i-rows" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="5" rx="1.5"/><rect x="4" y="14" width="16" height="5" rx="1.5"/></symbol>
   <symbol id="i-square" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="12" cy="12" r="3.2"/></symbol>
   <symbol id="i-wave" viewBox="0 0 24 24"><path d="M3 12c2-4 4-4 6 0s4 4 6 0 4-4 6 0"/></symbol>
-  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v3M12 18.5v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2.5 12h3M18.5 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></symbol>
-  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5z"/></symbol>
 </svg>
 
 <a class="skip-link" href="#main">Skip to content</a>
@@ -1473,9 +1484,6 @@
       <a href="#/account" data-route="account" class="account-nav-link">Log in</a>
     </nav>
     <div class="nav-actions">
-      <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to dark mode">
-        <svg class="icon"><use href="#i-moon"/></svg>
-      </button>
       <button class="saved-chip" id="savedChip" type="button">
         <svg class="icon"><use href="#i-bookmark"/></svg> Saved <span class="count" id="savedCount">0</span>
       </button>
@@ -1493,9 +1501,6 @@
   <a href="#/faq" data-route="faq">FAQ</a>
   <a href="#/contact" data-route="contact">Contact</a>
   <a href="#/account" data-route="account" class="account-nav-link">Log in</a>
-  <button class="theme-toggle theme-toggle-mobile" id="themeToggleMobile" type="button">
-    <svg class="icon"><use href="#i-moon"/></svg> <span id="themeToggleMobileLabel">Switch to dark mode</span>
-  </button>
   <a href="#/list" data-route="list" class="btn btn-primary">List your business</a>
 </div>
 
@@ -1536,13 +1541,6 @@
         <div class="hero-visual" data-plx>
           <div class="pattern-bg"></div>
           <div class="arch hero-photo"><picture><source type="image/webp" srcset="images/hero-meal.webp"><img src="images/hero-meal.jpg" width="1200" height="1800" fetchpriority="high" decoding="async" alt="A spread of grilled halal meats, vegetables and sauces"></picture></div>
-          <div class="hero-float">
-            <span class="badge-icon"><svg class="icon"><use href="#i-users"/></svg></span>
-            <div>
-              <strong>Community run</strong>
-              <p>Volunteers read every listing before it goes live.</p>
-            </div>
-          </div>
         </div>
       </div>
     </section>
@@ -1580,7 +1578,6 @@
         <div class="category-layout">
           <button class="category-photo" data-quick-cat="Restaurants">
             <picture><source type="image/webp" srcset="images/category-restaurants.webp"><img loading="lazy" decoding="async" src="images/category-restaurants.jpg" width="780" height="780" alt="Lentil soup, hummus, tabbouleh and flatbread on a table"></picture>
-            <span class="cat-icon"><svg class="icon"><use href="#i-heart"/></svg></span>
             <h3>Restaurants</h3>
             <span>Levantine, Somali, Desi, Turkish, and more</span>
           </button>
@@ -1612,20 +1609,17 @@
         <div class="section-head"><h2>Finding the right place takes three steps.</h2></div>
         <div class="steps-row">
           <div class="step reveal">
-            <span class="step-index">01</span>
-            <div class="step-num"><svg class="icon"><use href="#i-search"/></svg></div>
+            <div class="step-num">1</div>
             <h3>Search your neighborhood</h3>
             <p>Filter by category, part of the city, and the things that matter to your family.</p>
           </div>
           <div class="step reveal">
-            <span class="step-index">02</span>
-            <div class="step-num"><svg class="icon"><use href="#i-shield"/></svg></div>
+            <div class="step-num">2</div>
             <h3>Check the details</h3>
             <p>Open a listing to see its badges, hours, reviews, and how to reach the business.</p>
           </div>
           <div class="step reveal">
-            <span class="step-index">03</span>
-            <div class="step-num"><svg class="icon"><use href="#i-arrow-right"/></svg></div>
+            <div class="step-num">3</div>
             <h3>Visit or reach out</h3>
             <p>Hours, area, and contact details sit on every listing.</p>
           </div>
@@ -2446,7 +2440,7 @@
         <h2 style="margin-top:28px">What we collect</h2>
         <p style="color:var(--muted)">If you create an owner account, we store the email address and password you sign up with (through our authentication provider, Supabase) and the business listing details you submit, including any photos you upload. If you use the contact form, we receive the name, email, and message you enter so we can reply, and a one-way hash of your IP address that we use only to limit spam. If you join the email list in the footer, we store your email address. If you save listings while logged in, we store which listings you saved so they follow you between devices. If you report a problem, we store your report, the email address if you give one, and a one-way hash of your IP address to limit spam. If a listing is sponsored, we store which placement it has and until when. Browsing, searching, filtering, and saving listings do not require an account.</p>
         <h2 style="margin-top:28px">What stays in your browser</h2>
-        <p style="color:var(--muted)">Your saved listings and your light/dark theme preference are stored only in your browser's local storage. We do not receive or see this information, and it is never sent to our servers. If you use "Use my location" to see distances, your location is used only in your browser and is never sent to us. If you type an address or ZIP to measure from, it is sent to our server once to look up its coordinates (using the US Census Bureau's free geocoder) and is not stored.</p>
+        <p style="color:var(--muted)">Your saved listings are stored only in your browser's local storage. We do not receive or see this information, and it is never sent to our servers. If you use "Use my location" to see distances, your location is used only in your browser and is never sent to us. If you type an address or ZIP to measure from, it is sent to our server once to look up its coordinates (using the US Census Bureau's free geocoder) and is not stored.</p>
         <h2 style="margin-top:28px">Cookies and analytics</h2>
         <p style="color:var(--muted)">This site does not use cookies. We use Vercel Web Analytics, a cookieless, privacy-preserving analytics tool that reports aggregate, anonymized traffic patterns (such as which pages are visited) and cannot identify individual visitors.</p>
         <h2 style="margin-top:28px">How data is stored</h2>
@@ -3372,47 +3366,6 @@
   navToggle.addEventListener("click", function () { setToggleIcon(mobilePanel.classList.toggle("open")); });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeMobile(); });
 
-  /* ============ Theme toggle ============ */
-  var THEME_KEY = "nicc-theme";
-  var themeToggle = document.getElementById("themeToggle");
-  var themeToggleMobile = document.getElementById("themeToggleMobile");
-  var themeToggleMobileLabel = document.getElementById("themeToggleMobileLabel");
-  var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
-
-  function currentTheme() {
-    var explicit = document.documentElement.getAttribute("data-theme");
-    if (explicit === "light" || explicit === "dark") return explicit;
-    return prefersDark && prefersDark.matches ? "dark" : "light";
-  }
-  function applyThemeIcon() {
-    var isDark = currentTheme() === "dark";
-    var icon = isDark ? "i-sun" : "i-moon";
-    var label = isDark ? "Switch to light mode" : "Switch to dark mode";
-    if (themeToggle) {
-      themeToggle.innerHTML = '<svg class="icon"><use href="#' + icon + '"/></svg>';
-      themeToggle.setAttribute("aria-label", label);
-    }
-    if (themeToggleMobile) {
-      var use = themeToggleMobile.querySelector(".icon use");
-      if (use) use.setAttribute("href", "#" + icon);
-      if (themeToggleMobileLabel) themeToggleMobileLabel.textContent = label;
-    }
-  }
-  function toggleTheme() {
-    var root = document.documentElement;
-    if (!reduceMotion) root.classList.add("theme-transitioning");
-    var next = currentTheme() === "dark" ? "light" : "dark";
-    root.setAttribute("data-theme", next);
-    try { localStorage.setItem(THEME_KEY, next); } catch (e) { /* private mode */ }
-    applyThemeIcon();
-    if (!reduceMotion) {
-      window.setTimeout(function () { root.classList.remove("theme-transitioning"); }, 300);
-    }
-  }
-  if (themeToggle) themeToggle.addEventListener("click", toggleTheme);
-  if (themeToggleMobile) themeToggleMobile.addEventListener("click", toggleTheme);
-  applyThemeIcon();
-
   /* ============ Reveal ============ */
   var io = null;
   function revealInit() {
@@ -3469,15 +3422,6 @@
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(place);
     place();
   })();
-
-  /* ============ Card spotlight follows the pointer ============ */
-  document.addEventListener("pointermove", function (e) {
-    var c = e.target.closest && e.target.closest(".listing");
-    if (!c) return;
-    var r = c.getBoundingClientRect();
-    c.style.setProperty("--mx", (e.clientX - r.left) + "px");
-    c.style.setProperty("--my", (e.clientY - r.top) + "px");
-  }, { passive: true });
 
   /* ============ Pill rail edge fades ============ */
   document.querySelectorAll(".pill-rail").forEach(function (r) {
