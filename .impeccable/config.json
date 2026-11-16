@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          "404.html"
+        ],
+        "createdAt": "2026-11-16T04:17:07.438Z",
+        "reason": "Claude decided: #F8F8F2 ground is the incumbent NICC brand token used site-wide; refinement pass preserves the existing palette"
+      }
+    ]
+  }
+}
