@@ -16,7 +16,7 @@ function page(title, desc, canonical, image, jsonLd, body, status) {
     '<meta name="description" content="' + h.esc(desc) + '">' +
     '<link rel="canonical" href="' + h.esc(canonical) + '">' +
     '<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32.png">' +
-    '<meta property="og:type" content="website"><meta property="og:site_name" content="NICC Business">' +
+    '<meta property="og:type" content="website"><meta property="og:site_name" content="Noor Business">' +
     '<meta property="og:title" content="' + h.esc(title) + '"><meta property="og:description" content="' + h.esc(desc) + '">' +
     '<meta property="og:url" content="' + h.esc(canonical) + '"><meta property="og:image" content="' + h.esc(image) + '">' +
     '<meta name="twitter:card" content="summary_large_image">' +
@@ -29,7 +29,7 @@ function page(title, desc, canonical, image, jsonLd, body, status) {
     ".card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;margin:16px 0}" +
     ".cta{display:inline-block;background:var(--accent);color:var(--bg);padding:12px 22px;border-radius:999px;text-decoration:none;font-weight:700}" +
     "img{max-width:100%;border-radius:14px}ul{padding-left:1.1em}</style></head><body><main>" +
-    '<p><a href="/">&larr; NICC Business</a></p>' + body + "</main></body></html>" };
+    '<p><a href="/">&larr; Noor Business</a></p>' + body + "</main></body></html>" };
 }
 
 function render(b, reviews) {
@@ -45,7 +45,7 @@ function render(b, reviews) {
   if (avg != null) jsonLd.aggregateRating = { "@type": "AggregateRating", ratingValue: avg.toFixed(1), reviewCount: ratings.length };
 
   var body = (photo ? '<img src="' + h.esc(photo) + '" alt="' + h.esc(b.name) + '" width="720" height="405">' : "") +
-    "<h1>" + h.esc(b.name) + '</h1><p class="meta">' + h.esc(b.category) + " in " + h.esc(b.neighborhood) + ", Columbus, Ohio" +
+    "<h1>" + h.esc(b.name) + '</h1><p class="meta">' + h.esc(b.category) + " in " + h.esc(b.neighborhood) + ", Ohio" +
     (avg != null ? " &middot; " + avg.toFixed(1) + " &#9733; (" + ratings.length + ")" : "") + "</p>" +
     '<div class="card"><p>' + h.esc(b.long_description) + "</p></div>" +
     '<div class="card"><ul>' +
@@ -54,19 +54,19 @@ function render(b, reviews) {
     (site ? '<li>Website: <a href="' + h.esc(site) + '" rel="noopener nofollow">' + h.esc(site) + "</a></li>" : "") +
     "</ul></div>" +
     '<p><a class="cta" href="/#/explore?open=' + h.esc(b.id) + '">See hours &amp; reviews</a></p>';
-  return page(b.name + " — " + b.category + " in " + b.neighborhood + " | NICC Business", b.description, url, photo || SITE + "/images/hero.jpg", jsonLd, body);
+  return page(b.name + " — " + b.category + " in " + b.neighborhood + " | Noor Business", b.description, url, photo || SITE + "/images/hero.jpg", jsonLd, body);
 }
 
 module.exports = async function handler(req, res) {
   var id = String((req.query && req.query.id) || "");
   var out;
   if (!h.UUID_RE.test(id)) {
-    out = page("Listing not found | NICC Business", "This listing could not be found.", SITE + "/", SITE + "/images/hero.jpg", null,
+    out = page("Listing not found | Noor Business", "This listing could not be found.", SITE + "/", SITE + "/images/hero.jpg", null,
       '<h1>Listing not found</h1><p><a href="/noor-business.html#/explore">Browse the directory</a></p>', 404);
   } else {
     var b = await supa.rest("businesses?select=*&status=eq.approved&id=eq." + id);
     if (!b.ok || !Array.isArray(b.data) || !b.data[0]) {
-      out = page("Listing not found | NICC Business", "This listing could not be found.", SITE + "/", SITE + "/images/hero.jpg", null,
+      out = page("Listing not found | Noor Business", "This listing could not be found.", SITE + "/", SITE + "/images/hero.jpg", null,
         '<h1>Listing not found</h1><p><a href="/noor-business.html#/explore">Browse the directory</a></p>', 404);
     } else {
       var rv = await supa.rest("reviews?select=rating&status=eq.approved&business_id=eq." + id);

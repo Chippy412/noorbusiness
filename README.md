@@ -1,7 +1,7 @@
-# NICC Business
+# Noor Business
 
 A community business directory for Noor Islamic Cultural Center (NICC) in
-Columbus, Ohio.
+Hilliard, Ohio.
 
 ## Running it locally
 
