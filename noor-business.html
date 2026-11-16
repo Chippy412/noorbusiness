@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#F3F6F1" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0E1A17" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F6F8EF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121910" media="(prefers-color-scheme: dark)">
 <title>NICC Business</title>
 <meta name="description" content="NICC Business is a community-run directory of Muslim-owned and halal-friendly businesses in Columbus, Ohio. Find local shops and restaurants, or list your own.">
 <link rel="canonical" href="https://nicc-business.vercel.app/">
@@ -74,20 +74,13 @@
 <style>
   /* ============================================================
      NICC Business
-     Concept: Noor means light. The site is the Noor Islamic Cultural
-     Center community's directory, so the identity is evening light:
-     deep evergreen "night" surfaces lit by lamp gold, with the sage of
-     the NICC logo carrying the brand.
+     Palette comes straight from the NICC logo: its light sage green is
+     the brand and the main tint of the site; a deep green drawn from the
+     same hue is the accent for controls, text links and dark panels.
+     Sage is never used as text on light ground (it fails contrast);
+     on dark green it is the highlight.
 
-     Identity mark: the 8-point star (khatim) from the NICC logo, built
-     as the union of a square and its 45-degree rotation. The homepage
-     hero assembles it from those two squares on load.
-
-     Color roles: evergreen --accent is the control color on light
-     surfaces. Gold is light: glows, focus on night surfaces, and the
-     owner call to action. Gold is never used as text on light ground
-     (it fails contrast there). Sage stays for the mark and pattern.
-
+     Identity mark: the 8-point star (khatim) from the NICC logo.
      Type: Young Serif (display, h1/h2 only, single weight) with Figtree
      for everything else. Amiri for Arabic.
      ============================================================ */
@@ -100,35 +93,36 @@
     --ease-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
 
     --sage: #C6D29B;
-    --sage-deep: #8FA25C;
-    --gold: #E2AE4A;
-    --gold-bright: #F2C76B;
-    --gold-ink: #241A06;
-    --night: #12302A;
-    --night-2: #0C241F;
-    --night-ink: #EEF3EC;
-    --night-muted: #A9BFB5;
-    --night-line: rgba(238, 243, 236, 0.14);
+    --sage-deep: #93A65A;
+    --sage-light: #E6EDCC;
+    --hl: #C6D29B;
+    --hl-bright: #D9E3B4;
+    --hl-ink: #1B2A16;
+    --night: #23391F;
+    --night-2: #1A2C17;
+    --night-ink: #F4F7EB;
+    --night-muted: #CBD5B6;
+    --night-line: rgba(244, 247, 235, 0.16);
 
-    --accent: #1F4D40;
+    --accent: #2F4B26;
     --accent-ink: #FFFFFF;
-    --accent-soft: #E1ECE4;
-    --accent-soft-ink: #1A4136;
-    --ink: #16241F;
-    --ink-2: #33433C;
-    --muted: #586761;
-    --ground: #F3F6F1;
+    --accent-soft: #E6EDCC;
+    --accent-soft-ink: #2A4322;
+    --ink: #1B2617;
+    --ink-2: #384430;
+    --muted: #59654D;
+    --ground: #F6F8EF;
     --surface: #FFFFFF;
-    --surface-2: #E9EFEA;
-    --hairline: #D8E1DA;
-    --shadow-color: 18 40 34;
-    --focus: #1F4D40;
+    --surface-2: #EDF1DD;
+    --hairline: #DCE3C7;
+    --shadow-color: 27 42 22;
+    --focus: #2F4B26;
     --danger: #A3341F;
-    --nav-bg: rgba(243, 246, 241, 0.86);
+    --nav-bg: rgba(246, 248, 239, 0.88);
     --on-accent-soft: rgba(255, 255, 255, 0.86);
     --on-accent-border: rgba(255, 255, 255, 0.6);
     --logo-text: #A3B472;
-    --pattern-opacity: 0.4;
+    --pattern-opacity: 0.45;
     --pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 100 100'%3E%3Cg fill='none' stroke='%23C6D29B' stroke-width='2.4'%3E%3Crect x='20' y='20' width='60' height='60'/%3E%3Cpath d='M50 8 L92 50 L50 92 L8 50 Z'/%3E%3Cpath d='M38 20 H62 L80 38 V62 L62 80 H38 L20 62 V38 Z'/%3E%3C/g%3E%3C/svg%3E");
     --pattern-on-accent: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 100 100'%3E%3Cg fill='none' stroke='%23FFFFFF' stroke-width='2.4'%3E%3Crect x='20' y='20' width='60' height='60'/%3E%3Cpath d='M50 8 L92 50 L50 92 L8 50 Z'/%3E%3Cpath d='M38 20 H62 L80 38 V62 L62 80 H38 L20 62 V38 Z'/%3E%3C/g%3E%3C/svg%3E");
     font-synthesis-weight: none;
@@ -137,25 +131,26 @@
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --sage-deep: #C9D7A2;
-      --night: #0D221D;
-      --night-2: #091A16;
-      --accent: #B6D6C4;
-      --accent-ink: #0B1C17;
-      --accent-soft: rgba(182, 214, 196, 0.14);
-      --accent-soft-ink: #C9E3D4;
-      --ink: #EDF2EC;
-      --ink-2: #CDD9D1;
-      --muted: #A1B3AA;
-      --ground: #0E1A17;
-      --surface: #14241F;
-      --surface-2: #1B2E28;
-      --hairline: #273B34;
+      --sage-light: #26331F;
+      --night: #1C2B18;
+      --night-2: #141F11;
+      --accent: #C6D29B;
+      --accent-ink: #172012;
+      --accent-soft: rgba(198, 210, 155, 0.14);
+      --accent-soft-ink: #D6E0B0;
+      --ink: #EEF2E4;
+      --ink-2: #D2DAC2;
+      --muted: #A9B49A;
+      --ground: #121910;
+      --surface: #182116;
+      --surface-2: #1F2A1C;
+      --hairline: #2C3A27;
       --shadow-color: 0 0 0;
-      --focus: #B6D6C4;
+      --focus: #C6D29B;
       --danger: #F0B4A6;
-      --nav-bg: rgba(14, 26, 23, 0.84);
-      --on-accent-soft: rgba(11, 28, 23, 0.78);
-      --on-accent-border: rgba(11, 28, 23, 0.5);
+      --nav-bg: rgba(18, 25, 16, 0.86);
+      --on-accent-soft: rgba(23, 32, 18, 0.78);
+      --on-accent-border: rgba(23, 32, 18, 0.5);
       --logo-text: #7E8C55;
       --pattern-opacity: 0.2;
     }
@@ -163,25 +158,26 @@
 
   :root[data-theme="dark"] {
     --sage-deep: #C9D7A2;
-    --night: #0D221D;
-    --night-2: #091A16;
-    --accent: #B6D6C4;
-    --accent-ink: #0B1C17;
-    --accent-soft: rgba(182, 214, 196, 0.14);
-    --accent-soft-ink: #C9E3D4;
-    --ink: #EDF2EC;
-    --ink-2: #CDD9D1;
-    --muted: #A1B3AA;
-    --ground: #0E1A17;
-    --surface: #14241F;
-    --surface-2: #1B2E28;
-    --hairline: #273B34;
+    --sage-light: #26331F;
+    --night: #1C2B18;
+    --night-2: #141F11;
+    --accent: #C6D29B;
+    --accent-ink: #172012;
+    --accent-soft: rgba(198, 210, 155, 0.14);
+    --accent-soft-ink: #D6E0B0;
+    --ink: #EEF2E4;
+    --ink-2: #D2DAC2;
+    --muted: #A9B49A;
+    --ground: #121910;
+    --surface: #182116;
+    --surface-2: #1F2A1C;
+    --hairline: #2C3A27;
     --shadow-color: 0 0 0;
-    --focus: #B6D6C4;
+    --focus: #C6D29B;
     --danger: #F0B4A6;
-    --nav-bg: rgba(14, 26, 23, 0.84);
-    --on-accent-soft: rgba(11, 28, 23, 0.78);
-    --on-accent-border: rgba(11, 28, 23, 0.5);
+    --nav-bg: rgba(18, 25, 16, 0.86);
+    --on-accent-soft: rgba(23, 32, 18, 0.78);
+    --on-accent-border: rgba(23, 32, 18, 0.5);
     --logo-text: #7E8C55;
     --pattern-opacity: 0.2;
   }
@@ -209,7 +205,7 @@
   }
 
   h1, h2, h3, h4 { color: var(--ink); margin: 0; text-wrap: balance; }
-  h1, h2 { font-family: var(--font-display); font-weight: 400; letter-spacing: -0.01em; line-height: 1.12; }
+  h1, h2 { font-family: var(--font-display); font-weight: 400; font-style: normal; font-synthesis: none; letter-spacing: -0.01em; line-height: 1.12; }
   h3, h4 { font-family: var(--font-body); font-weight: 700; letter-spacing: -0.005em; line-height: 1.25; }
   p { text-wrap: pretty; }
   p { margin: 0; }
@@ -385,7 +381,16 @@
   .section-head { max-width: 620px; margin-bottom: 44px; }
   .section-head h2 { font-size: clamp(1.7rem, 1.15rem + 1.7vw, 2.5rem); font-weight: 700; letter-spacing: -0.015em; }
   .section-head p { margin-top: 12px; color: var(--muted); font-size: 1.05rem; }
-  .page-head { padding: 60px 0 40px; border-bottom: 1px solid var(--hairline); }
+  .page-head {
+    position: relative; isolation: isolate; overflow: hidden;
+    padding: 64px 0 44px; background: var(--sage-light); border-bottom: 1px solid var(--hairline);
+  }
+  .page-head::before {
+    content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    background-image: var(--pattern); background-size: 96px 96px; opacity: 0.45;
+    -webkit-mask-image: linear-gradient(90deg, transparent 35%, #000 100%);
+    mask-image: linear-gradient(90deg, transparent 35%, #000 100%);
+  }
   .page-head h1 { font-size: clamp(2rem, 1.4rem + 2.2vw, 2.9rem); }
   .page-head p { margin-top: 14px; color: var(--muted); font-size: 1.08rem; max-width: 58ch; }
 
@@ -1321,7 +1326,7 @@
 
   /* Print: just the content. */
   @media print {
-    .site-nav, .bottom-bar, .to-top, .toast, footer, .cta-band, .nl-visual, .pill-rail, dialog.listing-modal .modal-close { display: none !important; }
+    .site-nav, .bottom-bar, .to-top, .toast, footer, .cta-band, .pill-rail, dialog.listing-modal .modal-close { display: none !important; }
     body { padding: 0 !important; background: #fff; color: #000; }
     * { animation: none !important; transition: none !important; box-shadow: none !important; }
     .reveal.pre { opacity: 1 !important; transform: none !important; }
@@ -1342,43 +1347,52 @@
   }
 
   /* ============================================================
-     Homepage: "Noor means light"
-     One orchestrated moment on first load: the NICC star assembles
-     from its two squares around a real photo of the center, a gold
-     outline draws, and light opens up behind it. Everything else on
-     the page answers the visitor (hover, focus, scroll into the
-     owner steps) rather than moving on its own.
+     Homepage
+     The banner is the masjid itself: the aerial photo of the Noor
+     Islamic Cultural Center runs full width, with the text set on a
+     deep green scrim so it stays readable over any part of the photo.
+     Motion: on first load the photo settles in and the text rises;
+     after that, everything moves only in answer to the visitor.
      ============================================================ */
 
-  /* ---------- Hero ---------- */
+  /* ---------- Banner ---------- */
   .nl-hero {
     position: relative; isolation: isolate; overflow: hidden;
-    background: var(--night); color: var(--night-ink); padding: 76px 0 92px;
+    min-height: clamp(600px, 88vh, 820px); display: flex; align-items: flex-end;
+    padding: 160px 0 72px; color: #FFFFFF; background: var(--night);
   }
-  .nl-hero::before {
-    content: ""; position: absolute; inset: 0; z-index: -2; pointer-events: none;
-    background-image: var(--pattern); background-size: 120px 120px; opacity: 0.08;
-    -webkit-mask-image: radial-gradient(ellipse 70% 80% at 78% 50%, #000 0%, transparent 72%);
-    mask-image: radial-gradient(ellipse 70% 80% at 78% 50%, #000 0%, transparent 72%);
+  .nl-hero-media { position: absolute; inset: 0; z-index: -2; }
+  .nl-hero-media img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 22%; }
+  /* Two layers: a wash from the bottom-left where the text sits, and a
+     light overall tint so the photo never competes with the type. */
+  .nl-hero-scrim {
+    position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    background:
+      linear-gradient(90deg, rgba(20, 33, 17, 0.9) 0%, rgba(20, 33, 17, 0.72) 42%, rgba(20, 33, 17, 0.2) 75%, rgba(20, 33, 17, 0.05) 100%),
+      linear-gradient(0deg, rgba(20, 33, 17, 0.75) 0%, rgba(20, 33, 17, 0.25) 45%, rgba(20, 33, 17, 0) 70%);
   }
-  .nl-hero-glow {
-    position: absolute; z-index: -1; pointer-events: none;
-    width: 980px; height: 980px; right: -240px; top: 50%; margin-top: -490px;
-    background: radial-gradient(circle, rgba(242, 199, 107, 0.34) 0%, rgba(226, 174, 74, 0.13) 30%, rgba(226, 174, 74, 0) 62%);
+  .nl-hero-inner { width: 100%; }
+  .nl-hero-copy { max-width: 660px; }
+  .nl-hero h1 {
+    color: #FFFFFF; font-size: clamp(2.4rem, 1.4rem + 3.3vw, 4rem); line-height: 1.05; letter-spacing: -0.015em;
+    text-shadow: 0 2px 18px rgba(10, 18, 8, 0.35);
   }
-  .nl-hero-grid { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr); gap: 64px; align-items: center; }
-  .nl-hero h1 { color: var(--night-ink); font-size: clamp(2.4rem, 1.3rem + 3.4vw, 3.9rem); line-height: 1.04; letter-spacing: -0.018em; }
-  .nl-line { display: block; }
-  .nl-sub { margin-top: 24px; font-size: clamp(1.03rem, 0.96rem + 0.3vw, 1.16rem); line-height: 1.62; color: var(--night-muted); max-width: 50ch; }
-  .nl-hero :focus-visible { outline-color: var(--gold-bright); }
+  .nl-sub {
+    margin-top: 20px; font-size: clamp(1.04rem, 0.97rem + 0.3vw, 1.18rem); line-height: 1.6;
+    color: #EEF3E0; max-width: 50ch; text-shadow: 0 1px 10px rgba(10, 18, 8, 0.4);
+  }
+  .nl-hero :focus-visible { outline-color: var(--hl-bright); }
+  .nl-hero-credit {
+    position: absolute; right: 24px; bottom: 20px; margin: 0;
+    font-size: 0.8rem; color: rgba(255, 255, 255, 0.82); text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+  }
 
-  /* Search: a light card set into the night surface. Outer radius 20 =
-     inner 12 + padding 8, so the fields nest concentrically. */
+  /* Search: a light card on the photo. Outer radius 20 = inner 12 + padding 8. */
   .search-card {
-    margin-top: 34px; background: var(--surface); color: var(--ink);
+    margin-top: 30px; background: var(--surface); color: var(--ink);
     border-radius: 20px; padding: 8px; max-width: 640px;
     display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr) auto; gap: 4px;
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 32px 64px -32px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 30px 60px -28px rgba(0, 0, 0, 0.65), 0 2px 6px rgba(0, 0, 0, 0.15);
   }
   .search-field {
     position: relative; display: flex; align-items: center; gap: 10px; min-width: 0;
@@ -1407,76 +1421,45 @@
   .nl-hint-word.is-pre { opacity: 0; transform: translateY(60%); transition: none; }
   .nl-q:focus-within .nl-hint, .nl-q.has-value .nl-hint { opacity: 0; }
 
-  .nl-popular { margin-top: 20px; display: flex; align-items: center; gap: 10px 12px; flex-wrap: wrap; }
-  .nl-popular-label { font-size: 0.9rem; font-weight: 600; color: var(--night-muted); }
+  .nl-popular { margin-top: 18px; display: flex; align-items: center; gap: 10px 12px; flex-wrap: wrap; }
+  .nl-popular-label { font-size: 0.92rem; font-weight: 600; color: #EEF3E0; text-shadow: 0 1px 8px rgba(10, 18, 8, 0.5); }
   .nl-chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .nl-chip {
     font: inherit; font-size: 0.88rem; font-weight: 600; min-height: 40px; padding: 8px 15px;
-    color: var(--night-ink); background: rgba(238, 243, 236, 0.06); border: 1px solid var(--night-line);
+    color: #FFFFFF; background: rgba(20, 33, 17, 0.55); border: 1px solid rgba(255, 255, 255, 0.28);
     border-radius: 999px; cursor: pointer;
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
     transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.15s var(--ease-out);
   }
   .nl-chip:active { transform: scale(0.97); }
   @media (hover: hover) and (pointer: fine) {
-    .nl-chip:hover { color: var(--gold-bright); border-color: rgba(242, 199, 107, 0.55); background: rgba(242, 199, 107, 0.08); }
+    .nl-chip:hover { background: var(--hl); border-color: var(--hl); color: var(--hl-ink); }
   }
 
-  /* The star: a square layer and a diamond layer showing the same photo.
-     Their union is the NICC khatim. */
-  .nl-visual { position: relative; margin: 0; justify-self: center; width: min(100%, 520px); }
-  .nl-star { position: relative; aspect-ratio: 1; }
-  .nl-layer { position: absolute; inset: 0; }
-  .nl-layer img { width: 100%; height: 100%; object-fit: cover; object-position: 56% 50%; }
-  .nl-square { clip-path: polygon(14.29% 14.29%, 85.71% 14.29%, 85.71% 85.71%, 14.29% 85.71%); }
-  .nl-diamond { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
-  .nl-outline { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-  .nl-outline path {
-    /* No non-scaling-stroke here: it breaks pathLength-based dashing,
-       which the draw-on animation relies on. 0.3 units is ~1.5px at full size. */
-    fill: none; stroke: var(--gold); stroke-width: 0.3; stroke-linejoin: round;
-    stroke-dasharray: 1; stroke-dashoffset: 0;
-  }
-  .nl-ring { position: absolute; inset: -9%; pointer-events: none; opacity: 0.5; }
-  .nl-ring svg { width: 100%; height: 100%; overflow: visible; transform: rotate(22.5deg); }
-  .nl-ring path { fill: none; stroke: var(--sage); stroke-width: 1; vector-effect: non-scaling-stroke; stroke-dasharray: 2 6; }
-  .nl-visual figcaption { margin-top: 22px; text-align: center; font-size: 0.86rem; color: var(--night-muted); }
-
-  /* First-load sequence. JS adds .nl-played after it finishes so the
-     star doesn't rebuild every time someone navigates back home. */
+  /* First-load sequence. JS adds .nl-played once it finishes, so coming
+     back to the homepage later doesn't replay it. */
   @keyframes nl-rise { from { opacity: 0; transform: translateY(18px); } }
   @keyframes nl-fade { from { opacity: 0; } }
-  @keyframes nl-square-in {
-    from { clip-path: polygon(50% 50%, 50% 50%, 50% 50%, 50% 50%); }
-  }
-  @keyframes nl-diamond-in {
-    0% { clip-path: polygon(50% 50%, 50% 50%, 50% 50%, 50% 50%); animation-timing-function: cubic-bezier(0.19, 1, 0.22, 1); }
-    40% { clip-path: polygon(14.29% 14.29%, 85.71% 14.29%, 85.71% 85.71%, 14.29% 85.71%); animation-timing-function: cubic-bezier(0.645, 0.045, 0.355, 1); }
-    100% { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
-  }
-  @keyframes nl-draw { from { stroke-dashoffset: 1; } }
-  @keyframes nl-glow { from { opacity: 0; transform: scale(0.7); } }
-  @keyframes nl-spin { to { transform: rotate(382.5deg); } }
-
+  @keyframes nl-settle { from { transform: scale(1.08); } }
   @media (prefers-reduced-motion: no-preference) {
-    .nl-hero:not(.nl-played) .nl-line:nth-child(1) { animation: nl-rise 0.8s var(--ease-out-expo) 0.1s backwards; }
-    .nl-hero:not(.nl-played) .nl-line:nth-child(2) { animation: nl-rise 0.8s var(--ease-out-expo) 0.2s backwards; }
-    .nl-hero:not(.nl-played) .nl-sub { animation: nl-rise 0.8s var(--ease-out-expo) 0.32s backwards; }
-    .nl-hero:not(.nl-played) .search-card { animation: nl-rise 0.8s var(--ease-out-expo) 0.44s backwards; }
-    .nl-hero:not(.nl-played) .nl-popular { animation: nl-fade 0.8s ease-out 0.62s backwards; }
-    .nl-hero:not(.nl-played) .nl-square { animation: nl-square-in 0.6s var(--ease-out-expo) 0.15s backwards; }
-    .nl-hero:not(.nl-played) .nl-diamond { animation: nl-diamond-in 1.5s 0.15s backwards; }
-    .nl-hero:not(.nl-played) .nl-outline path { animation: nl-draw 1.2s var(--ease-in-out) 1.25s backwards; }
-    .nl-hero:not(.nl-played) .nl-hero-glow { animation: nl-glow 1.8s var(--ease-out) 1.1s backwards; }
-    .nl-hero:not(.nl-played) .nl-visual figcaption { animation: nl-fade 0.8s ease-out 1.8s backwards; }
-    .nl-hero:not(.nl-played) .nl-ring { animation: nl-fade 1s ease-out 1.6s backwards; }
-    .nl-ring svg { animation: nl-spin 160s linear infinite; }
+    .nl-hero:not(.nl-played) .nl-hero-media img { animation: nl-settle 2.4s var(--ease-out) backwards; }
+    .nl-hero:not(.nl-played) h1 { animation: nl-rise 0.9s var(--ease-out-expo) 0.15s backwards; }
+    .nl-hero:not(.nl-played) .nl-sub { animation: nl-rise 0.9s var(--ease-out-expo) 0.28s backwards; }
+    .nl-hero:not(.nl-played) .search-card { animation: nl-rise 0.9s var(--ease-out-expo) 0.4s backwards; }
+    .nl-hero:not(.nl-played) .nl-popular { animation: nl-fade 0.8s ease-out 0.6s backwards; }
+    .nl-hero:not(.nl-played) .nl-hero-credit { animation: nl-fade 0.8s ease-out 1s backwards; }
   }
 
-  @media (max-width: 960px) {
-    .nl-hero { padding: 52px 0 64px; }
-    .nl-hero-grid { grid-template-columns: 1fr; gap: 48px; }
-    .nl-visual { width: min(82%, 420px); }
-    .nl-hero-glow { right: 50%; margin-right: -490px; top: auto; bottom: -560px; margin-top: 0; }
+  @media (max-width: 760px) {
+    /* On phones the masjid sits at the top and the text below it, with
+       the scrim rising from the bottom. */
+    .nl-hero { min-height: 0; padding: 230px 0 40px; }
+    .nl-hero-media img { object-position: 58% 0%; height: 62%; }
+    .nl-hero-media { background: var(--night); }
+    .nl-hero-scrim {
+      background: linear-gradient(0deg, rgba(20, 33, 17, 1) 0%, rgba(20, 33, 17, 0.96) 52%, rgba(20, 33, 17, 0.55) 70%, rgba(20, 33, 17, 0.12) 88%, rgba(20, 33, 17, 0.05) 100%);
+    }
+    .nl-hero-credit { display: none; }
   }
   @media (max-width: 640px) {
     .search-card { grid-template-columns: 1fr; }
@@ -1505,7 +1488,7 @@
   .nl-head-sub { margin-top: 10px; color: var(--muted); max-width: 52ch; }
 
   /* ---------- Categories: a typographic index ---------- */
-  section.nl-cats { padding: 88px 0 72px; }
+  section.nl-cats { padding: 72px 0 88px; }
   .nl-cat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 48px; border-top: 1px solid var(--hairline); }
   .nl-cat {
     display: flex; align-items: center; gap: 18px; width: 100%; text-align: left; cursor: pointer;
@@ -1531,17 +1514,18 @@
     .nl-cat:hover .nl-cat-arrow { opacity: 1; transform: none; }
   }
   @media (max-width: 760px) {
-    section.nl-cats { padding: 64px 0 48px; }
+    section.nl-cats { padding: 56px 0 64px; }
     .nl-cat-grid { grid-template-columns: 1fr; }
     .nl-cat-arrow { opacity: 1; transform: none; }
   }
 
   /* ---------- Featured ---------- */
-  section.nl-featured { padding: 40px 0 88px; }
+  section.nl-featured { padding: 80px 0 40px; }
   section.nl-featured[hidden] { display: none; }
+  @media (max-width: 760px) { section.nl-featured { padding: 56px 0 24px; } }
 
   /* ---------- Business owners ---------- */
-  section.nl-owners { padding: 0 0 96px; }
+  section.nl-owners { padding: 96px 0; }
   .nl-owners-panel {
     position: relative; isolation: isolate; overflow: hidden;
     background: var(--night); color: var(--night-ink); border-radius: 28px;
@@ -1554,30 +1538,30 @@
   }
   .nl-owners-panel::after {
     content: ""; position: absolute; z-index: -1; pointer-events: none; width: 720px; height: 720px; left: -260px; bottom: -420px;
-    background: radial-gradient(circle, rgba(242, 199, 107, 0.26) 0%, rgba(226, 174, 74, 0) 62%);
+    background: radial-gradient(circle, rgba(198, 210, 155, 0.22) 0%, rgba(198, 210, 155, 0) 62%);
   }
-  .nl-owners-panel :focus-visible { outline-color: var(--gold-bright); }
+  .nl-owners-panel :focus-visible { outline-color: var(--hl-bright); }
   .nl-owners h2 { color: var(--night-ink); font-size: clamp(1.95rem, 1.3rem + 1.9vw, 2.75rem); max-width: 16ch; }
   .nl-owners-copy > p { margin-top: 18px; color: var(--night-muted); font-size: 1.05rem; max-width: 46ch; }
   .nl-owners-actions { display: flex; align-items: center; gap: 14px 24px; flex-wrap: wrap; margin-top: 30px; }
-  .btn-gold { background: var(--gold); color: var(--gold-ink); }
+  .btn-hl { background: var(--hl); color: var(--hl-ink); }
   @media (hover: hover) and (pointer: fine) {
-    .btn-gold:hover { background: var(--gold-bright); transform: translateY(-2px); box-shadow: 0 14px 28px -12px rgba(226, 174, 74, 0.55); }
+    .btn-hl:hover { background: var(--hl-bright); transform: translateY(-2px); box-shadow: 0 14px 28px -12px rgba(198, 210, 155, 0.5); }
   }
   .nl-link-light {
     color: var(--night-ink); font-weight: 600; text-decoration: underline; text-underline-offset: 4px;
     text-decoration-color: rgba(238, 243, 236, 0.35); transition: text-decoration-color 0.2s ease;
   }
-  .nl-link-light:hover { text-decoration-color: var(--gold-bright); }
+  .nl-link-light:hover { text-decoration-color: var(--hl-bright); }
 
-  /* A real sequence, so it's numbered. A gold line runs down through the
+  /* A real sequence, so it's numbered. A sage line runs down through the
      steps when the panel scrolls into view, lighting each one in turn. */
   .nl-steps { list-style: none; margin: 0; padding: 0; position: relative; display: flex; flex-direction: column; gap: 30px; }
   .nl-steps::before, .nl-steps::after {
     content: ""; position: absolute; left: 19px; top: 20px; bottom: 20px; width: 2px; border-radius: 2px;
   }
   .nl-steps::before { background: var(--night-line); }
-  .nl-steps::after { background: var(--gold); transform: scaleY(0); transform-origin: top; transition: transform 1.3s var(--ease-in-out) 0.15s; }
+  .nl-steps::after { background: var(--hl); transform: scaleY(0); transform-origin: top; transition: transform 1.3s var(--ease-in-out) 0.15s; }
   .nl-steps.is-in::after { transform: scaleY(1); }
   .nl-step { position: relative; z-index: 1; display: flex; gap: 18px; }
   .nl-step-dot {
@@ -1587,14 +1571,14 @@
     background: var(--night-2); color: var(--night-muted); border: 1.5px solid var(--night-line);
     transition: background-color 0.35s ease, border-color 0.35s ease, color 0.35s ease, transform 0.35s var(--ease-out);
   }
-  .nl-steps.is-in .nl-step-dot { background: var(--gold); border-color: var(--gold); color: var(--gold-ink); }
+  .nl-steps.is-in .nl-step-dot { background: var(--hl); border-color: var(--hl); color: var(--hl-ink); }
   .nl-steps.is-in .nl-step:nth-child(1) .nl-step-dot { transition-delay: 0.1s; }
   .nl-steps.is-in .nl-step:nth-child(2) .nl-step-dot { transition-delay: 0.75s; }
   .nl-steps.is-in .nl-step:nth-child(3) .nl-step-dot { transition-delay: 1.4s; }
   .nl-step h3 { color: var(--night-ink); font-size: 1.1rem; padding-top: 8px; }
   .nl-step p { margin-top: 5px; color: var(--night-muted); font-size: 0.96rem; max-width: 40ch; }
   @media (max-width: 900px) {
-    section.nl-owners { padding-bottom: 72px; }
+    section.nl-owners { padding: 64px 0; }
     .nl-owners-panel { grid-template-columns: 1fr; gap: 40px; border-radius: 24px; }
   }
 
@@ -1617,14 +1601,14 @@
     background: var(--night); border-top: none; color: var(--night-ink);
     --ink: var(--night-ink); --ink-2: #C9D6CD; --muted: var(--night-muted);
     --hairline: var(--night-line); --ground: rgba(238, 243, 236, 0.06);
-    --accent: var(--gold); --accent-ink: var(--gold-ink); --accent-soft: rgba(242, 199, 107, 0.18);
-    --focus: var(--gold-bright);
+    --accent: var(--hl); --accent-ink: var(--hl-ink); --accent-soft: rgba(198, 210, 155, 0.18);
+    --focus: var(--hl-bright);
   }
   footer .brand { color: var(--night-ink); }
-  footer .footer-col a:hover, footer .footer-legal a:hover { color: var(--gold-bright); }
+  footer .footer-col a:hover, footer .footer-legal a:hover { color: var(--hl-bright); }
 
   @media (prefers-reduced-motion: reduce) {
-    .nl-hint-word, .nl-chip, .nl-cat-icon, .nl-cat-arrow, .nl-steps::after, .nl-step-dot, .btn-gold, .nl-link-light { transition: none; }
+    .nl-hint-word, .nl-chip, .nl-cat-icon, .nl-cat-arrow, .nl-steps::after, .nl-step-dot, .btn-hl, .nl-link-light { transition: none; }
   }
 </style>
 
@@ -1734,10 +1718,13 @@
   <!-- ============ HOME ============ -->
   <div class="page" id="page-home">
     <section class="nl-hero" aria-labelledby="homeTitle">
-      <div class="nl-hero-glow" aria-hidden="true"></div>
-      <div class="wrap nl-hero-grid">
+      <div class="nl-hero-media">
+        <picture><source type="image/webp" srcset="images/nicc-aerial.webp"><img src="images/nicc-aerial.jpg" width="1800" height="1013" fetchpriority="high" decoding="async" alt="Aerial view of the Noor Islamic Cultural Center and its pond in Columbus, Ohio"></picture>
+      </div>
+      <div class="nl-hero-scrim" aria-hidden="true"></div>
+      <div class="wrap nl-hero-inner">
         <div class="nl-hero-copy">
-          <h1 id="homeTitle"><span class="nl-line">The Noor community&rsquo;s</span> <span class="nl-line">guide to local businesses.</span></h1>
+          <h1 id="homeTitle">The Noor community&rsquo;s guide to local businesses.</h1>
           <p class="nl-sub">Muslim-owned and halal-friendly restaurants, grocers, clinics and services across Columbus, gathered by volunteers from the Noor Islamic Cultural Center (NICC).</p>
           <form class="search-card" role="search" aria-label="Find a business" id="heroSearch">
             <label class="search-field nl-q">
@@ -1774,35 +1761,20 @@
             </div>
           </div>
         </div>
-
-        <figure class="nl-visual">
-          <div class="nl-ring" aria-hidden="true">
-            <svg viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M50 0 L64.29 14.29 L85.71 14.29 L85.71 35.71 L100 50 L85.71 64.29 L85.71 85.71 L64.29 85.71 L50 100 L35.71 85.71 L14.29 85.71 L14.29 64.29 L0 50 L14.29 35.71 L14.29 14.29 L35.71 14.29 Z"/></svg>
-          </div>
-          <div class="nl-star">
-            <div class="nl-layer nl-square"><picture><source type="image/webp" srcset="images/nicc-aerial.webp"><img src="images/nicc-aerial.jpg" width="1800" height="1013" fetchpriority="high" decoding="async" alt="Aerial view of the Noor Islamic Cultural Center, its two domes and pond, in Columbus"></picture></div>
-            <div class="nl-layer nl-diamond" aria-hidden="true"><picture><source type="image/webp" srcset="images/nicc-aerial.webp"><img src="images/nicc-aerial.jpg" width="1800" height="1013" decoding="async" alt=""></picture></div>
-            <svg class="nl-outline" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M50 0 L64.29 14.29 L85.71 14.29 L85.71 35.71 L100 50 L85.71 64.29 L85.71 85.71 L64.29 85.71 L50 100 L35.71 85.71 L14.29 85.71 L14.29 64.29 L0 50 L14.29 35.71 L14.29 14.29 L35.71 14.29 Z"/></svg>
-          </div>
-          <figcaption>The Noor Islamic Cultural Center, Columbus</figcaption>
-        </figure>
       </div>
+      <p class="nl-hero-credit">Noor Islamic Cultural Center, Columbus</p>
     </section>
 
-    <section class="nl-facts" aria-label="How the directory works">
-      <div class="wrap nl-facts-row">
-        <div class="nl-fact">
-          <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#i-star-mark"/></svg>
-          <div><h2>Free for everyone</h2><p>Browse and save listings without an account. Listing a business is free too.</p></div>
+    <section class="nl-featured" id="featuredSection" aria-labelledby="featuredTitle">
+      <div class="wrap">
+        <div class="nl-head">
+          <div>
+            <h2 id="featuredTitle">Featured businesses</h2>
+            <p class="nl-head-sub" id="featuredSub">A few places worth knowing about. Sponsored ones are always labeled.</p>
+          </div>
+          <a class="text-link" href="#/explore" data-route="explore">See all businesses <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
         </div>
-        <div class="nl-fact">
-          <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#i-star-mark"/></svg>
-          <div><h2>Read by a volunteer</h2><p>Owners write their own listings. An NICC volunteer reads every one before it appears.</p></div>
-        </div>
-        <div class="nl-fact">
-          <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#i-star-mark"/></svg>
-          <div><h2>Honest placement</h2><p>Badges can&rsquo;t be bought, and sponsored listings are always labeled.</p></div>
-        </div>
+        <div class="listing-grid" id="featuredGrid"></div>
       </div>
     </section>
 
@@ -1825,16 +1797,20 @@
       </div>
     </section>
 
-    <section class="nl-featured" id="featuredSection" aria-labelledby="featuredTitle">
-      <div class="wrap">
-        <div class="nl-head">
-          <div>
-            <h2 id="featuredTitle">Featured businesses</h2>
-            <p class="nl-head-sub" id="featuredSub">A few places worth knowing about. Sponsored ones are always labeled.</p>
-          </div>
-          <a class="text-link" href="#/explore" data-route="explore">See all businesses <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+    <section class="nl-facts" aria-label="How the directory works">
+      <div class="wrap nl-facts-row">
+        <div class="nl-fact">
+          <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#i-star-mark"/></svg>
+          <div><h2>Free for everyone</h2><p>Browse and save listings without an account. Listing a business is free too.</p></div>
         </div>
-        <div class="listing-grid" id="featuredGrid"></div>
+        <div class="nl-fact">
+          <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#i-star-mark"/></svg>
+          <div><h2>Read by a volunteer</h2><p>Owners write their own listings. An NICC volunteer reads every one before it appears.</p></div>
+        </div>
+        <div class="nl-fact">
+          <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#i-star-mark"/></svg>
+          <div><h2>Honest placement</h2><p>Badges can&rsquo;t be bought, and sponsored listings are always labeled.</p></div>
+        </div>
       </div>
     </section>
 
@@ -1845,7 +1821,7 @@
             <h2 id="ownersTitle">Own a business? Let your neighbors find you.</h2>
             <p>Listing is free. Add your hours, photos and contact details, then keep them current and reply to reviews from your own account.</p>
             <div class="nl-owners-actions">
-              <a href="#/list" data-route="list" class="btn btn-gold">List your business</a>
+              <a href="#/list" data-route="list" class="btn btn-hl">List your business</a>
               <a href="#/faq" data-route="faq" class="nl-link-light">Read the owner FAQ</a>
             </div>
           </div>
@@ -3744,12 +3720,12 @@
   (function () {
     var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    // The star assembles on first view only; after that, coming back home is instant.
+    // The banner intro plays on first view only; after that, coming back home is instant.
     var hero = document.querySelector(".nl-hero");
-    var outline = hero && hero.querySelector(".nl-outline path");
+    var heroImg = hero && hero.querySelector(".nl-hero-media img");
     if (hero) {
-      if (reduce || !outline) hero.classList.add("nl-played");
-      else outline.addEventListener("animationend", function () { hero.classList.add("nl-played"); }, { once: true });
+      if (reduce || !heroImg) hero.classList.add("nl-played");
+      else heroImg.addEventListener("animationend", function () { hero.classList.add("nl-played"); }, { once: true });
     }
 
     // Real examples cycle in the empty search box so people see what they can find.
