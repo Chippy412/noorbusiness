@@ -27,7 +27,8 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" as="image" type="image/webp" href="images/hero-meal.webp" fetchpriority="high">
+<link rel="preload" as="image" type="image/webp" href="images/hero-meal.webp" media="(min-width: 641px)" fetchpriority="high">
+<link rel="preload" as="image" type="image/webp" imagesrcset="images/masjid-hero-960.webp 960w, images/masjid-hero-1280.webp 1280w" imagesizes="100vw" media="(max-width: 640px)" fetchpriority="high">
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:ital,opsz,wght@0,12..96,500;0,12..96,600;0,12..96,700;1,12..96,600&family=Manrope:wght@400;500;600;700;800&family=Amiri:wght@400;700&family=JetBrains+Mono:wght@500&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:ital,opsz,wght@0,12..96,500;0,12..96,600;0,12..96,700;1,12..96,600&family=Manrope:wght@400;500;600;700;800&family=Amiri:wght@400;700&family=JetBrains+Mono:wght@500&display=swap"></noscript>
 <link rel="manifest" href="manifest.webmanifest">
@@ -94,6 +95,11 @@
     --focus: #4C5F26;
     --danger: #A3341F;
     --nav-bg: rgba(248, 248, 242, 0.86);
+    /* Deep green surface for the phone hero and the steps panel. */
+    --night: #23391F;
+    --night-ink: #F4F7EB;
+    --night-muted: #CBD5B6;
+    --night-line: rgba(244, 247, 235, 0.18);
     --on-accent-soft: rgba(255, 255, 255, 0.86);
     --on-accent-border: rgba(255, 255, 255, 0.6);
     --logo-text: #A3B472;
@@ -282,7 +288,11 @@
   .section-head { max-width: 620px; margin-bottom: 44px; }
   .section-head h2 { font-size: clamp(1.7rem, 1.15rem + 1.7vw, 2.5rem); font-weight: 700; letter-spacing: -0.015em; }
   .section-head p { margin-top: 12px; color: var(--muted); font-size: 1.05rem; }
-  .page-head { padding: 60px 0 40px; border-bottom: 1px solid var(--hairline); }
+  .page-head { position: relative; isolation: isolate; overflow: hidden; padding: 60px 0 40px; background: var(--accent-soft); border-bottom: 1px solid var(--hairline); }
+  .page-head::before {
+    content: ""; position: absolute; inset: 0; z-index: -1; background-image: var(--pattern); background-size: 120px 120px; opacity: 0.5;
+    -webkit-mask-image: linear-gradient(to left, #000 15%, transparent 70%); mask-image: linear-gradient(to left, #000 15%, transparent 70%);
+  }
   .page-head h1 { font-size: clamp(2rem, 1.4rem + 2.2vw, 2.9rem); }
   .page-head p { margin-top: 14px; color: var(--muted); font-size: 1.08rem; max-width: 58ch; }
 
@@ -297,6 +307,7 @@
 
   /* ---------- Hero ---------- */
   .hero { padding: 56px 0 84px; }
+  .hero-masjid { display: none; }
   .hero-grid { display: grid; grid-template-columns: 1.06fr 0.94fr; gap: 56px; align-items: center; }
   .hero h1 { font-size: clamp(2.1rem, 1rem + 3.4vw, 3.5rem); font-weight: 700; letter-spacing: -0.02em; }
   .hero-sub { margin-top: 20px; font-size: 1.1rem; color: var(--muted); max-width: 46ch; }
@@ -1382,6 +1393,62 @@
     #featuredGrid .listing { flex-basis: 88%; }
   }
 
+  /* ---------- Phone: masjid banner, green hero, tiles, steps panel ---------- */
+  @media (max-width: 640px) {
+    .hero { padding: 0 0 30px; background: var(--night); }
+    .hero-masjid { display: block; position: relative; margin: 0; aspect-ratio: 16 / 9; overflow: hidden; }
+    .hero-masjid img { width: 100%; height: 100%; object-fit: cover; }
+    .hero-masjid::after {
+      content: ""; position: absolute; inset: 45% 0 0 0; pointer-events: none;
+      background: linear-gradient(to bottom, transparent, var(--night));
+    }
+    .hero-masjid figcaption {
+      position: absolute; left: 20px; bottom: 10px; z-index: 1; margin: 0;
+      font-size: 0.74rem; font-weight: 600; color: rgba(255, 255, 255, 0.9); text-shadow: 0 1px 6px rgba(0, 0, 0, 0.55);
+    }
+    .hero-grid { padding-top: 20px; }
+    .hero-visual { display: none; }
+    .hero h1 { color: var(--night-ink); }
+    .hero-sub { color: var(--night-muted); }
+    .hero .search-card { box-shadow: 0 24px 40px -24px rgba(0 0 0 / 0.6); border-color: transparent; }
+    .hero-trust { color: var(--night-muted); }
+    .hero-trust strong { color: var(--night-ink); }
+    .hero-trust svg { color: var(--sage); }
+    .hero :focus-visible { outline-color: var(--sage); }
+
+    /* Categories: the photo card leads, the rest become a 2-up grid of tiles. */
+    .cat-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; border-top: 0; }
+    .cat-row {
+      flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 18px;
+      min-height: 0; padding: 14px 14px 16px; border: 1px solid var(--hairline); border-radius: 16px; background: var(--surface);
+    }
+    .cat-row:hover { padding-left: 14px; }
+    .cat-row:last-child:nth-child(odd) { grid-column: 1 / -1; min-height: 0; flex-direction: row; align-items: center; }
+    .cat-row h3 { font-size: 1rem; line-height: 1.25; }
+    .cat-row span:not(.cat-icon) { display: none; }
+    .cat-icon { width: 40px; height: 40px; }
+    .category-photo { min-height: 170px; }
+
+    /* Steps sit in a deep green panel, joined by a line. */
+    .steps-band { background: none; border: 0; padding: 8px 0 0; }
+    .steps-band > .wrap {
+      position: relative; isolation: isolate; overflow: hidden; margin: 0 20px; padding: 30px 22px;
+      background: var(--night); border-radius: 22px;
+    }
+    .steps-band > .wrap::before {
+      content: ""; position: absolute; inset: 0; z-index: -1;
+      background-image: var(--pattern-on-accent); background-size: 72px 72px; opacity: 0.06;
+    }
+    .steps-band .section-head h2 { color: var(--night-ink); }
+    .steps-row { position: relative; gap: 26px; }
+    .steps-row::before {
+      content: ""; position: absolute; left: 21px; top: 22px; bottom: 22px; width: 2px; background: var(--night-line);
+    }
+    .steps-band .step-num { background: var(--sage); border-color: var(--sage); color: var(--night); }
+    .steps-band .step h3 { color: var(--night-ink); }
+    .steps-band .step p { color: var(--night-muted); }
+  }
+
   /* Print: just the content. */
   @media print {
     .site-nav, .bottom-bar, .to-top, .toast, footer, .cta-band, .hero-visual, .pill-rail, dialog.listing-modal .modal-close { display: none !important; }
@@ -1509,6 +1576,14 @@
   <!-- ============ HOME ============ -->
   <div class="page" id="page-home">
     <section class="hero">
+      <figure class="hero-masjid">
+        <picture>
+          <source media="(min-width: 641px)" srcset="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==">
+          <source type="image/webp" srcset="images/masjid-hero-960.webp 960w, images/masjid-hero-1280.webp 1280w" sizes="100vw">
+          <img src="images/masjid-hero-960.jpg" srcset="images/masjid-hero-960.jpg 960w, images/masjid-hero-1280.jpg 1280w" sizes="100vw" width="960" height="540" fetchpriority="high" decoding="async" alt="Aerial view of the Noor Islamic Cultural Center and its pond in Hilliard, Ohio">
+        </picture>
+        <figcaption>Noor Islamic Cultural Center, Hilliard</figcaption>
+      </figure>
       <div class="wrap hero-grid">
         <div>
           <h1>Find Muslim-owned and halal-friendly businesses in Columbus.</h1>
