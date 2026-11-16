@@ -252,7 +252,7 @@
     }
 
     function messageSheet(m) {
-      var subject = "Re: " + (m.subject || "your message to Noor Business");
+      var subject = "Re: " + (m.subject || "your message to NICC Business");
       return '<article class="mod-sheet mod-sheet-quiet' + (m.handled_at ? " is-done" : "") + '">' +
         '<header class="mod-sheet-head"><div><h3>' + esc(m.name) + '</h3><p class="mod-sub">' + esc(m.subject || "No subject") + "</p></div>" +
         '<p class="mod-when">' + when(m.created_at) + "<br>" + esc(m.email) + "</p></header>" +
@@ -757,7 +757,7 @@
       return QUEUES.reduce(function (sum, q) { return sum + queueItems(q.id).length; }, 0);
     }
     function setTitle(n) {
-      document.title = (n ? "(" + n + ") " : "") + "Moderation — Noor Business";
+      document.title = (n ? "(" + n + ") " : "") + "Moderation — NICC Business";
     }
     function showBanner(n) {
       var main = root.querySelector(".mod-main");
@@ -784,7 +784,7 @@
         showBanner(added);
         h.toast(added === 1 ? "A new item needs review." : added + " new items need review.");
         if (desktopOn() && document.hidden) {
-          try { new Notification("Noor Business moderation", { body: (added === 1 ? "1 new item" : added + " new items") + " waiting for review.", tag: "nicc-moderation" }); } catch (e) { /* unsupported */ }
+          try { new Notification("NICC Business moderation", { body: (added === 1 ? "1 new item" : added + " new items") + " waiting for review.", tag: "nicc-moderation" }); } catch (e) { /* unsupported */ }
         }
       }
       lastSeen = c.total;

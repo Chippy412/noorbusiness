@@ -1,7 +1,7 @@
 {
-  "name": "Noor Business",
-  "short_name": "Noor Business",
-  "description": "A community-run directory of Muslim-owned and halal-verified businesses in Hilliard, Ohio.",
+  "name": "NICC Business",
+  "short_name": "NICC Business",
+  "description": "A community-run directory of Muslim-owned and halal-verified businesses in Columbus, Ohio.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
