@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // scripts/import-businesses.mjs
 // Loads researched listings from a CSV into the businesses table as
-// PENDING, unclaimed rows (origin = 'imported', no owner), so a moderator
+// PENDING rows with no owner (origin = 'imported', no owner), so a moderator
 // approves each one before it shows on the site.
 //
 //   node scripts/import-businesses.mjs listings.csv --batch pilot-2026-11            # dry run (default)

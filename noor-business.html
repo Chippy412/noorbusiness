@@ -748,8 +748,6 @@
   .modal-photo { margin: -24px -28px 0; aspect-ratio: 16/9; overflow: hidden; }
   .modal-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .modal-section h3 { font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-family: "Manrope", sans-serif; font-weight: 700; margin-bottom: 12px; }
-  .unclaimed-tag { display: inline-block; margin: 0 0 6px; padding: 2px 8px; border-radius: 999px; background: var(--surface-2, #f1f1ec); color: var(--muted); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.02em; }
-  .unclaimed-note { padding: 10px 12px; border-radius: 10px; background: var(--surface-2, #f1f1ec); color: var(--ink-2); font-size: 0.9rem; }
   .hours-list { display: flex; flex-direction: column; gap: 8px; }
   .hours-row { display: flex; justify-content: space-between; font-size: 0.92rem; }
   .hours-row span:first-child { color: var(--muted); }
@@ -2902,7 +2900,6 @@
           '</button>' +
         '</div>' +
         '<div class="listing-body">' +
-          (item.unclaimed ? '<p class="unclaimed-tag" title="Added by NICC volunteers from public information. The owner has not claimed it yet.">Unclaimed</p>' : '') +
           (item.sponsored ? '<p class="sponsored-tag" title="This business pays to be promoted. Badges can\u2019t be bought.">Sponsored</p>' : '') +
           '<h3>' + name + '</h3>' +
           '<p class="listing-meta">' + cat + ' in ' + hood + '</p>' +
@@ -2994,9 +2991,6 @@
     var sponsorBadge = item.sponsored ? '<span class="badge neutral sponsored-badge" title="This business pays to be promoted. Badges can\u2019t be bought.">Sponsored</span>' : '';
     html += '<div class="modal-section"><div class="badges">' + item.badges.map(badgeHtml).join("") + ratingBadge + sponsorBadge + '</div></div>';
     html += '<div class="modal-section"><p style="color:var(--ink-2)">' + escapeAttr(item.long) + '</p></div>';
-    if (item.unclaimed) {
-      html += '<div class="modal-section"><p class="unclaimed-note"><strong>Unclaimed listing.</strong> Added by NICC volunteers from public information, so details may be out of date. Is this your business? Choose <strong>Claim this business</strong> below, or use <strong>Report</strong> to ask us to remove it.</p></div>';
-    }
 
     if (item.address) {
       var mapsUrl = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(item.name + " " + item.address);
