@@ -32,6 +32,7 @@
     status: status,
     queue: function () { return rpc("admin_queue"); },
     counts: function () { return rpc("admin_counts"); },
+    addListing: function (fields) { return rpc("admin_add_listing", { p_fields: fields }); },
     allBusinesses: function () { return rpc("admin_all_businesses"); },
     recentReviews: function () { return rpc("admin_recent_reviews"); },
     log: function () { return rpc("admin_log"); },
@@ -66,6 +67,7 @@
     { id: "messages", label: "Messages" },
     { id: "published", label: "Published reviews" },
     { id: "all", label: "All listings" },
+    { id: "add", label: "Add a listing" },
     { id: "activity", label: "Activity" },
     { id: "guide", label: "Guide" },
     { id: "sponsors", label: "Sponsors", modOnly: true },
@@ -101,6 +103,7 @@
     "message.handled": "marked a message handled", "message.reopened": "reopened a message",
     "note": "added a note on",
     "sponsor.billing": "billing update for", "sponsor.comped": "gave a free placement to", "sponsor.comp_ended": "ended the free placement on",
+    "listing.added": "added a listing:",
     "listing.featured_until": "set when Featured ends on",
     "team.added": "added to the team:", "team.role": "changed the role of", "team.removed": "removed from the team:"
   };
@@ -420,6 +423,34 @@
         }).join("") + "</ul>";
     }
 
+    /* ---------- add a listing ---------- */
+    var CATEGORY_LIST = ["Restaurants", "Grocery", "Modest Wear", "Health & Wellness", "Professional Services", "Education", "Home & Living", "Auto & Repair"];
+    function addPanel() {
+      function field(id, label, extra, tag) {
+        return '<div class="field"><label for="' + id + '">' + label + "</label>" +
+          (tag === "textarea" ? '<textarea id="' + id + '" rows="4"' + extra + "></textarea>" : '<input id="' + id + '" autocomplete="off"' + extra + ">") + "</div>";
+      }
+      return '<p class="mod-intro">Add a business you found, for example from a community directory. It is saved as a waiting listing with no owner, so it shows up under New listings to be published. The owner can claim it later.</p>' +
+        '<form class="mod-add mod-form" id="adminListingForm">' +
+        field("alName", "Business name", " required maxlength=\"120\"") +
+        '<div class="field"><label for="alCat">Category</label><select id="alCat" required>' + CATEGORY_LIST.map(function (c) { return "<option>" + esc(c) + "</option>"; }).join("") + "</select></div>" +
+        field("alHood", "Neighborhood or city", " required maxlength=\"60\" placeholder=\"Dublin\"") +
+        field("alDesc", "Short description (shown on the card)", " required maxlength=\"300\"") +
+        field("alLong", "Full description", " required maxlength=\"3000\"", "textarea") +
+        field("alAddr", "Street address", " maxlength=\"250\"") +
+        field("alPhone", "Phone", " maxlength=\"40\"") +
+        field("alWeb", "Website (https://…)", " type=\"url\" maxlength=\"300\"") +
+        field("alHours", "Hours, e.g. Mon-Sat 11am-9pm; Sun 12pm-6pm", "") +
+        field("alSources", "Where you found it (links, one per line)", "", "textarea") +
+        '<button type="submit" class="btn btn-primary btn-sm">Save listing</button></form>';
+    }
+    function parseHoursText(text) {
+      return String(text || "").split(";").map(function (part) {
+        var p = part.trim(), m = p.match(/^(\D*?)\s*(\d.*)$/);
+        return m && m[1] ? [m[1].trim(), m[2].trim()] : [p, ""];
+      }).filter(function (x) { return x[0]; });
+    }
+
     /* ---------- layout ---------- */
     function navItem(id, label, n) {
       return '<button class="mod-nav-item" role="tab" data-tab="' + id + '" aria-selected="' + (state.tab === id) + '">' +
@@ -474,6 +505,8 @@
         body = state.guide ? '<article class="mod-guide-wrap">' + state.guide + "</article>"
           : state.guideError ? '<div class="mod-empty"><p class="mod-empty-title">' + esc(state.guideError) + '</p><p>Use <em>Refresh now</em> to try again.</p></div>'
           : loading("the guide");
+      } else if (state.tab === "add") {
+        body = addPanel();
       } else if (state.tab === "team") {
         body = state.team ? teamPanel(state.team) : loading("the team");
       } else if (state.tab === "sponsors") {
@@ -726,6 +759,29 @@
         } catch (err) {
           h.toast((err && err.message) || "Could not add it.");
           cb.disabled = false;
+        }
+        return;
+      }
+      var listingForm = ev.target.closest("#adminListingForm");
+      if (listingForm) {
+        ev.preventDefault();
+        var lb = listingForm.querySelector('button[type="submit"]');
+        var gv = function (id) { return document.getElementById(id).value.trim(); };
+        lb.disabled = true;
+        try {
+          await api.addListing({
+            name: gv("alName"), category: gv("alCat"), neighborhood: gv("alHood"),
+            description: gv("alDesc"), long_description: gv("alLong"),
+            address: gv("alAddr"), phone: gv("alPhone"), website: gv("alWeb"),
+            hours: parseHoursText(gv("alHours")),
+            source_urls: gv("alSources").split(/\s+/).filter(function (u) { return /^https?:\/\//.test(u); })
+          });
+          state.tab = "new";
+          await refresh();
+          h.toast("Listing saved. It is waiting under New listings.");
+        } catch (err) {
+          h.toast((err && err.message) || "Could not save the listing.");
+          lb.disabled = false;
         }
         return;
       }

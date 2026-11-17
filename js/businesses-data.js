@@ -46,6 +46,8 @@
       rating: null,
       reviewCount: 0,
       ownerId: row.owner_id || null,
+      // Researched by volunteers from public information and not yet claimed by the owner.
+      unclaimed: row.origin === "imported" && !row.owner_id,
       phone: row.phone || null,
       website: row.website || null,
       desc: row.description,
