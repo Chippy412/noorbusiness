@@ -75,6 +75,7 @@ chmod -R a+rX "$WEB"
 
 echo "== nginx"
 install -m 644 deploy/nginx/noorbusiness.conf /etc/nginx/conf.d/noorbusiness.conf
+install -m 644 deploy/nginx/noorbusiness-internal.conf /etc/nginx/conf.d/noorbusiness-internal.conf
 # The repo config is port 80 only, so the copy above drops certbot's HTTPS
 # block. If a certificate exists, have certbot put it back, with the
 # http->https redirect (set NO_HTTPS_REDIRECT=1 to skip the redirect).
