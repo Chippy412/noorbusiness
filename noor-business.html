@@ -1575,6 +1575,19 @@
     .listing-art img { transition: none; }
     .faq-a, .to-top, .bottom-bar a, .bottom-bar button { transition: none; }
   }
+  /* ---------- Balance pass: long names, even cards, results bar ---------- */
+  .listing-body h3, .listing-meta { overflow-wrap: anywhere; }
+  .listing-body h3 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+  .listing-desc { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
+  .results-bar { min-height: 44px; }
+  .results-tools .field select { text-overflow: ellipsis; }
+  @media (max-width: 640px) {
+    .results-tools { gap: 8px; }
+    .results-tools .field { max-width: 172px !important; }
+    #results.list-view .listing-body h3 { white-space: normal; -webkit-line-clamp: 2; line-clamp: 2; }
+    #results.list-view .listing-meta { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+    #results.list-view .listing-body { padding-block: 12px; }
+  }
 </style>
 
 </head>
