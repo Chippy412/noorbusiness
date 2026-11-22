@@ -52,6 +52,7 @@
     setMessageHandled: function (id, handled) { return rpc("admin_set_message_handled", { p_id: id, p_handled: handled }); },
     sponsorships: function () { return rpc("admin_sponsorships"); },
     setComp: function (id, tier, until, note) { return rpc("admin_set_comp", { p_business: id, p_tier: tier, p_until: until, p_note: reason(note) }); },
+    listingStats: function (days) { return rpc("admin_listing_stats", { p_days: days }); },
     setFeaturedUntil: function (id, until) { return rpc("admin_set_featured_until", { p_id: id, p_until: until }); }
   };
 
@@ -70,6 +71,7 @@
     { id: "add", label: "Add a listing" },
     { id: "activity", label: "Activity" },
     { id: "guide", label: "Guide" },
+    { id: "analytics", label: "Analytics", modOnly: true },
     { id: "sponsors", label: "Sponsors", modOnly: true },
     { id: "team", label: "Team", modOnly: true }
   ];
@@ -115,7 +117,7 @@
     var esc = h.escape;
     var isMod = h.role === "moderator";
     var state = {
-      tab: "new", guide: null, guideError: null, data: null, all: null, team: null, published: null, log: null, sponsors: null,
+      tab: "new", guide: null, guideError: null, stats: null, statsDays: 30, data: null, all: null, team: null, published: null, log: null, sponsors: null,
       allQuery: "", allStatus: "", allFlag: "", allPage: 0, openHistory: {}
     };
 
@@ -403,6 +405,77 @@
       '<p class="mod-intro" style="margin-top:14px">Paid sponsorships will be handled through the masjid\u2019s own payment process. Until then, give a free placement above once the owner has arranged it with the team.</p>';
     }
 
+    // Analytics (moderators). Only anonymous daily totals per listing exist, so
+    // everything here is a count: no visitors, no devices, no places.
+    function num(n) { return Number(n || 0).toLocaleString(); }
+    function pct(a, b) { return b > 0 ? Math.round((a / b) * 1000) / 10 + "%" : "–"; }
+    function shortDay(iso) { return new Date(iso + "T12:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" }); }
+    function change(now, before) {
+      if (!before) return now ? "New this period" : "No change";
+      var d = Math.round(((now - before) / before) * 100);
+      return d === 0 ? "Same as before" : (d > 0 ? "Up " : "Down ") + Math.abs(d) + "% on the period before";
+    }
+    function niceMax(v) {
+      if (v <= 4) return 4;
+      var mag = Math.pow(10, Math.floor(Math.log10(v))), f = v / mag;
+      return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * mag;
+    }
+    function viewsChart(daily) {
+      var W = 720, H = 220, L = 38, B = 26, T = 8, R = 4;
+      var max = niceMax(Math.max.apply(null, daily.map(function (d) { return d.views; }).concat([1])));
+      var slot = (W - L - R) / daily.length, bw = Math.max(2, slot * 0.7);
+      var grid = [0, 0.5, 1].map(function (f) {
+        var y = T + (H - T - B) * (1 - f);
+        return '<line class="mod-an-grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + y + '" y2="' + y + '"/>' +
+          '<text class="mod-an-axis" x="' + (L - 6) + '" y="' + (y + 4) + '" text-anchor="end">' + num(max * f) + "</text>";
+      }).join("");
+      var bars = daily.map(function (d, i) {
+        var hgt = (H - T - B) * (d.views / max);
+        return '<rect class="mod-an-bar" x="' + (L + i * slot + (slot - bw) / 2).toFixed(1) + '" y="' + (H - B - hgt).toFixed(1) +
+          '" width="' + bw.toFixed(1) + '" height="' + Math.max(hgt, d.views ? 2 : 0).toFixed(1) + '" rx="2"><title>' +
+          esc(shortDay(d.day) + ": " + num(d.views) + (d.views === 1 ? " view" : " views")) + "</title></rect>";
+      }).join("");
+      var ticks = [0, Math.floor((daily.length - 1) / 2), daily.length - 1].filter(function (v, i, a) { return a.indexOf(v) === i; });
+      var labels = ticks.map(function (i, k) {
+        return '<text class="mod-an-axis" x="' + (L + i * slot + slot / 2).toFixed(1) + '" y="' + (H - 6) + '" text-anchor="' +
+          (k === 0 && ticks.length > 1 ? "start" : k === ticks.length - 1 && ticks.length > 1 ? "end" : "middle") + '">' + esc(shortDay(daily[i].day)) + "</text>";
+      }).join("");
+      return '<svg class="mod-an-chart" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Views per day, ' +
+        esc(shortDay(daily[0].day)) + " to " + esc(shortDay(daily[daily.length - 1].day)) + '">' + grid + bars + labels + "</svg>";
+    }
+    function analyticsPanel(st) {
+      var t = st.totals, prev = t.previous;
+      var clicks = t.website + t.phone + t.directions, prevClicks = prev.website + prev.phone + prev.directions;
+      var range = [7, 30, 90].map(function (n) {
+        return '<button class="btn btn-sm ' + (st.days === n ? "btn-primary" : "btn-ghost") + '" data-act="stats-range" data-days="' + n + '" aria-pressed="' + (st.days === n) + '">' + n + " days</button>";
+      }).join("");
+      function tile(label, value, sub) {
+        return '<div class="mod-an-tile"><p class="mod-an-label">' + label + '</p><p class="mod-an-value">' + value + '</p><p class="mod-an-sub">' + sub + "</p></div>";
+      }
+      var tiles = '<div class="mod-an-tiles">' +
+        tile("Views", num(t.views), change(t.views, prev.views)) +
+        tile("Clicks", num(clicks), change(clicks, prevClicks)) +
+        tile("Click-through", pct(clicks, t.views), "Clicks per view") +
+        tile("Listings seen", num(st.coverage.with_views) + " of " + num(st.coverage.live), "Live listings with a view") + "</div>";
+      if (!t.views && !clicks) {
+        return '<div class="mod-an-bar-head"><p class="mod-intro">Last ' + st.days + " days</p><div class=\"mod-an-range\">" + range + "</div></div>" + tiles +
+          '<div class="mod-empty"><p class="mod-empty-title">No visits counted yet.</p><p>Counts start as people open and use listings. Visitors who send Do Not Track are never counted.</p></div>';
+      }
+      var kinds = [["Website", t.website, "website"], ["Phone", t.phone, "phone"], ["Directions", t.directions, "directions"]];
+      var split = '<ul class="mod-an-split">' + kinds.map(function (k) {
+        return '<li><span class="mod-an-split-name">' + k[0] + '</span><span class="mod-an-track"><span class="mod-an-fill" style="width:' + (clicks ? Math.round((k[1] / clicks) * 100) : 0) + '%"></span></span>' +
+          '<span class="mod-an-split-n">' + num(k[1]) + '</span><span class="mod-an-split-pct">' + pct(k[1], t.views) + " of views</span></li>";
+      }).join("") + "</ul>";
+      var top = st.top.length ? '<div class="mod-an-tablewrap"><table class="mod-an-table"><thead><tr><th>Listing</th><th>Views</th><th>Website</th><th>Phone</th><th>Directions</th><th>Click-through</th></tr></thead><tbody>' +
+        st.top.map(function (r) {
+          return "<tr><th scope=\"row\">" + esc(r.name) + '<span class="mod-an-cat">' + esc(r.category) + "</span></th><td>" + num(r.views) + "</td><td>" + num(r.website) + "</td><td>" + num(r.phone) + "</td><td>" + num(r.directions) + "</td><td>" + pct(r.website + r.phone + r.directions, r.views) + "</td></tr>";
+        }).join("") + "</tbody></table></div>" : '<p class="mod-sub">No listing has been viewed in this period.</p>';
+      return '<div class="mod-an-bar-head"><p class="mod-intro">Last ' + st.days + " days, New York time. Daily totals only: no names, devices or places are stored.</p><div class=\"mod-an-range\">" + range + "</div></div>" + tiles +
+        '<section class="mod-sheet"><h3>Views per day</h3>' + viewsChart(st.daily) + "</section>" +
+        '<section class="mod-sheet"><h3>What people do next</h3><p class="mod-sub">Share of all clicks, and how often it happens per view.</p>' + split + "</section>" +
+        '<section class="mod-sheet"><h3>Most viewed listings</h3>' + top + "</section>";
+    }
+
     function teamPanel(members) {
       return '<section class="mod-sheet mod-sheet-quiet">' +
         '<h3>Add someone</h3>' +
@@ -509,6 +582,8 @@
         body = addPanel();
       } else if (state.tab === "team") {
         body = state.team ? teamPanel(state.team) : loading("the team");
+      } else if (state.tab === "analytics") {
+        body = state.stats ? analyticsPanel(state.stats) : loading("analytics");
       } else if (state.tab === "sponsors") {
         body = state.sponsors && state.all ? sponsorsPanel(state.sponsors) : loading("sponsorships");
       } else {
@@ -539,6 +614,7 @@
       if (state.tab === "all") state.all = await api.allBusinesses();
       if (state.tab === "published") state.published = await api.recentReviews();
       if (state.tab === "activity") state.log = await api.log();
+      if (state.tab === "analytics" && isMod) state.stats = await api.listingStats(state.statsDays);
       if (state.tab === "team" && isMod) state.team = await api.team();
       if (state.tab === "sponsors" && isMod) {
         var both = await Promise.all([api.sponsorships(), api.allBusinesses()]);
@@ -612,7 +688,7 @@
         var focusTarget = root.querySelector('[data-tab="' + state.tab + '"]');
         if (focusTarget) focusTarget.focus();
         var needs = (state.tab === "all" && !state.all) || state.tab === "published" || state.tab === "activity" ||
-          (state.tab === "guide" && !state.guide) || (isMod && (state.tab === "team" || state.tab === "sponsors"));
+          (state.tab === "guide" && !state.guide) || (isMod && (state.tab === "team" || state.tab === "sponsors" || state.tab === "analytics"));
         if (needs) {
           try { await loadTab(); render(); } catch (e) { h.toast(e.message || "Could not load that."); }
         }
@@ -674,6 +750,14 @@
             try { await api.setReviewStatus(ids[i], s, null); } catch (e) { failed++; }
           }
           msg = (ids.length - failed) + (s === "approved" ? " published." : " rejected.") + (failed ? " " + failed + " could not be changed." : "");
+        }
+        else if (act === "stats-range") {
+          state.statsDays = Number(btn_.getAttribute("data-days"));
+          state.stats = await api.listingStats(state.statsDays);
+          render();
+          var again = root.querySelector('[data-act="stats-range"][data-days="' + state.statsDays + '"]');
+          if (again) again.focus();
+          return;
         }
         else if (act === "comp-end") {
           if (!window.confirm("End the free placement for " + btn_.closest("[data-name]").getAttribute("data-name") + "? A paid sponsorship, if any, is not affected.")) { btn_.disabled = false; return; }
