@@ -109,6 +109,8 @@ function render(b, reviews, others) {
     "</ul></div>" +
     (hoursRows.length ? '<div class="card"><h2>Hours</h2><ul>' + hoursRows.map(function (r) { return "<li>" + h.esc(r[0]) + ": " + h.esc(r[1]) + "</li>"; }).join("") + "</ul></div>" : "") +
     '<p><a class="cta" href="/#/explore?open=' + h.esc(b.id) + '">See reviews &amp; more</a></p>' +
+    '<div class="card"><strong>Is this your business?</strong> <a href="/#/explore?open=' + h.esc(b.id) + '">Claim it</a> to keep the details up to date. ' +
+    'Spot something wrong? <a href="/#/explore?open=' + h.esc(b.id) + '">Report wrong info</a> and a volunteer will check it.</div>' +
     (more.length ? '<h2>More Muslim-owned businesses in Columbus</h2><ul>' + more.map(function (o) {
       return '<li><a href="/b/' + h.esc(o.id) + '">' + h.esc(o.name) + "</a> &middot; " + h.esc(o.category) + ", " + h.esc(o.neighborhood) + "</li>";
     }).join("") + "</ul>" : "") +

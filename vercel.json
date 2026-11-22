@@ -1,5 +1,7 @@
 {
   "redirects": [
+    { "source": "/join", "destination": "/#/list", "permanent": false },
+    { "source": "/claim", "destination": "/#/explore", "permanent": false },
     {
       "source": "/",
       "has": [
@@ -24,6 +26,7 @@
     }
   ],
   "rewrites": [
+    { "source": "/flyer", "destination": "/flyer.html" },
     {
       "source": "/",
       "destination": "/noor-business.html"

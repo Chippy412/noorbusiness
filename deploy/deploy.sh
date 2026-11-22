@@ -49,7 +49,7 @@ fi
 
 echo "== static files -> $WEB"
 STAGE=$(mktemp -d)
-cp -r noor-business.html 404.html manifest.webmanifest robots.txt js images "$STAGE"/
+cp -r noor-business.html flyer.html 404.html manifest.webmanifest robots.txt js images "$STAGE"/
 rsync -a --delete "$STAGE"/ "$WEB"/ 2>/dev/null || { rm -rf "${WEB:?}"/*; cp -r "$STAGE"/. "$WEB"/; }
 rm -rf "$STAGE"
 
