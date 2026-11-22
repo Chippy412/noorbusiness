@@ -47,3 +47,37 @@ export `config.api.bodyParser = false`), and
 
 `SITE_URL` now also drives the canonical links in `/b/<id>`, the sitemap and
 the links in notification emails.
+
+## Listing photos
+
+Owners upload a cover photo from the add-listing form or their account page.
+The browser resizes it first (`js/photo.js`: longest edge 1600px, re-encoded as
+WebP or JPEG, which also drops EXIF data such as GPS location), so originals up
+to 20 MB are accepted while stored files stay well under the bucket's 5 MB limit.
+The file then goes to the `business-photos` bucket in Supabase Storage at
+`<business_id>/<timestamp>.<ext>`, and `businesses.photo_url` points at
+`/storage/v1/object/public/business-photos/...`. Listings without a photo, or
+whose photo fails to load, show the category icon placeholder.
+
+Storage is the only layer that knows where the bytes live. Today the
+self-hosted Storage API uses its file backend (`/opt/supabase/docker/volumes/storage`,
+included in the nightly `storage.tar.gz` backup).
+
+### Moving photos to S3 later
+
+No app code changes: the public URLs stay the same because they go through
+the Storage API, not straight to the bucket.
+
+1. Create a private S3 bucket and an IAM user limited to it
+   (`s3:GetObject`, `s3:PutObject`, `s3:DeleteObject`, `s3:ListBucket`).
+2. In `/opt/supabase/docker/.env` / the `storage` service of
+   `docker-compose.yml` set `STORAGE_BACKEND=s3`, `GLOBAL_S3_BUCKET`, `REGION`,
+   and the key pair (`AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`). Keep the
+   keys in the server's env file only, never in git or chat.
+3. Copy the existing files so object keys match, then restart Storage:
+   `aws s3 sync /opt/supabase/docker/volumes/storage/stub/stub/ s3://BUCKET/stub/`
+   (check the folder layout under `volumes/storage` first; Storage keys objects
+   as `<tenant>/<bucket>/<path>`), then `docker compose up -d storage`.
+4. Open a listing with a photo and upload a test photo to confirm.
+5. Once photos live in S3, `storage.tar.gz` in the nightly backup is empty;
+   rely on S3 versioning for the photos instead.

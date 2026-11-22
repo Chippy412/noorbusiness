@@ -103,11 +103,13 @@
   async function uploadPhoto(businessId, file) {
     var user = await window.NiccAuth.getCurrentUser();
     if (!user) throw new Error("You must be logged in to upload a photo.");
-    var ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
-    var path = businessId + "/" + Date.now() + "." + ext;
+    // Resize and re-encode first (also strips EXIF/GPS) so phone photos fit the bucket limit.
+    // Accepts a File, or the result of NiccPhoto.prepare() when the caller already ran it.
+    var prepared = file && file.blob ? file : await window.NiccPhoto.prepare(file);
+    var path = businessId + "/" + Date.now() + "." + prepared.ext;
     var uploadResult = await window.NiccSupabase.storage
       .from("business-photos")
-      .upload(path, file, { cacheControl: "3600", upsert: false });
+      .upload(path, prepared.blob, { cacheControl: "3600", upsert: false, contentType: prepared.type });
     if (uploadResult.error) throw uploadResult.error;
     var publicUrl = window.NiccSupabase.storage.from("business-photos").getPublicUrl(path).data.publicUrl;
     var updateResult = await window.NiccSupabase.rpc("owner_update_business", { p_id: businessId, p_fields: { photo_url: publicUrl } });
