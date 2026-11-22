@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Flyer | NICC Business</title>
+<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32.png">
+<style>
+  :root { color-scheme: light; --bg:#fbfaf5; --ink:#1d2410; --muted:#5d6650; --accent:#4c5f26; --line:#dfe3d0; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 system-ui,-apple-system,Segoe UI,sans-serif; }
+  .tools { max-width:760px; margin:0 auto; padding:20px 16px 0; display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  .tools select, .tools button { font:inherit; padding:9px 14px; border-radius:999px; border:1px solid var(--line); background:#fff; color:var(--ink); }
+  .tools button { background:var(--accent); color:var(--bg); border-color:var(--accent); font-weight:700; cursor:pointer; }
+  .sheet { max-width:760px; margin:20px auto 48px; padding:40px 32px; background:#fff; border:1px solid var(--line); border-radius:20px; text-align:center; }
+  .sheet h1 { font-size:2.2rem; line-height:1.1; margin:0 0 10px; text-wrap:balance; }
+  .sheet p.lead { font-size:1.15rem; color:var(--muted); margin:0 auto 24px; max-width:32em; }
+  #qr { width:320px; max-width:70%; margin:0 auto; }
+  #qr svg { width:100%; height:auto; display:block; }
+  .short { margin:18px 0 0; font-size:1.7rem; font-weight:800; color:var(--accent); word-break:break-all; }
+  .small { color:var(--muted); font-size:.95rem; margin-top:8px; }
+  .brand { margin-top:28px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; font-size:.85rem; color:var(--muted); }
+  @media print { .tools { display:none; } body { background:#fff; } .sheet { border:0; margin:0 auto; } }
+</style>
+</head>
+<body>
+<div class="tools">
+  <label for="kind">Flyer for</label>
+  <select id="kind">
+    <option value="join">Owners: list or claim your business</option>
+    <option value="browse">Everyone: find Muslim owned businesses</option>
+  </select>
+  <button type="button" id="print">Print</button>
+</div>
+<main class="sheet" id="sheet">
+  <h1 id="title"></h1>
+  <p class="lead" id="lead"></p>
+  <div id="qr" role="img" aria-label="QR code"></div>
+  <p class="short" id="short"></p>
+  <p class="small" id="note"></p>
+  <p class="brand">NICC Business &middot; community-run directory</p>
+</main>
+<script src="/js/vendor/qrcode.js"></script>
+<script>
+(function () {
+  var origin = location.origin;
+  var host = origin.replace(/^https?:\/\//, "");
+  // Short links: /join lists or claims a business, /explore-style browsing is the home page.
+  var KINDS = {
+    join: { path: "/join", title: "Own a business in central Ohio?", lead: "Get listed on the community directory for free, or claim your listing if you are already on it.", note: "Scan the code or type the link. It takes about two minutes." },
+    browse: { path: "/", title: "Find Muslim owned and halal friendly businesses", lead: "Restaurants, grocers, services and more across central Ohio, in one place.", note: "Scan the code or type the link." }
+  };
+  var kind = new URLSearchParams(location.search).get("for");
+  if (!KINDS[kind]) kind = "join";
+  var sel = document.getElementById("kind");
+  function draw() {
+    var k = KINDS[kind];
+    var url = origin + k.path;
+    document.getElementById("title").textContent = k.title;
+    document.getElementById("lead").textContent = k.lead;
+    document.getElementById("note").textContent = k.note;
+    document.getElementById("short").textContent = host + (k.path === "/" ? "" : k.path);
+    var qr = qrcode(0, "M");
+    qr.addData(url);
+    qr.make();
+    document.getElementById("qr").innerHTML = qr.createSvgTag({ cellSize: 8, margin: 0, scalable: true });
+    document.getElementById("qr").setAttribute("aria-label", "QR code for " + url);
+    sel.value = kind;
+  }
+  sel.addEventListener("change", function () { kind = sel.value; draw(); });
+  document.getElementById("print").addEventListener("click", function () { window.print(); });
+  draw();
+})();
+</script>
+</body>
+</html>

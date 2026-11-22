@@ -52,7 +52,9 @@ function render(b, reviews) {
     (b.phone ? "<li>Phone: " + h.esc(b.phone) + "</li>" : "") +
     (site ? '<li>Website: <a href="' + h.esc(site) + '" rel="noopener nofollow">' + h.esc(site) + "</a></li>" : "") +
     "</ul></div>" +
-    '<p><a class="cta" href="/#/explore?open=' + h.esc(b.id) + '">See hours &amp; reviews</a></p>';
+    '<p><a class="cta" href="/#/explore?open=' + h.esc(b.id) + '">See hours &amp; reviews</a></p>' +
+    '<div class="card"><strong>Is this your business?</strong> <a href="/#/explore?open=' + h.esc(b.id) + '">Claim it</a> to keep the details up to date. ' +
+    'Spot something wrong? <a href="/#/explore?open=' + h.esc(b.id) + '">Report wrong info</a> and a volunteer will check it.</div>';
   return page(b.name + " — " + b.category + " in " + b.neighborhood + " | NICC Business", b.description, url, photo || SITE + "/images/hero.jpg", jsonLd, body);
 }
 
