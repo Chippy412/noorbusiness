@@ -707,6 +707,106 @@
     .pop-panel, .pop-panel-near { left: 16px; right: 16px; width: auto; }
   }
 
+  /* ---------- Explore: quick chips, count badge, status pill ---------- */
+  .quick-wrap { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .quick-row { display: flex; align-items: center; gap: 8px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding: 2px 2px 4px; margin: -2px -2px -4px; }
+  .quick-row::-webkit-scrollbar { display: none; }
+  .qchip {
+    flex: none; scroll-snap-align: start; display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding: 0 16px;
+    border: 1px solid var(--hairline); border-radius: 999px; background: var(--ground); color: var(--ink-2);
+    font: inherit; font-size: 0.92rem; font-weight: 600; white-space: nowrap; cursor: pointer;
+  }
+  .qchip .icon { width: 16px; height: 16px; flex: none; }
+  .qchip:hover { border-color: var(--accent); }
+  .qchip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-soft-ink); }
+  .qchip:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .q-sep { flex: none; width: 1px; align-self: stretch; margin: 8px 2px; background: var(--hairline); }
+  .q-status { margin: 0; font-size: 0.85rem; font-weight: 600; color: var(--ink-2); }
+  .q-status[hidden] { display: none; }
+  @media (min-width: 900px) { .qcat, .q-sep { display: none; } }
+  @media (max-width: 899px) { .filter-category { display: none; } }
+  .pop-count { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-size: 0.74rem; font-weight: 700; line-height: 20px; text-align: center; }
+  .pop-count[hidden] { display: none; }
+  .sheet-done, .sheet-backdrop { display: none; }
+  .listing-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+  .listing-sub:not(:has(.open-pill:not([hidden]))):not(:has(.listing-dist:not(:empty))) { display: none; }
+  .open-pill { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 999px; font-size: 0.74rem; font-weight: 700; background: var(--surface-2); color: var(--muted); }
+  .open-pill[hidden] { display: none; }
+  .open-pill.is-open { background: var(--accent-soft); color: var(--accent-soft-ink); }
+
+  /* ---------- Explore on phones: compact sticky filters, bottom sheets, compact rows ---------- */
+  @media (max-width: 640px) {
+    .filter-panel { position: sticky; top: 60px; z-index: 20; padding: 10px; gap: 8px; border-radius: 14px; flex-direction: row; flex-wrap: wrap; align-items: center; box-shadow: 0 10px 22px -18px rgba(var(--shadow-color) / 0.6); }
+    .filter-panel.sheet-open { z-index: 60; }
+    .filter-bar { display: contents; }
+    .filter-search { order: 1; flex: 1 1 0; min-width: 0; }
+    .filter-search input { min-height: 46px; }
+    .pop { order: 2; flex: none; }
+    .quick-wrap { order: 3; flex: 1 1 100%; }
+    .pop-btn { position: relative; width: 46px; min-height: 46px; padding: 0; justify-content: center; }
+    .pop-btn .pop-chev { display: none; }
+    .pop-btn .pop-ico, .pop-btn .icon { width: 20px; height: 20px; }
+    .pop-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; flex: none; }
+    .pop-count { position: absolute; top: -6px; right: -6px; }
+    html.sheet-lock, html.sheet-lock body { overflow: hidden; }
+    .sheet-backdrop { display: block; position: fixed; inset: 0; z-index: 1; background: rgba(20, 24, 15, 0.5); }
+    .sheet-backdrop[hidden] { display: none; }
+    .pop-panel, .pop-panel-near {
+      position: fixed; left: 0; right: 0; bottom: 0; top: auto; width: auto; z-index: 2;
+      max-height: 80vh; max-height: 80dvh; overflow-y: auto; overscroll-behavior: contain;
+      border-radius: 22px 22px 0 0; border-width: 1px 0 0; padding: 22px 18px calc(18px + env(safe-area-inset-bottom));
+      box-shadow: 0 -24px 48px -20px rgba(0 0 0 / 0.45); animation: sheet-up 0.28s cubic-bezier(0.16,1,0.3,1);
+    }
+    .pop-panel::before { content: ""; position: absolute; top: 8px; left: 50%; width: 40px; height: 4px; margin-left: -20px; border-radius: 4px; background: var(--hairline); }
+    .pop-panel[hidden] { display: none; }
+    .pop-check { min-height: 44px; }
+    .pop-check input { width: 20px; height: 20px; }
+    .chip { min-height: 44px; padding: 0 16px; }
+    .seg label span { padding: 11px 16px; }
+    .pop-foot { justify-content: space-between; align-items: center; }
+    .pop-foot .btn-link { min-height: 44px; padding: 0 4px; }
+    .sheet-done { display: inline-flex; justify-content: center; min-height: 44px; min-width: 96px; }
+    .pop-panel-near .sheet-done { align-self: stretch; }
+
+    .results-bar { gap: 8px 10px; }
+    .results-count { flex: 1 1 auto; white-space: nowrap; }
+    .rc-long { display: none; }
+    .results-bar { flex-wrap: nowrap; }
+    .results-tools { flex: 1 1 auto; justify-content: flex-end; }
+    .results-tools .view-toggle button { min-width: 44px; min-height: 44px; justify-content: center; }
+    .results-tools .field { max-width: 150px !important; }
+    .results-tools .field select { min-height: 44px; }
+
+    /* Compact list: small square thumbnail at the left, ~4 rows per screen. */
+    #results.list-view { gap: 10px; }
+    #results.list-view .listing { flex-direction: row; align-items: stretch; border-radius: 14px; min-height: 92px; }
+    #results.list-view .listing:hover { transform: none; }
+    #results.list-view .listing-art { width: 92px; aspect-ratio: auto; align-self: stretch; min-height: 92px; flex: none; }
+    #results.list-view .listing-art .art-cat { display: none; }
+    #results.list-view .listing-art .art-badge { width: 46px; height: 46px; box-shadow: none; }
+    #results.list-view .listing-art .art-badge svg { width: 22px; height: 22px; }
+    #results.list-view .listing-body { padding: 10px 48px 10px 12px; gap: 3px 10px; min-width: 0; flex-direction: row; flex-wrap: wrap; align-content: center; align-items: center; }
+    #results.list-view .listing-body > h3, #results.list-view .listing-body > .listing-meta { flex: 1 1 100%; min-width: 0; }
+    #results.list-view .listing-sub { gap: 4px 8px; }
+    #results.list-view .rating-new { display: none; }
+    #results.list-view .listing-foot { flex: none; }
+    #results.list-view .listing-body h3 { font-size: 1rem; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #results.list-view .listing-meta { font-size: 0.84rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #results.list-view .listing-desc, #results.list-view .badges, #results.list-view .sponsored-tag { display: none; }
+    #results.list-view .listing-foot { margin: 0; padding: 0; border: 0; justify-content: flex-start; }
+    #results.list-view .view-btn { font-size: 0; }
+    #results.list-view .view-btn::after { content: ""; position: absolute; inset: 0; z-index: 1; }
+    #results.list-view .listing:has(.view-btn:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
+    #results.list-view .save-btn { top: 4px; right: 4px; width: 44px; height: 44px; z-index: 2; background: transparent; border-color: transparent; }
+    #results.list-view .save-btn[aria-pressed="true"] { background: var(--accent-soft); }
+    #results.list-view .skeleton-card .listing-art { width: 92px; }
+  }
+  @keyframes sheet-up { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) {
+    .pop-panel { animation: none !important; }
+    .quick-row { scroll-behavior: auto; }
+  }
+
   .results-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 30px 0 22px; }
   .results-count { font-size: 0.95rem; color: var(--muted); }
   .results-count strong { color: var(--ink); }
@@ -1354,11 +1454,7 @@
     .cta-actions { width: 100%; flex-direction: column; gap: 10px; }
     .cta-actions .btn { width: 100%; }
 
-    .filter-panel { padding: 14px; gap: 12px; border-radius: 16px; }
-    /* Grid and list collapse to the same single column here, so the toggle does nothing. */
-    .results-bar { margin: 18px 0 14px; flex-wrap: nowrap; }
-    .results-tools .view-toggle { display: none; }
-    .results-tools .field { max-width: 170px !important; }
+    .results-bar { margin: 18px 0 14px; }
     .empty-state { padding: 40px 18px; }
 
     .form-card { padding: 20px 16px; }
@@ -1791,7 +1887,9 @@
             </div>
             <div class="pop" id="popShow">
               <button type="button" class="pop-btn" aria-expanded="false" aria-controls="popShowPanel">
+                <svg class="icon pop-ico" aria-hidden="true"><use href="#i-sliders"/></svg>
                 <span class="pop-label" id="showLabel">Show only</span>
+                <span class="pop-count" id="showCount" aria-hidden="true" hidden>0</span>
                 <svg class="icon pop-chev" aria-hidden="true"><use href="#i-chevron-down"/></svg>
               </button>
               <div class="pop-panel" id="popShowPanel" role="group" aria-label="Show only" hidden>
@@ -1825,7 +1923,7 @@
                     <option value="4.5">4.5+ stars</option>
                   </select>
                 </div>
-                <div class="pop-foot"><button type="button" class="btn-link" id="resetFilters">Reset filters</button></div>
+                <div class="pop-foot"><button type="button" class="btn-link" id="resetFilters">Reset filters</button><button type="button" class="btn btn-primary btn-sm sheet-done">Done</button></div>
               </div>
             </div>
             <div class="pop" id="popNear">
@@ -1863,14 +1961,24 @@
                   </select>
                 </div>
                 <p class="filter-help" id="withinNote" hidden>Some listings without an address on file are hidden while a distance is set.</p>
+                <button type="button" class="btn btn-primary btn-sm sheet-done">Done</button>
               </div>
             </div>
           </div>
+          <div class="quick-wrap" id="quickWrap">
+            <div class="quick-row" id="quickRow" role="group" aria-label="Quick filters">
+              <button type="button" class="qchip" id="qOpen" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>Open now</button>
+              <button type="button" class="qchip" id="qNear" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#i-pin"/></svg>Near me</button>
+              <span class="q-sep" aria-hidden="true"></span>
+            </div>
+            <p class="q-status" id="quickStatus" role="status" aria-live="polite" hidden></p>
+          </div>
+          <div class="sheet-backdrop" id="sheetBackdrop" hidden></div>
           <select id="fHood" hidden aria-hidden="true" tabindex="-1"><option value=""></option></select>
         </form>
 
         <div class="results-bar">
-          <p class="results-count" aria-live="polite"><strong id="resultCount">6</strong> businesses listed</p>
+          <p class="results-count" aria-live="polite"><strong id="resultCount">6</strong><span class="rc-long"> businesses</span> listed</p>
           <div class="results-tools">
             <div class="view-toggle" role="group" aria-label="View style">
               <button type="button" id="viewGrid" aria-pressed="true" aria-label="Grid view"><svg class="icon"><use href="#i-grid"/></svg></button>
@@ -1880,6 +1988,7 @@
               <label class="sr-only" for="fSort">Sort results</label>
               <select id="fSort">
                 <option value="recommended">Recommended</option>
+                <option value="relevance" id="sortRelevance" disabled hidden>Best match</option>
                 <option value="rating">Highest rated</option>
                 <option value="newest">Newest</option>
                 <option value="name">Name, A to Z</option>
@@ -1895,7 +2004,7 @@
         <div class="empty-state" id="emptyState">
           <div class="e-icon"><svg class="icon"><use href="#i-search"/></svg></div>
           <h3>No businesses match those filters yet.</h3>
-          <p>Try a wider neighborhood, or clear a filter to see more of the directory.</p>
+          <p>Try fewer or different words, a wider area, or clear your filters to see the whole directory.</p>
           <div class="empty-suggest">
             <span class="empty-suggest-label">Popular right now</span>
             <button class="pill" data-quick-cat="Restaurants"><svg class="icon"><use href="#i-heart"/></svg> Restaurants</button>
@@ -2731,6 +2840,7 @@
 <script src="js/businesses-data.js"></script>
 <script src="js/hours.js"></script>
 <script src="js/geo.js"></script>
+<script src="js/search.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/photo.js"></script>
 <script src="js/owner-dashboard.js"></script>
@@ -2903,21 +3013,21 @@
           (photoUrl
             ? '<img src="' + photoUrl + '" alt="' + name + '" loading="lazy" data-icon="' + escapeAttr(item.icon) + '" data-cat="' + cat + '">'
             : '<span class="art-badge"><svg class="icon"><use href="#' + item.icon + '"/></svg></span><span class="art-cat">' + cat + '</span>') +
-          '<button class="save-btn" type="button" data-id="' + item.id + '" aria-pressed="' + (isSaved(item.id) ? "true" : "false") + '" aria-label="Save ' + name + '">' +
-            '<svg class="icon"><use href="#i-bookmark"/></svg>' +
-          '</button>' +
         '</div>' +
+        '<button class="save-btn" type="button" data-id="' + item.id + '" aria-pressed="' + (isSaved(item.id) ? "true" : "false") + '" aria-label="Save ' + name + '">' +
+          '<svg class="icon"><use href="#i-bookmark"/></svg>' +
+        '</button>' +
         '<div class="listing-body">' +
           (item.sponsored ? '<p class="sponsored-tag" title="This business pays to be promoted. Badges can\u2019t be bought.">Sponsored</p>' : '') +
           '<h3>' + name + '</h3>' +
           '<p class="listing-meta">' + cat + ' in ' + hood + '</p>' +
-          '<p class="listing-dist" data-dist></p>' +
+          '<div class="listing-sub"><span class="open-pill" data-status hidden></span><p class="listing-dist" data-dist></p></div>' +
           '<p class="listing-desc">' + desc + '</p>' +
           '<div class="badges">' + item.badges.map(badgeHtml).join("") + '</div>' +
           '<div class="listing-foot">' +
             (item.rating != null
               ? '<span class="rating"><svg class="icon filled"><use href="#i-star"/></svg> ' + item.rating.toFixed(1) + ' <span style="color:var(--muted);font-family:inherit;font-weight:600">(' + item.reviewCount + ')</span></span>'
-              : '<span class="rating" style="color:var(--muted);font-family:inherit;font-weight:600">New to the directory</span>') +
+              : '<span class="rating rating-new" style="color:var(--muted);font-family:inherit;font-weight:600">New to the directory</span>') +
             '<button class="view-btn text-link" type="button" data-open="' + item.id + '">View listing</button>' +
           '</div>' +
         '</div>' +
@@ -3628,13 +3738,14 @@
   /* ============ Explore filtering ============ */
   var emptyState = document.getElementById("emptyState");
   var resultCount = document.getElementById("resultCount");
-  var badgeBoxes = Array.prototype.slice.call(document.querySelectorAll(".toggle input[data-badge]"));
+  var badgeBoxes = Array.prototype.slice.call(document.querySelectorAll("#filterPanel input[data-badge]"));
   var savedBox = document.getElementById("fSaved");
   var openNowBox = document.getElementById("fOpenNow");
   var openNowHelp = document.getElementById("openNowHelp");
   var ratingSel = document.getElementById("fRating");
   var matchRadios = Array.prototype.slice.call(document.querySelectorAll('input[name="badgeMatch"]'));
-  var SORT_MODES = ["recommended", "rating", "newest", "name", "hood", "nearest"];
+  var SORT_MODES = ["recommended", "relevance", "rating", "newest", "name", "hood", "nearest"];
+  var sortTouched = false; // true once the visitor picks a sort (or the URL has one): then "Best match" never takes over
 
   /* ---- Distance from ----
      The origin (your location, or a geocoded address) lives only in this
@@ -3673,6 +3784,8 @@
     // msg: null for the normal "From: ..." line, or a message to show first.
     if (!originStatus) return;
     originStatus.textContent = "";
+    var qs = document.getElementById("quickStatus");
+    if (qs) { qs.textContent = msg || ""; qs.hidden = !msg; }
     if (msg) {
       var err = document.createElement("span");
       err.className = "dist-error";
@@ -3706,7 +3819,7 @@
     saveOrigin();
     refreshOriginUi();
     var sortSel = document.getElementById("fSort");
-    if (first && sortSel.value === "recommended") sortSel.value = "nearest";
+    if (first && (sortSel.value === "recommended" || sortSel.value === "relevance")) sortSel.value = "nearest";
     sortResults();
     applyFilters();
   }
@@ -3774,7 +3887,9 @@
 
   function applyFilters() {
     if (!results) return;
-    var words = document.getElementById("fQuery").value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    var rawQuery = document.getElementById("fQuery").value.trim();
+    var S = window.NiccSearch;
+    var words = S ? S.words(rawQuery) : rawQuery.toLowerCase().split(/\s+/).filter(Boolean);
     var cat = document.getElementById("fCategory").value;
     var hood = document.getElementById("fHood").value;
     var wanted = badgeBoxes.filter(function (b) { return b.checked; }).map(function (b) { return b.getAttribute("data-badge"); });
@@ -3787,6 +3902,13 @@
     var radius = withinMiles();
     var hiddenNoCoords = false;
 
+    // With no explicit sort chosen, a search orders by relevance ("Best match"); clearing it goes back.
+    var sortSel = document.getElementById("fSort"), relOpt = document.getElementById("sortRelevance");
+    if (relOpt) { relOpt.disabled = !words.length; relOpt.hidden = !words.length; }
+    var prevMode = sortSel.value;
+    if (words.length && !sortTouched && sortSel.value === "recommended") sortSel.value = "relevance";
+    if (!words.length && sortSel.value === "relevance") sortSel.value = "recommended";
+
     var shown = 0;
     Array.prototype.slice.call(results.querySelectorAll(".listing[data-name]")).forEach(function (card) {
       var haystack = card.getAttribute("data-search") || "";
@@ -3797,14 +3919,34 @@
       var id = card.getAttribute("data-id");
       var hasBadge = function (w) { return cBadges.indexOf(w) !== -1; };
 
-      // Every word has to appear somewhere (name, descriptions, category, area, address).
-      var okText = words.every(function (w) { return haystack.indexOf(w) !== -1; });
+      // Every word has to match somewhere (name, descriptions, category, area, address),
+      // either itself or via a small alias map ("butcher" finds Grocery).
+      var okText = true;
+      card._score = 0;
+      if (words.length) {
+        if (S) {
+          card._score = S.score({ name: card.getAttribute("data-name"), category: cCat, area: cHood, description: haystack }, words);
+          okText = card._score > 0;
+        } else {
+          okText = words.every(function (w) { return haystack.indexOf(w) !== -1; });
+        }
+      }
       var okCat = !cat || cCat.replace("&amp;", "&") === cat.replace("&amp;", "&");
       var okHood = !hood || cHood === hood;
       var okBadges = !wanted.length || (matchAny ? wanted.some(hasBadge) : wanted.every(hasBadge));
       var okSaved = !savedOnly || isSaved(id);
       var okRating = isNaN(minRating) || (!isNaN(cRating) && cRating >= minRating); // unrated never passes a minimum
       var okOpen = !openOnly || cardOpenNow(card, now) === true; // unknown hours are hidden too
+
+      var statusEl = card.querySelector("[data-status]");
+      if (statusEl) {
+        var openState = cardOpenNow(card, now);
+        statusEl.hidden = openState === null;
+        if (openState !== null) {
+          statusEl.textContent = openState ? "Open now" : "Closed";
+          statusEl.classList.toggle("is-open", openState);
+        }
+      }
 
       var miles = cardMiles(card);
       var distEl = card.querySelector("[data-dist]");
@@ -3817,6 +3959,7 @@
       if (match) shown++;
     });
 
+    if (sortSel.value !== prevMode || sortSel.value === "relevance") sortResults();
     if (withinNote) withinNote.hidden = !hiddenNoCoords;
     if (resultCount.textContent !== String(shown)) {
       resultCount.textContent = String(shown);
@@ -3842,7 +3985,10 @@
     if (document.getElementById("fOpenNow").checked) n++;
     if (savedBox && savedBox.checked) n++;
     n += badgeBoxes.filter(function (b) { return b.checked; }).length;
-    document.getElementById("showLabel").textContent = n ? "Show only \u00b7 " + n : "Show only";
+    var countEl = document.getElementById("showCount");
+    countEl.textContent = String(n);
+    countEl.hidden = !n;
+    showBtn.setAttribute("aria-label", n ? "Show only, " + n + " active" : "Show only");
     showBtn.classList.toggle("is-active", n > 0);
     var within = document.getElementById("fWithin").value;
     var label = "Distance";
@@ -3856,7 +4002,44 @@
       c.setAttribute("aria-pressed", String(c.getAttribute("data-within") === within));
     });
     nearBtn.classList.toggle("is-active", !!origin);
+    syncQuickChips();
   }
+  /* Quick-filter chips mirror the real controls (select / checkbox / origin), so
+     the URL, Reset and the popovers stay the single source of truth. */
+  function syncQuickChips() {
+    var qOpen = document.getElementById("qOpen"), qNear = document.getElementById("qNear");
+    if (!qOpen || !qNear) return;
+    qOpen.setAttribute("aria-pressed", String(!!(openNowBox && openNowBox.checked)));
+    qNear.setAttribute("aria-pressed", String(!!origin));
+    var cat = document.getElementById("fCategory").value;
+    Array.prototype.forEach.call(document.querySelectorAll("#quickRow .qcat"), function (c) {
+      c.setAttribute("aria-pressed", String(c.getAttribute("data-qcat") === cat));
+    });
+  }
+  (function initQuickChips() {
+    var row = document.getElementById("quickRow"), sel = document.getElementById("fCategory");
+    if (!row || !sel) return;
+    Array.prototype.forEach.call(sel.options, function (o) {
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "qchip qcat"; b.setAttribute("data-qcat", o.value);
+      b.setAttribute("aria-pressed", "false");
+      b.textContent = o.value ? o.textContent : "All";
+      row.appendChild(b);
+    });
+    document.getElementById("qOpen").addEventListener("click", function () {
+      openNowBox.checked = !openNowBox.checked;
+      openNowBox.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    document.getElementById("qNear").addEventListener("click", function () {
+      if (origin) { setOrigin(null); } else { useMyLocation(); }
+    });
+    row.addEventListener("click", function (e) {
+      var c = e.target.closest(".qcat");
+      if (!c) return;
+      sel.value = c.getAttribute("data-qcat");
+      sel.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+  })();
   document.getElementById("withinChips").addEventListener("click", function (e) {
     var chip = e.target.closest(".chip");
     if (!chip) return;
@@ -3866,11 +4049,28 @@
   });
   (function () {
     var pops = Array.prototype.slice.call(document.querySelectorAll(".pop"));
+    var panel = document.getElementById("filterPanel"), backdrop = document.getElementById("sheetBackdrop");
+    var phone = window.matchMedia("(max-width: 640px)");
+    // On phones the open panel is a bottom sheet with a dimmed backdrop.
+    function refreshSheet() {
+      var any = pops.some(function (p) { return !p.querySelector(".pop-panel").hidden; });
+      var on = any && phone.matches;
+      panel.classList.toggle("sheet-open", on);
+      document.documentElement.classList.toggle("sheet-lock", on);
+      if (backdrop) backdrop.hidden = !on;
+    }
+    if (phone.addEventListener) phone.addEventListener("change", refreshSheet);
+    if (backdrop) backdrop.addEventListener("click", function () { pops.forEach(function (o) { close(o, true); }); });
+    Array.prototype.forEach.call(document.querySelectorAll(".sheet-done"), function (b) {
+      b.addEventListener("click", function () { pops.forEach(function (o) { close(o, true); }); });
+    });
     function close(pop, refocus) {
       var btn = pop.querySelector(".pop-btn");
+      var was = !pop.querySelector(".pop-panel").hidden;
       pop.querySelector(".pop-panel").hidden = true;
       btn.setAttribute("aria-expanded", "false");
-      if (refocus) btn.focus();
+      if (refocus && was) btn.focus({ preventScroll: true });
+      refreshSheet();
     }
     pops.forEach(function (pop) {
       pop.querySelector(".pop-btn").addEventListener("click", function () {
@@ -3879,6 +4079,7 @@
         if (!wasOpen) {
           pop.querySelector(".pop-panel").hidden = false;
           pop.querySelector(".pop-btn").setAttribute("aria-expanded", "true");
+          refreshSheet();
         }
       });
     });
@@ -3913,7 +4114,7 @@
     if (badgeMatchMode() === "any") p.set("match", "any");
     if (openNowBox && openNowBox.checked) p.set("now", "1");
     if (savedBox && savedBox.checked) p.set("saved", "1");
-    if (sort !== "recommended") p.set("sort", sort);
+    if (sort !== "recommended" && !(sort === "relevance" && !sortTouched)) p.set("sort", sort);
     if (withinMiles() != null) p.set("within", String(withinMiles())); // the radius only; the origin never goes in the URL
     var qs = p.toString();
     var next = "#/explore" + (qs ? "?" + qs : "");
@@ -3943,7 +4144,8 @@
       if (withinSel.value !== (p.get("within") || "")) withinSel.value = ""; // unknown value -> Any
     }
     var sort = p.get("sort");
-    document.getElementById("fSort").value = SORT_MODES.indexOf(sort) !== -1 && (sort !== "nearest" || origin) ? sort : "recommended";
+    sortTouched = SORT_MODES.indexOf(sort) !== -1;
+    document.getElementById("fSort").value = SORT_MODES.indexOf(sort) !== -1 && (sort !== "nearest" || origin) && (sort !== "relevance" || p.get("q")) ? sort : "recommended";
     sortResults();
     applyFilters();
     return true;
@@ -3968,6 +4170,7 @@
         // Sponsored listings first, then the same order as "Highest rated".
         return (Number(b.getAttribute("data-sponsored") === "1") - Number(a.getAttribute("data-sponsored") === "1")) || byRating(a, b);
       }
+      if (mode === "relevance") return ((b._score || 0) - (a._score || 0)) || byRating(a, b);
       if (mode === "rating") return byRating(a, b);
       if (mode === "newest") {
         var ta = created(a), tb = created(b);
@@ -3996,10 +4199,13 @@
     if (openNowBox) openNowBox.checked = false;
     if (savedBox) savedBox.checked = false;
     if (withinSel) withinSel.value = ""; // the origin is kept
+    sortTouched = false;
+    if (document.getElementById("fSort").value === "relevance") document.getElementById("fSort").value = "recommended";
     if (!silent) applyFilters();
   }
 
   if (results) {
+    if (window.matchMedia("(max-width: 640px)").matches) document.getElementById("fQuery").placeholder = "Search";
     document.getElementById("filterPanel").addEventListener("submit", function (e) { e.preventDefault(); applyFilters(); });
     ["fQuery", "fCategory", "fHood", "fRating"].forEach(function (id) {
       var el = document.getElementById(id);
@@ -4010,7 +4216,7 @@
     matchRadios.forEach(function (r) { r.addEventListener("change", function () { flip(applyFilters); }); });
     if (openNowBox) openNowBox.addEventListener("change", function () { flip(applyFilters); });
     if (savedBox) savedBox.addEventListener("change", function () { flip(applyFilters); });
-    document.getElementById("fSort").addEventListener("change", function () { flip(function () { sortResults(); applyFilters(); }); });
+    document.getElementById("fSort").addEventListener("change", function () { sortTouched = true; flip(function () { sortResults(); applyFilters(); }); });
     withinSel.addEventListener("change", function () { flip(applyFilters); });
     document.getElementById("useLocation").addEventListener("click", useMyLocation);
     document.getElementById("setOrigin").addEventListener("click", setAddressOrigin);
@@ -4023,16 +4229,29 @@
 
     var viewGrid = document.getElementById("viewGrid");
     var viewList = document.getElementById("viewList");
+    // On phones the list view is a compact one-column row layout and is the default,
+    // unless the visitor has picked a view before (remembered in localStorage).
+    var VIEW_KEY = "nicc-explore-view";
+    function setView(mode, persist) {
+      results.classList.toggle("list-view", mode === "list");
+      viewList.setAttribute("aria-pressed", String(mode === "list"));
+      viewGrid.setAttribute("aria-pressed", String(mode !== "list"));
+      if (persist) { try { localStorage.setItem(VIEW_KEY, mode); } catch (e) { /* private mode */ } }
+    }
+    (function () {
+      var saved = null;
+      try { saved = localStorage.getItem(VIEW_KEY); } catch (e) { /* private mode */ }
+      if (saved !== "grid" && saved !== "list") saved = window.matchMedia("(max-width: 640px)").matches ? "list" : "grid";
+      setView(saved, false);
+    })();
     viewGrid.addEventListener("click", function () {
       flip(function () {
-        results.classList.remove("list-view");
-        viewGrid.setAttribute("aria-pressed", "true"); viewList.setAttribute("aria-pressed", "false");
+        setView("grid", true);
       });
     });
     viewList.addEventListener("click", function () {
       flip(function () {
-        results.classList.add("list-view");
-        viewList.setAttribute("aria-pressed", "true"); viewGrid.setAttribute("aria-pressed", "false");
+        setView("list", true);
       });
     });
 
