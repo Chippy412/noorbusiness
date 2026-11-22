@@ -2458,8 +2458,8 @@
                 <div class="field full">
                   <label for="ownAddPhoto">Cover photo (optional)</label>
                   <input type="file" id="ownAddPhoto" accept="image/png,image/jpeg,image/webp">
-                  <span class="help">JPG, PNG or WebP, up to 5 MB. A wide photo of your storefront or best product works well. You can change it later from your account.</span>
-                  <span class="error">Please choose a JPG, PNG or WebP under 5 MB.</span>
+                  <span class="help">JPG, PNG or WebP up to 20 MB. Photos are resized and location data is removed before upload. A wide photo of your storefront or best product works well. You can change it later from your account.</span>
+                  <span class="error" id="ownAddPhotoError">Please choose a JPG, PNG or WebP under 20 MB.</span>
                 </div>
               </div>
             </form>
@@ -2727,6 +2727,7 @@
 <script src="js/hours.js"></script>
 <script src="js/geo.js"></script>
 <script src="js/auth.js"></script>
+<script src="js/photo.js"></script>
 <script src="js/owner-dashboard.js"></script>
 <script src="js/admin.js"></script>
 <script>
@@ -2895,7 +2896,7 @@
         (typeof item.lat === "number" && typeof item.lng === "number" ? ' data-lat="' + item.lat + '" data-lng="' + item.lng + '"' : '') + '>' +
         '<div class="listing-art art-tone-' + item.tone + '">' +
           (photoUrl
-            ? '<img src="' + photoUrl + '" alt="' + name + '" loading="lazy">'
+            ? '<img src="' + photoUrl + '" alt="' + name + '" loading="lazy" data-icon="' + escapeAttr(item.icon) + '" data-cat="' + cat + '">'
             : '<span class="art-badge"><svg class="icon"><use href="#' + item.icon + '"/></svg></span><span class="art-cat">' + cat + '</span>') +
           '<button class="save-btn" type="button" data-id="' + item.id + '" aria-pressed="' + (isSaved(item.id) ? "true" : "false") + '" aria-label="Save ' + name + '">' +
             '<svg class="icon"><use href="#i-bookmark"/></svg>' +
@@ -3410,7 +3411,29 @@
 
   /* Fade listing photos in when they finish loading (load/error don't bubble, so capture). */
   function markImageLoaded(e) {
-    if (e.target && e.target.tagName === "IMG" && e.target.closest(".listing-art")) e.target.classList.add("is-loaded");
+    var img = e.target;
+    if (!img || img.tagName !== "IMG") return;
+    var modalPhoto = e.type === "error" && img.closest(".modal-photo");
+    if (modalPhoto) { modalPhoto.remove(); return; }
+    if (!img.closest(".listing-art")) return;
+    if (e.type === "error") {
+      // Swap the broken photo for the same placeholder cards use when there is no photo.
+      var badge = document.createElement("span");
+      badge.className = "art-badge";
+      var NS = "http://www.w3.org/2000/svg";
+      var svg = document.createElementNS(NS, "svg");
+      svg.setAttribute("class", "icon");
+      var use = document.createElementNS(NS, "use");
+      use.setAttribute("href", "#" + (img.getAttribute("data-icon") || "i-storefront"));
+      svg.appendChild(use);
+      badge.appendChild(svg);
+      var catEl = document.createElement("span");
+      catEl.className = "art-cat";
+      catEl.textContent = img.getAttribute("data-cat") || "";
+      img.replaceWith(badge, catEl);
+      return;
+    }
+    img.classList.add("is-loaded");
   }
   document.addEventListener("load", markImageLoaded, true);
   document.addEventListener("error", markImageLoaded, true);
@@ -4610,13 +4633,9 @@
           var row = input.closest(".owner-photo-row");
           var preview = row.querySelector(".owner-photo-preview");
           var status = row.querySelector(".owner-photo-status");
-          if (["image/jpeg", "image/png", "image/webp"].indexOf(file.type) === -1) {
-            status.textContent = "Please choose a JPG, PNG or WebP image.";
-            input.value = "";
-            return;
-          }
-          if (file.size > 5 * 1024 * 1024) {
-            status.textContent = "That photo is over 5 MB. Please choose a smaller one.";
+          var photoProblem = window.NiccPhoto.checkInput(file);
+          if (photoProblem) {
+            status.textContent = photoProblem;
             input.value = "";
             return;
           }
@@ -4868,7 +4887,16 @@
       }
       var photoInput = document.getElementById("ownAddPhoto");
       var photoFile = photoInput && photoInput.files && photoInput.files[0];
-      var photoOk = !photoFile || (/^image\/(png|jpeg|webp)$/.test(photoFile.type) && photoFile.size <= 5 * 1024 * 1024);
+      var photoProblem = photoFile ? window.NiccPhoto.checkInput(photoFile) : null;
+      var photoOk = !photoProblem;
+      var photoErr = document.getElementById("ownAddPhotoError");
+      if (photoErr && photoProblem) photoErr.textContent = photoProblem;
+      // Resize up front so a photo we can't use is reported before the listing is created.
+      var preparedPhoto = null;
+      if (photoOk && photoFile) {
+        try { preparedPhoto = await window.NiccPhoto.prepare(photoFile); }
+        catch (prepErr) { photoOk = false; if (photoErr) photoErr.textContent = prepErr.message; }
+      }
       photoInput.closest(".field").classList.toggle("invalid", !photoOk);
       if (!photoOk) return;
       try {
@@ -4888,9 +4916,9 @@
           try { await window.NiccOwner.setHours(created.id, newHours); }
           catch (hoursErr) { photoNote += " Your hours could not be saved; you can add them from your account."; }
         }
-        if (photoFile && created && created.id) {
-          try { await window.NiccOwner.uploadPhoto(created.id, photoFile); }
-          catch (photoErr) { photoNote = " Your cover photo could not be uploaded; you can add it from your account."; }
+        if (preparedPhoto && created && created.id) {
+          try { await window.NiccOwner.uploadPhoto(created.id, preparedPhoto); }
+          catch (uploadErr) { photoNote += " Your cover photo could not be uploaded; you can add it from your account."; }
         }
         status.textContent = "Thank you. Your listing has been submitted and a volunteer will review it within two business days." + photoNote;
         status.classList.remove("error");
@@ -5025,7 +5053,7 @@
     function setPhoto() {
       photoUrl = null;
       var file = photoInput && photoInput.files && photoInput.files[0];
-      if (!file || !/^image\/(png|jpeg|webp)$/.test(file.type) || file.size > 5 * 1024 * 1024) { schedule(); return; }
+      if (!file || window.NiccPhoto.checkInput(file)) { schedule(); return; }
       var reader = new FileReader();
       reader.onload = function () {
         // Ignore a result that arrives after the file was changed or cleared.
