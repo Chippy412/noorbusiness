@@ -43,6 +43,8 @@ MIGRATIONS = [
     "2026-10-11-sponsorship.sql",
     "2026-10-12-locations.sql",
     "2026-11-02-remove-halal-verification.sql",
+    "2026-11-17-imported-listings.sql",
+    "2026-11-22-listing-stats.sql",
 ]
 
 
@@ -990,6 +992,29 @@ def rate_limit_new_listings(t):
     for i in range(3):
         t.q("insert into businesses (owner_id, name, category, neighborhood, description, long_description) values (%s,%s,'R','D','s','l')", (o, "b%d" % i))
     t.fails("insert into businesses (owner_id, name, category, neighborhood, description, long_description) values (%s,'b4','R','D','s','l')", (o,), contains="too many")
+
+
+# ------------------------------------------------------------ listing stats
+@test
+def listing_stats_are_server_only_and_owner_readable(t):
+    o = t.user("o@x.co")
+    other = t.user("z@x.co")
+    b = t.business(o, "approved", "Live")
+    hidden = t.business(o, "pending", "Hidden")
+    t.as_(role="service_role")
+    assert t.one("select record_listing_event(%s, 'view')", (b,)) is True
+    assert t.one("select record_listing_event(%s, 'phone')", (b,)) is True
+    assert t.one("select record_listing_event(%s, 'bogus')", (b,)) is False
+    assert t.one("select record_listing_event(%s, 'view')", (hidden,)) is False
+    t.as_()
+    t.fails("select record_listing_event(%s, 'view')", (b,))
+    t.fails("select * from listing_daily_stats")
+    t.as_(other)
+    t.fails("select * from my_listing_stats(%s)", (b,), contains="not allowed")
+    t.fails("select record_listing_event(%s, 'view')", (b,))
+    t.as_(o)
+    rows = t.q("select views, phone_clicks from my_listing_stats(%s)", (b,))
+    assert rows == [(1, 1)], rows
 
 
 # --------------------------------------------------------------------- main
