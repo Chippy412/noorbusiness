@@ -254,3 +254,64 @@ test("geocode route: validates input and keeps the backfill for moderators", asy
   });
 });
 
+
+test("listing page: typed JSON-LD with geo, opening hours and breadcrumbs, plus related links", () => {
+  const { render } = require("../api/listing")._test;
+  const out = render({
+    id: "22222222-2222-2222-2222-222222222222", name: "Noor Grill", category: "Restaurants", neighborhood: "Dublin",
+    description: "Halal grill. " + "x".repeat(200), long_description: "Long", address: "1 Main St", phone: "(614) 555-0100",
+    website: "https://noor.example", lat: 40.1, lng: -83.1,
+    hours: [["Mon–Fri", "9am–5pm"], ["Sat", "10am–2pm"], ["Sun", "Closed"], ["Whenever", "maybe"]]
+  }, [], [{ id: "33333333-3333-3333-3333-333333333333", name: "Other <b>", category: "Grocery", neighborhood: "Dublin" }]);
+  const blocks = [...out.html.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/g)].map((m) => JSON.parse(m[1]));
+  assert.strictEqual(blocks.length, 2);
+  const biz = blocks[0];
+  assert.strictEqual(biz["@type"], "Restaurant");
+  assert.deepStrictEqual(biz.geo, { "@type": "GeoCoordinates", latitude: 40.1, longitude: -83.1 });
+  assert.strictEqual(biz.openingHoursSpecification.length, 2, "closed and unreadable rows are dropped");
+  assert.deepStrictEqual(biz.openingHoursSpecification[0].dayOfWeek, ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]);
+  assert.strictEqual(biz.openingHoursSpecification[0].opens, "09:00");
+  assert.strictEqual(biz.openingHoursSpecification[0].closes, "17:00");
+  assert.strictEqual(blocks[1]["@type"], "BreadcrumbList");
+  assert.match(out.html, /<meta name="description" content="[^"]{1,160}">/);
+  assert.ok(out.html.includes('href="/b/33333333-3333-3333-3333-333333333333"'));
+  assert.ok(!out.html.includes("<b>"), "related names are escaped");
+  assert.ok(out.html.includes('data-ev="phone"') && out.html.includes('data-ev="website"') && out.html.includes('data-ev="directions"'));
+});
+
+test("track: only POST, ignores bots / bad input / missing service key, answers 204", async () => {
+  const handler = require("../api/track");
+  const id = "11111111-1111-1111-1111-111111111111";
+  delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+  let res = mockRes();
+  await handler({ method: "GET", headers: {} }, res);
+  assert.strictEqual(res.code, 405);
+  res = mockRes();
+  await handler({ method: "POST", headers: { "user-agent": "Mozilla/5.0" }, body: { id, event: "view" } }, res);
+  assert.strictEqual(res.code, 204);
+
+  const calls = [];
+  const realFetch = global.fetch;
+  global.fetch = async (url, opts) => { calls.push({ url, body: JSON.parse(opts.body) }); return { ok: true, status: 200, text: async () => "true", headers: new Map() }; };
+  process.env.SUPABASE_SERVICE_ROLE_KEY = "svc";
+  try {
+    const human = { headers: { "user-agent": "Mozilla/5.0 (iPhone)", "x-forwarded-for": "9.9.9.9" } };
+    assert.strictEqual(await handler.record(human, id, "view"), true);
+    assert.strictEqual(await handler.record(human, id, "view"), false, "same visitor, same event: counted once");
+    assert.strictEqual(await handler.record(human, id, "phone"), true);
+    assert.strictEqual(await handler.record({ headers: { "user-agent": "Googlebot/2.1" } }, id, "view"), false);
+    assert.strictEqual(await handler.record({ headers: { "user-agent": "Mozilla/5.0", dnt: "1", "x-forwarded-for": "1.1.1.1" } }, id, "view"), false);
+    assert.strictEqual(await handler.record(human, "not-a-uuid", "view"), false);
+    assert.strictEqual(await handler.record({ headers: { "user-agent": "Mozilla/5.0", "x-forwarded-for": "2.2.2.2" } }, id, "pwn"), false);
+    assert.strictEqual(calls.length, 2);
+    assert.deepStrictEqual(calls[0].body, { p_business_id: id, p_event: "view" });
+    assert.ok(!JSON.stringify(calls).includes("9.9.9.9"), "the visitor's address is never sent to the database");
+  } finally { global.fetch = realFetch; delete process.env.SUPABASE_SERVICE_ROLE_KEY; }
+});
+
+test("robots.txt and the sitemap point at the real domain", () => {
+  const robots = require("node:fs").readFileSync(require("node:path").join(__dirname, "..", "robots.txt"), "utf8");
+  assert.match(robots, /Sitemap: https:\/\/noorbusiness\.org\/sitemap\.xml/);
+  assert.match(robots, /Disallow: \/api\//);
+  assert.ok(!robots.includes("vercel.app"));
+});

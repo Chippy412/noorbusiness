@@ -6,7 +6,7 @@
 // NOTIFY_EMAIL_FROM (a sender verified in Resend, or onboarding@resend.dev).
 var html = require("./_lib/html");
 var supa = require("./_lib/supa");
-var SITE = (process.env.SITE_URL || "https://nicc-business.vercel.app").replace(/\/$/, "");
+var SITE = (process.env.SITE_URL || "https://noorbusiness.org").replace(/\/$/, "");
 
 var LABELS = {
   businesses: "New business listing to review",

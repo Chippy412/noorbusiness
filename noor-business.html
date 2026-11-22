@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#F8F8F2">
 <title>NICC Business</title>
 <meta name="description" content="NICC Business is a community-run directory of Muslim-owned and halal-friendly businesses in Columbus, Ohio. Find local shops and restaurants, or list your own.">
-<link rel="canonical" href="https://nicc-business.vercel.app/">
+<link rel="canonical" href="https://noorbusiness.org/">
 <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16.png">
 <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
@@ -14,14 +14,14 @@
 <meta property="og:site_name" content="NICC Business">
 <meta property="og:title" content="NICC Business — Columbus, Ohio Business Directory">
 <meta property="og:description" content="A community-run directory of Muslim-owned and halal-friendly businesses in Columbus, Ohio.">
-<meta property="og:image" content="https://nicc-business.vercel.app/images/og-image.jpg">
+<meta property="og:image" content="https://noorbusiness.org/images/og-image.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:url" content="https://nicc-business.vercel.app/">
+<meta property="og:url" content="https://noorbusiness.org/">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="NICC Business — Columbus, Ohio Business Directory">
 <meta name="twitter:description" content="A community-run directory of Muslim-owned and halal-friendly businesses in Columbus, Ohio.">
-<meta name="twitter:image" content="https://nicc-business.vercel.app/images/og-image.jpg">
+<meta name="twitter:image" content="https://noorbusiness.org/images/og-image.jpg">
 <script>
   window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
 </script>
@@ -38,22 +38,22 @@
   "@graph": [
     {
       "@type": "Organization",
-      "@id": "https://nicc-business.vercel.app/#org",
+      "@id": "https://noorbusiness.org/#org",
       "name": "NICC Business",
-      "url": "https://nicc-business.vercel.app/",
-      "logo": "https://nicc-business.vercel.app/images/logo.png",
+      "url": "https://noorbusiness.org/",
+      "logo": "https://noorbusiness.org/images/logo.png",
       "description": "A community-run directory of Muslim-owned and halal-friendly businesses in Columbus, Ohio.",
       "areaServed": { "@type": "City", "name": "Columbus, Ohio" }
     },
     {
       "@type": "WebSite",
-      "@id": "https://nicc-business.vercel.app/#website",
-      "url": "https://nicc-business.vercel.app/",
+      "@id": "https://noorbusiness.org/#website",
+      "url": "https://noorbusiness.org/",
       "name": "NICC Business",
-      "publisher": { "@id": "https://nicc-business.vercel.app/#org" },
+      "publisher": { "@id": "https://noorbusiness.org/#org" },
       "potentialAction": {
         "@type": "SearchAction",
-        "target": { "@type": "EntryPoint", "urlTemplate": "https://nicc-business.vercel.app/#/explore?q={search_term_string}" },
+        "target": { "@type": "EntryPoint", "urlTemplate": "https://noorbusiness.org/#/explore?q={search_term_string}" },
         "query-input": "required name=search_term_string"
       }
     }
@@ -2975,10 +2975,24 @@
     return s;
   }
 
+  // Privacy-friendly counts (daily totals per listing, nothing about the
+  // visitor is stored; see api/track.js). Skipped when Do Not Track is on.
+  function trackEvent(id, event) {
+    try {
+      if (!id || navigator.doNotTrack === "1" || !navigator.sendBeacon) return;
+      navigator.sendBeacon("/api/track", new Blob([JSON.stringify({ id: id, event: event })], { type: "application/json" }));
+    } catch (e) { /* counting is best-effort */ }
+  }
+  modalBody.addEventListener("click", function (e) {
+    var a = e.target.closest && e.target.closest("a[data-ev]");
+    if (a && currentItem) trackEvent(currentItem.id, a.getAttribute("data-ev"));
+  });
+
   function openListing(id, fromEl) {
     var item = LISTINGS.filter(function (l) { return l.id === id; })[0];
     if (!item) { toast("That listing isn't available any more."); return; }
     currentItem = item;
+    trackEvent(item.id, "view");
 
     modalTitle.textContent = item.name;
     modalMeta.textContent = item.cat.replace("&amp;", "and") + " in " + item.hood + ", Columbus";
@@ -3005,8 +3019,8 @@
               '<svg class="icon" style="color:var(--accent);flex-shrink:0"><use href="#i-pin"/></svg>' + escapeAttr(item.address) + '</p>' +
               (modalDist ? '<p class="modal-dist" style="margin-top:6px;color:var(--accent-soft-ink);font-weight:700">' + escapeAttr(modalDist) + ' away</p>' : '') +
               '<p style="margin-top:8px">' +
-              (hasCoords ? '<a class="text-link" href="' + escapeAttr(dirUrl) + '" target="_blank" rel="noopener">Directions</a>'
-                         : '<a class="text-link" href="' + escapeAttr(mapsUrl) + '" target="_blank" rel="noopener">Get directions</a>') +
+              (hasCoords ? '<a class="text-link" data-ev="directions" href="' + escapeAttr(dirUrl) + '" target="_blank" rel="noopener">Directions</a>'
+                         : '<a class="text-link" data-ev="directions" href="' + escapeAttr(mapsUrl) + '" target="_blank" rel="noopener">Get directions</a>') +
               '</p></div>';
     }
 
@@ -3014,8 +3028,8 @@
     var phoneDigits = item.phone ? String(item.phone).replace(/[^\d+]/g, "") : "";
     if (siteUrl || phoneDigits) {
       html += '<div class="modal-section"><h3>Contact</h3><div class="hours-list">' +
-              (phoneDigits ? '<div class="hours-row"><span>Phone</span><span><a class="text-link" href="tel:' + escapeAttr(phoneDigits) + '">' + escapeAttr(item.phone) + '</a></span></div>' : "") +
-              (siteUrl ? '<div class="hours-row"><span>Website</span><span><a class="text-link" href="' + siteUrl + '" target="_blank" rel="noopener nofollow">' + escapeAttr(siteUrl.replace(/^https:\/\//, "").replace(/\/$/, "")) + '</a></span></div>' : "") +
+              (phoneDigits ? '<div class="hours-row"><span>Phone</span><span><a class="text-link" data-ev="phone" href="tel:' + escapeAttr(phoneDigits) + '">' + escapeAttr(item.phone) + '</a></span></div>' : "") +
+              (siteUrl ? '<div class="hours-row"><span>Website</span><span><a class="text-link" data-ev="website" href="' + siteUrl + '" target="_blank" rel="noopener nofollow">' + escapeAttr(siteUrl.replace(/^https:\/\//, "").replace(/\/$/, "")) + '</a></span></div>' : "") +
               '</div></div>';
     }
 

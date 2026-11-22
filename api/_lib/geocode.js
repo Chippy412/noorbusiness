@@ -7,7 +7,7 @@
 // Neighborhoods that are their own cities; the rest of the directory's
 // neighborhoods are inside Columbus.
 var CITIES = { "Dublin": "Dublin", "Westerville": "Westerville", "Hilliard": "Hilliard" };
-var UA = "NICC-Business-directory/1.0 (+https://nicc-business.vercel.app)";
+var UA = "NICC-Business-directory/1.0 (+https://noorbusiness.org)";
 
 // A listing's address often leaves out the city and state ("1 Main St").
 function withContext(address, neighborhood) {

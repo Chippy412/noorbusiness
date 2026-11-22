@@ -65,8 +65,9 @@ and isn't something `git clone` gives you.
 | `/api/submit` | Contact form, footer newsletter, and "Report a problem". Verifies Turnstile on the server, rate-limits per sender, writes with the service-role key. |
 | `/api/notify` | Emails volunteers when something needs moderating, and emails owners/reviewers the team's decisions (called by database triggers, see `2026-10-04-notify-triggers.sql`). |
 | `/api/geocode` | Address or ZIP to map coordinates (US Census geocoder, then OpenStreetMap). Used for a visitor's "distance from" point, by a database trigger when a listing's address changes, and by the moderators' "Find map locations" button. |
-| `/b/<id>` → `/api/listing` | A crawlable, shareable page for each approved listing (title, Open Graph, schema.org). |
-| `/sitemap.xml` → `/api/sitemap` | Home page plus every approved listing. |
+| `/b/<id>` → `/api/listing` | A crawlable, shareable page for each approved listing: title, meta description, Open Graph, schema.org `LocalBusiness` (typed by category, with address, map point, opening hours, rating), breadcrumbs, and links to related listings. |
+| `/api/track` | Privacy-friendly counts. Stores only a daily total per listing of views and website / phone / directions clicks (`listing_daily_stats`, migration `2026-11-22-listing-stats.sql`). No cookies, no IP, no user agent, no visitor id; bots and Do Not Track are skipped, and repeat events from one visitor within 30 minutes are collapsed using a hash held in memory only. Owners will read their own numbers through the `my_listing_stats()` function. Needs the service-role key; without it counting is silently off. |
+| `/sitemap.xml` → `/api/sitemap` | Home page plus every approved listing. `robots.txt` points crawlers at it and keeps `/api/` out of the index. |
 | `/api/verify-turnstile`, `/api/turnstile-config` | Turnstile helpers. |
 
 **Environment variables** (Vercel > Settings > Environment Variables):

@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /api/
 
-Sitemap: https://nicc-business.vercel.app/sitemap.xml
+Sitemap: https://noorbusiness.org/sitemap.xml
