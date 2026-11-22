@@ -1025,6 +1025,11 @@
   .mod-comp { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.8fr) minmax(0, 0.9fr); gap: 12px; align-items: end; margin-top: 14px; }
   .mod-comp-note { grid-column: 1 / 3; }
   @media (max-width: 860px) { .mod-comp { grid-template-columns: 1fr; } .mod-comp-note { grid-column: auto; } }
+  /* Claim prompt inside the listing dialog */
+  .claim-callout { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 18px; border: 1px dashed var(--accent); border-radius: 14px; background: var(--accent-soft); }
+  .claim-callout h3 { margin: 0 0 4px; color: var(--accent-soft-ink); }
+  .claim-callout p { margin: 0; color: var(--ink-2); font-size: 0.92rem; }
+  @media (max-width: 560px) { .claim-callout { flex-direction: column; align-items: stretch; } }
   /* Report dialog */
   dialog.report-modal { width: min(520px, calc(100vw - 32px)); }
   .report-reasons { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -2616,7 +2621,7 @@
   <div class="modal-foot">
     <button class="btn btn-primary" id="modalSave"><svg class="icon"><use href="#i-bookmark"/></svg> Save listing</button>
     <button class="btn btn-ghost" type="button" id="modalShare">Share listing</button>
-    <button class="btn btn-ghost" type="button" id="modalReport">Report a problem</button>
+    <button class="btn btn-ghost" type="button" id="modalReport">Report wrong info</button>
     <button class="btn btn-ghost" id="modalClaim">Claim this business</button>
   </div>
 </dialog>
@@ -3027,10 +3032,17 @@
       html += '<div class="modal-section"><h3>Hours</h3><p style="color:var(--muted)">Not yet listed. Check with the business before you visit.</p></div>';
     }
 
+    if (!item.ownerId) {
+      html += '<div class="modal-section claim-callout"><div><h3>Is this your business?</h3>' +
+              '<p>Claim it to keep the hours, photos and details up to date. A volunteer reviews every claim.</p></div>' +
+              '<button type="button" class="btn btn-primary" id="modalClaimCta">Claim it</button></div>';
+    }
     html += '<div class="modal-section" id="modalReviewsSection"><h3>Community reviews</h3><p style="color:var(--muted)">Loading reviews…</p></div>';
 
     modalBody.innerHTML = html;
     modalSave.innerHTML = '<svg class="icon"><use href="#i-bookmark"/></svg> ' + (isSaved(item.id) ? "Saved" : "Save listing");
+    var claimCta = document.getElementById("modalClaimCta");
+    if (claimCta) claimCta.addEventListener("click", function () { document.getElementById("modalClaim").click(); });
     var claimBtn = document.getElementById("modalClaim");
     if (claimBtn) {
       claimBtn.hidden = false;
