@@ -45,6 +45,7 @@ MIGRATIONS = [
     "2026-11-02-remove-halal-verification.sql",
     "2026-11-17-imported-listings.sql",
     "2026-11-22-listing-stats.sql",
+    "2026-11-23-admin-listing-stats.sql",
 ]
 
 
@@ -1015,6 +1016,37 @@ def listing_stats_are_server_only_and_owner_readable(t):
     t.as_(o)
     rows = t.q("select views, phone_clicks from my_listing_stats(%s)", (b,))
     assert rows == [(1, 1)], rows
+
+
+@test
+def admin_listing_stats_is_moderator_only_and_aggregate(t):
+    o = t.user("o@x.co")
+    vol = t.user("v@x.co")
+    mod = t.user("m@x.co")
+    t.admin()
+    t.q("insert into admins (user_id, role) values (%s, 'volunteer')", (vol,))
+    t.q("insert into admins (user_id, role) values (%s, 'moderator')", (mod,))
+    a = t.business(o, "approved", "Alpha")
+    b = t.business(o, "approved", "Beta")
+    t.business(o, "pending", "Hidden")
+    t.as_(role="service_role")
+    for _ in range(3):
+        t.q("select record_listing_event(%s, 'view')", (a,))
+    t.q("select record_listing_event(%s, 'phone')", (a,))
+    t.q("select record_listing_event(%s, 'view')", (b,))
+    t.as_()
+    t.fails("select admin_listing_stats(30)")
+    t.as_(o)
+    t.fails("select admin_listing_stats(30)")
+    t.as_(vol)
+    t.fails("select admin_listing_stats(30)")
+    t.as_(mod)
+    r = t.one("select admin_listing_stats(7)")
+    assert r["days"] == 7 and len(r["daily"]) == 7, r
+    assert r["totals"]["views"] == 4 and r["totals"]["phone"] == 1, r["totals"]
+    assert [x["name"] for x in r["top"]] == ["Alpha", "Beta"], r["top"]
+    assert r["coverage"] == {"live": 2, "with_views": 2}, r["coverage"]
+    assert "ip" not in str(r).lower().replace("description", "")
 
 
 # --------------------------------------------------------------------- main
