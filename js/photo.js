@@ -38,7 +38,8 @@
   function checkInput(file) {
     if (!file) return "Please choose a photo.";
     var type = String(file.type || "").toLowerCase();
-    if (type === "image/heic" || type === "image/heif") {
+    // Some phones hand over HEIC files with no type at all, so check the name too.
+    if (type === "image/heic" || type === "image/heif" || (!type && /\.(heic|heif)$/i.test(String(file.name || "")))) {
       // Browsers can't reliably decode HEIC, so ask for a JPG instead.
       return "HEIC photos aren't supported yet. Please choose a JPG or PNG (on iPhone: Settings > Camera > Formats > Most Compatible).";
     }

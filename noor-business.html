@@ -852,6 +852,10 @@
   .hours-row { display: flex; justify-content: space-between; font-size: 0.92rem; }
   .hours-row span:first-child { color: var(--muted); }
   .hours-row span:last-child { font-family: "JetBrains Mono", monospace; font-size: 0.85rem; }
+  /* Contact rows share the hours layout but read as normal text, with phone-sized tap targets. */
+  .contact-list .hours-row { align-items: center; gap: 12px; }
+  .contact-list .hours-row span:last-child { font-family: inherit; font-size: 0.95rem; min-width: 0; text-align: right; overflow-wrap: anywhere; }
+  .contact-list a, .modal-dir a { display: inline-block; padding: 10px 0; }
   .review { padding: 16px 0; border-top: 1px solid var(--hairline); }
   .review:first-of-type { border-top: none; padding-top: 0; }
   .review-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
@@ -3165,6 +3169,12 @@
     if (a && currentItem) trackEvent(currentItem.id, a.getAttribute("data-ev"));
   });
 
+  // "Columbus (Northland)" already says Columbus; only suburbs and areas get ", Columbus".
+  function placeLabel(hood) {
+    hood = String(hood || "");
+    return /\bcolumbus\b/i.test(hood) ? hood : hood + ", Columbus";
+  }
+
   function openListing(id, fromEl) {
     var item = LISTINGS.filter(function (l) { return l.id === id; })[0];
     if (!item) { toast("That listing isn't available any more."); return; }
@@ -3172,7 +3182,7 @@
     trackEvent(item.id, "view");
 
     modalTitle.textContent = item.name;
-    modalMeta.textContent = item.cat.replace("&amp;", "and") + " in " + item.hood + ", Columbus";
+    modalMeta.textContent = item.cat.replace("&amp;", "and") + " in " + placeLabel(item.hood);
 
     var html = "";
     var modalPhotoUrl = safePhotoUrl(item.photo);
@@ -3195,7 +3205,7 @@
       html += '<div class="modal-section"><h3>Location</h3><p style="color:var(--ink-2);display:flex;align-items:center;gap:8px">' +
               '<svg class="icon" style="color:var(--accent);flex-shrink:0"><use href="#i-pin"/></svg>' + escapeAttr(item.address) + '</p>' +
               (modalDist ? '<p class="modal-dist" style="margin-top:6px;color:var(--accent-soft-ink);font-weight:700">' + escapeAttr(modalDist) + ' away</p>' : '') +
-              '<p style="margin-top:8px">' +
+              '<p class="modal-dir" style="margin-top:2px">' +
               (hasCoords ? '<a class="text-link" data-ev="directions" href="' + escapeAttr(dirUrl) + '" target="_blank" rel="noopener">Directions</a>'
                          : '<a class="text-link" data-ev="directions" href="' + escapeAttr(mapsUrl) + '" target="_blank" rel="noopener">Get directions</a>') +
               '</p></div>';
@@ -3204,7 +3214,7 @@
     var siteUrl = safePhotoUrl(item.website); // same rule: escaped, https only
     var phoneDigits = item.phone ? String(item.phone).replace(/[^\d+]/g, "") : "";
     if (siteUrl || phoneDigits) {
-      html += '<div class="modal-section"><h3>Contact</h3><div class="hours-list">' +
+      html += '<div class="modal-section"><h3>Contact</h3><div class="hours-list contact-list">' +
               (phoneDigits ? '<div class="hours-row"><span>Phone</span><span><a class="text-link" data-ev="phone" href="tel:' + escapeAttr(phoneDigits) + '">' + escapeAttr(item.phone) + '</a></span></div>' : "") +
               (siteUrl ? '<div class="hours-row"><span>Website</span><span><a class="text-link" data-ev="website" href="' + siteUrl + '" target="_blank" rel="noopener nofollow">' + escapeAttr(siteUrl.replace(/^https:\/\//, "").replace(/\/$/, "")) + '</a></span></div>' : "") +
               '</div></div>';
@@ -3249,6 +3259,11 @@
       } catch (e) { shown(); }
     } else {
       modal.showModal();
+    }
+    // Give the open listing its own history entry (same URL), so the phone's
+    // back button or swipe closes it instead of leaving the page underneath.
+    if (!(history.state && history.state.nbListing)) {
+      try { history.pushState({ nbListing: true }, "", location.href); } catch (e) { /* sandboxed frame */ }
     }
     renderReviewsSection(item);
   }
@@ -3390,6 +3405,13 @@
   modal.addEventListener("cancel", function (e) { if (supportsVT) { e.preventDefault(); closeModal(); } });
   document.getElementById("modalClose").addEventListener("click", closeModal);
   modal.addEventListener("close", syncUrl);
+  // Closed with X, Escape or the backdrop: drop the history entry openListing added.
+  modal.addEventListener("close", function () {
+    if (history.state && history.state.nbListing) history.back();
+  });
+  window.addEventListener("popstate", function () {
+    if (modal.open && !(history.state && history.state.nbListing)) closeModal();
+  });
   document.getElementById("modalShare").addEventListener("click", async function () {
     if (!currentItem) return;
     var link = location.origin + "/b/" + currentItem.id;
@@ -3601,6 +3623,7 @@
   }
 
   window.addEventListener("hashchange", function () {
+    if (modal.open) modal.close(); // a listing never stays open over another page
     var route = currentRoute();
     if (route === lastRoute) { render(route); return; }
     lastRoute = route;
@@ -4181,7 +4204,7 @@
     var qs = p.toString();
     var next = "#/explore" + (qs ? "?" + qs : "");
     if (location.hash !== next) {
-      try { history.replaceState(null, "", location.pathname + location.search + next); } catch (e) { /* sandboxed frame */ }
+      try { history.replaceState(history.state, "", location.pathname + location.search + next); } catch (e) { /* sandboxed frame */ }
     }
   }
   // Returns true if the hash carried any filter params (and applied them).
@@ -5263,7 +5286,7 @@
       '<div class="listing-art art-tone-1"><span class="art-badge"><svg class="icon"><use href="#' + item.icon + '"/></svg></span></div>' +
       '<div class="pv-full-body">' +
         '<h4>' + escapeAttr(item.name) + '</h4>' +
-        '<p class="listing-meta">' + escapeAttr(item.cat) + ' in ' + escapeAttr(item.hood) + ', Columbus</p>' +
+        '<p class="listing-meta">' + escapeAttr(item.cat) + ' in ' + escapeAttr(placeLabel(item.hood)) + '</p>' +
         '<div class="modal-section"><div class="badges"><span class="badge neutral">New to the directory</span></div></div>' +
         '<div class="modal-section"><p style="color:var(--ink-2)">' + escapeAttr(item.long) + '</p></div>';
     if (item.address) {
@@ -5271,7 +5294,7 @@
         '<svg class="icon" style="color:var(--accent);flex-shrink:0"><use href="#i-pin"/></svg>' + escapeAttr(item.address) + '</p></div>';
     }
     if (siteUrl || phoneDigits) {
-      html += '<div class="modal-section"><h3>Contact</h3><div class="hours-list">' +
+      html += '<div class="modal-section"><h3>Contact</h3><div class="hours-list contact-list">' +
         (phoneDigits ? '<div class="hours-row"><span>Phone</span><span>' + escapeAttr(item.phone) + '</span></div>' : "") +
         (siteUrl ? '<div class="hours-row"><span>Website</span><span>' + escapeAttr(item.website.replace(/^https?:\/\//, "").replace(/\/$/, "")) + '</span></div>' : "") +
         '</div></div>';
