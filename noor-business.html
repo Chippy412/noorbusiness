@@ -1155,6 +1155,18 @@
   .mod-an-table tbody tr:last-child > * { border-bottom: 0; }
   .mod-an-cat { display: block; color: var(--muted); font-size: 0.78rem; font-weight: 600; }
   @media (max-width: 560px) { .mod-an-split li { grid-template-columns: 70px minmax(0, 1fr) 44px; } .mod-an-split-pct { display: none; } }
+  /* Owner stats (account page), reusing the Analytics styles above */
+  .owner-stats-card .mod-an-bar-head { margin: 0 0 16px; }
+  .owner-stats-section { margin-top: 22px; padding: 18px 0 0; border-top: 1px solid var(--hairline); }
+  .owner-stats-card .mod-an-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 0; }
+  @media (max-width: 560px) {
+    .owner-stats-card .mod-an-tiles { gap: 8px; }
+    .owner-stats-card .mod-an-tile { padding: 12px; border-radius: 14px; }
+    .owner-stats-card .mod-an-value { font-size: 1.4rem; }
+    .owner-stats-card .mod-an-sub { font-size: 0.74rem; }
+  }
+  .owner-stats-section h3 { margin: 0 0 4px; font-size: 1.05rem; }
+  #ownerStats[aria-busy="true"] { opacity: 0.6; transition: opacity 0.2s; }
   /* Claim prompt inside the listing dialog */
   .claim-callout { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 18px; border: 1px dashed var(--accent); border-radius: 14px; background: var(--accent-soft); }
   .claim-callout h3 { margin: 0 0 4px; color: var(--accent-soft-ink); }
@@ -2538,6 +2550,11 @@
             <div id="mfaPanel"><p style="color:var(--muted)">Loading…</p></div>
           </div>
 
+          <div class="form-card owner-stats-card" id="ownerStatsCard" style="margin-top:24px" hidden>
+            <h2 style="font-size:1.3rem;margin-bottom:12px">How your listings are doing</h2>
+            <div id="ownerStats" aria-live="polite"><p style="color:var(--muted)">Loading…</p></div>
+          </div>
+
           <div class="form-card" style="margin-top:24px">
             <h2 style="font-size:1.3rem;margin-bottom:12px">Your listings</h2>
             <div id="myListings"><p style="color:var(--muted)">Loading…</p></div>
@@ -2887,6 +2904,8 @@
 <script src="js/auth.js"></script>
 <script src="js/photo.js"></script>
 <script src="js/owner-dashboard.js"></script>
+<script src="js/stats-view.js"></script>
+<script src="js/owner-stats.js"></script>
 <script src="js/admin.js"></script>
 <script>
 (function () {
@@ -4740,6 +4759,7 @@
       }).catch(function () { /* admin tables not set up yet */ });
       renderNotices();
       renderMyListings();
+      renderOwnerStats();
       renderMfaPanel();
       renderMyReviews();
       prefillListDraft();
@@ -4843,6 +4863,11 @@
     return values.map(function (v) {
       return '<option value="' + escapeAttr(v) + '"' + (v === selected ? " selected" : "") + ">" + escapeAttr(v) + "</option>";
     }).join("");
+  }
+
+  function renderOwnerStats() {
+    var card = document.getElementById("ownerStatsCard"), el = document.getElementById("ownerStats");
+    if (card && el && window.NiccOwnerStats) window.NiccOwnerStats.mount(card, el);
   }
 
   async function renderMyListings() {

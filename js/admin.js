@@ -407,51 +407,14 @@
 
     // Analytics (moderators). Only anonymous daily totals per listing exist, so
     // everything here is a count: no visitors, no devices, no places.
-    function num(n) { return Number(n || 0).toLocaleString(); }
-    function pct(a, b) { return b > 0 ? Math.round((a / b) * 1000) / 10 + "%" : "–"; }
-    function shortDay(iso) { return new Date(iso + "T12:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" }); }
-    function change(now, before) {
-      if (!before) return now ? "New this period" : "No change";
-      var d = Math.round(((now - before) / before) * 100);
-      return d === 0 ? "Same as before" : (d > 0 ? "Up " : "Down ") + Math.abs(d) + "% on the period before";
-    }
-    function niceMax(v) {
-      if (v <= 4) return 4;
-      var mag = Math.pow(10, Math.floor(Math.log10(v))), f = v / mag;
-      return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * mag;
-    }
-    function viewsChart(daily) {
-      var W = 720, H = 220, L = 38, B = 26, T = 8, R = 4;
-      var max = niceMax(Math.max.apply(null, daily.map(function (d) { return d.views; }).concat([1])));
-      var slot = (W - L - R) / daily.length, bw = Math.max(2, slot * 0.7);
-      var grid = [0, 0.5, 1].map(function (f) {
-        var y = T + (H - T - B) * (1 - f);
-        return '<line class="mod-an-grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + y + '" y2="' + y + '"/>' +
-          '<text class="mod-an-axis" x="' + (L - 6) + '" y="' + (y + 4) + '" text-anchor="end">' + num(max * f) + "</text>";
-      }).join("");
-      var bars = daily.map(function (d, i) {
-        var hgt = (H - T - B) * (d.views / max);
-        return '<rect class="mod-an-bar" x="' + (L + i * slot + (slot - bw) / 2).toFixed(1) + '" y="' + (H - B - hgt).toFixed(1) +
-          '" width="' + bw.toFixed(1) + '" height="' + Math.max(hgt, d.views ? 2 : 0).toFixed(1) + '" rx="2"><title>' +
-          esc(shortDay(d.day) + ": " + num(d.views) + (d.views === 1 ? " view" : " views")) + "</title></rect>";
-      }).join("");
-      var ticks = [0, Math.floor((daily.length - 1) / 2), daily.length - 1].filter(function (v, i, a) { return a.indexOf(v) === i; });
-      var labels = ticks.map(function (i, k) {
-        return '<text class="mod-an-axis" x="' + (L + i * slot + slot / 2).toFixed(1) + '" y="' + (H - 6) + '" text-anchor="' +
-          (k === 0 && ticks.length > 1 ? "start" : k === ticks.length - 1 && ticks.length > 1 ? "end" : "middle") + '">' + esc(shortDay(daily[i].day)) + "</text>";
-      }).join("");
-      return '<svg class="mod-an-chart" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Views per day, ' +
-        esc(shortDay(daily[0].day)) + " to " + esc(shortDay(daily[daily.length - 1].day)) + '">' + grid + bars + labels + "</svg>";
-    }
+    var SV = window.NiccStatsView;
+    var num = SV.num, pct = SV.pct, change = SV.change, viewsChart = SV.viewsChart, tile = SV.tile;
     function analyticsPanel(st) {
       var t = st.totals, prev = t.previous;
       var clicks = t.website + t.phone + t.directions, prevClicks = prev.website + prev.phone + prev.directions;
       var range = [7, 30, 90].map(function (n) {
         return '<button class="btn btn-sm ' + (st.days === n ? "btn-primary" : "btn-ghost") + '" data-act="stats-range" data-days="' + n + '" aria-pressed="' + (st.days === n) + '">' + n + " days</button>";
       }).join("");
-      function tile(label, value, sub) {
-        return '<div class="mod-an-tile"><p class="mod-an-label">' + label + '</p><p class="mod-an-value">' + value + '</p><p class="mod-an-sub">' + sub + "</p></div>";
-      }
       var tiles = '<div class="mod-an-tiles">' +
         tile("Views", num(t.views), change(t.views, prev.views)) +
         tile("Clicks", num(clicks), change(clicks, prevClicks)) +

@@ -315,3 +315,19 @@ test("robots.txt and the sitemap point at the real domain", () => {
   assert.match(robots, /Disallow: \/api\//);
   assert.ok(!robots.includes("vercel.app"));
 });
+
+test("listing page share card: listing photo when there is one, else the 1200x630 site card", () => {
+  const { render } = require("../api/listing")._test;
+  const base = { id: "22222222-2222-2222-2222-222222222222", name: "Cafe & Co", category: "Restaurants", neighborhood: "Dublin",
+    description: "Coffee.", long_description: "Coffee." };
+  const plain = render(base, [], []).html;
+  assert.match(plain, /<meta property="og:image" content="https:\/\/noorbusiness\.org\/images\/og-image\.jpg">/);
+  assert.match(plain, /<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">/);
+  assert.match(plain, /<meta property="og:title" content="Cafe &amp; Co · Restaurants in Dublin, Columbus">/);
+  assert.match(plain, /<meta name="twitter:image" content="https:\/\/noorbusiness\.org\/images\/og-image\.jpg">/);
+  assert.match(plain, /<title>Cafe &amp; Co — Restaurants in Dublin, Columbus \| NICC Business<\/title>/);
+  const withPhoto = render(Object.assign({}, base, { photo_url: "https://cdn.example/p.jpg" }), [], []).html;
+  assert.match(withPhoto, /<meta property="og:image" content="https:\/\/cdn\.example\/p\.jpg">/);
+  assert.match(withPhoto, /<meta property="og:image:alt" content="Photo of Cafe &amp; Co">/);
+  assert.ok(!/og:image:width/.test(withPhoto), "no made-up size for owner photos");
+});
