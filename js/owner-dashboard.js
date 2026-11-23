@@ -190,7 +190,17 @@
     return byId;
   }
 
+  // Daily view/click counts for one listing the caller owns, newest first
+  // (my_listing_stats, 2026-11-22-listing-stats.sql). Only days with
+  // activity come back; NiccStatsView.summarize() fills in the rest.
+  async function loadListingStats(businessId, days) {
+    var result = await window.NiccSupabase.rpc("my_listing_stats", { p_business_id: businessId, p_days: days });
+    if (result.error) throw result.error;
+    return result.data || [];
+  }
+
   window.NiccOwner = {
+    loadListingStats: loadListingStats,
     loadMyBusinesses: loadMyBusinesses,
     createBusiness: createBusiness,
     claimBusiness: claimBusiness,

@@ -11,17 +11,29 @@ var track = require("./track");
 
 var SITE = (process.env.SITE_URL || "https://noorbusiness.org").replace(/\/$/, "");
 
-function page(title, desc, canonical, image, jsonLd, body, status) {
+// The site-wide share card, sized for link previews (1200x630).
+var DEFAULT_CARD = { url: SITE + "/images/og-image.jpg", width: 1200, height: 630, alt: "NICC Business: Muslim-owned businesses in Columbus, Ohio" };
+
+// card: { title, url, width?, height?, alt } for the link preview that
+// WhatsApp, iMessage, Facebook, X and Slack show when the page is shared.
+function page(title, desc, canonical, card, jsonLd, body, status) {
+  card = card || {};
+  var image = card.url || DEFAULT_CARD.url;
+  var shareTitle = card.title || title;
   return { status: status || 200, html: '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">' +
     '<meta name="viewport" content="width=device-width, initial-scale=1">' +
     "<title>" + h.esc(title) + "</title>" +
     '<meta name="description" content="' + h.esc(desc) + '">' +
     '<link rel="canonical" href="' + h.esc(canonical) + '">' +
     '<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32.png">' +
-    '<meta property="og:type" content="website"><meta property="og:site_name" content="NICC Business">' +
-    '<meta property="og:title" content="' + h.esc(title) + '"><meta property="og:description" content="' + h.esc(desc) + '">' +
+    '<meta property="og:type" content="website"><meta property="og:site_name" content="NICC Business"><meta property="og:locale" content="en_US">' +
+    '<meta property="og:title" content="' + h.esc(shareTitle) + '"><meta property="og:description" content="' + h.esc(desc) + '">' +
     '<meta property="og:url" content="' + h.esc(canonical) + '"><meta property="og:image" content="' + h.esc(image) + '">' +
-    '<meta name="twitter:card" content="summary_large_image">' +
+    (card.width && card.height ? '<meta property="og:image:width" content="' + card.width + '"><meta property="og:image:height" content="' + card.height + '">' : "") +
+    '<meta property="og:image:alt" content="' + h.esc(card.alt || DEFAULT_CARD.alt) + '">' +
+    '<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="' + h.esc(shareTitle) + '">' +
+    '<meta name="twitter:description" content="' + h.esc(desc) + '"><meta name="twitter:image" content="' + h.esc(image) + '">' +
+    '<meta name="twitter:image:alt" content="' + h.esc(card.alt || DEFAULT_CARD.alt) + '">' +
     [].concat(jsonLd || []).map(function (ld) { return '<script type="application/ld+json">' + JSON.stringify(ld).replace(/</g, "\\u003c") + "</script>"; }).join("") +
     "<style>:root{color-scheme:light;--bg:#fbfaf5;--ink:#1d2410;--muted:#5d6650;--accent:#4c5f26;--card:#fff;--line:#dfe3d0}" +
     "body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,Segoe UI,sans-serif}" +
@@ -122,19 +134,24 @@ function render(b, reviews, others) {
   var title = b.name + " \u2014 " + b.category + " in " + b.neighborhood + ", Columbus | NICC Business";
   var desc = String(b.description || "");
   if (desc.length > 155) desc = desc.slice(0, 152).replace(/\s+\S*$/, "") + "\u2026";
-  return page(title, desc, url, photo || SITE + "/images/hero.jpg", [jsonLd, crumbs], body);
+  // Share card: the listing's own photo when it has one, else the site card.
+  var card = photo
+    ? { url: photo, alt: "Photo of " + b.name }
+    : { url: DEFAULT_CARD.url, width: DEFAULT_CARD.width, height: DEFAULT_CARD.height, alt: DEFAULT_CARD.alt };
+  card.title = b.name + " \u00b7 " + b.category + " in " + b.neighborhood + ", Columbus";
+  return page(title, desc, url, card, [jsonLd, crumbs], body);
 }
 
 module.exports = async function handler(req, res) {
   var id = String((req.query && req.query.id) || "");
   var out;
   if (!h.UUID_RE.test(id)) {
-    out = page("Listing not found | NICC Business", "This listing could not be found.", SITE + "/", SITE + "/images/hero.jpg", null,
+    out = page("Listing not found | NICC Business", "This listing could not be found.", SITE + "/", null, null,
       '<h1>Listing not found</h1><p><a href="/noor-business.html#/explore">Browse the directory</a></p>', 404);
   } else {
     var b = await supa.rest("businesses?select=*&status=eq.approved&id=eq." + id);
     if (!b.ok || !Array.isArray(b.data) || !b.data[0]) {
-      out = page("Listing not found | NICC Business", "This listing could not be found.", SITE + "/", SITE + "/images/hero.jpg", null,
+      out = page("Listing not found | NICC Business", "This listing could not be found.", SITE + "/", null, null,
         '<h1>Listing not found</h1><p><a href="/noor-business.html#/explore">Browse the directory</a></p>', 404);
     } else {
       var rv = await supa.rest("reviews?select=rating&status=eq.approved&business_id=eq." + id);
