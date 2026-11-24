@@ -105,14 +105,14 @@ test("verify-turnstile survives a malformed JSON body", async () => {
 
 test("notify skips updates except for queued listing edits", async () => {
   process.env.NOTIFY_SECRET = "s3cret";
-  process.env.RESEND_API_KEY = "k"; process.env.NOTIFY_EMAIL_TO = "a@b.co"; process.env.NOTIFY_EMAIL_FROM = "x <x@y.co>";
+  process.env.AWS_SES_ACCESS_KEY_ID = "AKIDEXAMPLE"; process.env.AWS_SES_SECRET_ACCESS_KEY = "secret"; process.env.NOTIFY_EMAIL_TO = "a@b.co"; process.env.NOTIFY_EMAIL_FROM = "x <x@y.co>";
   const handler = require("../api/notify");
   const res = mockRes();
   await handler({ method: "POST", headers: { authorization: "Bearer s3cret" },
     body: { type: "UPDATE", table: "reviews", record: { status: "pending" } } }, res);
   assert.strictEqual(res.code, 200);
   assert.strictEqual(res.body.skipped, true);
-  for (const k of ["NOTIFY_SECRET", "RESEND_API_KEY", "NOTIFY_EMAIL_TO", "NOTIFY_EMAIL_FROM"]) delete process.env[k];
+  for (const k of ["NOTIFY_SECRET", "AWS_SES_ACCESS_KEY_ID", "AWS_SES_SECRET_ACCESS_KEY", "NOTIFY_EMAIL_TO", "NOTIFY_EMAIL_FROM"]) delete process.env[k];
 });
 
 test("notify summarises a queued listing edit", () => {
@@ -133,17 +133,14 @@ test("submit rejects contact emails that could inject into a mailto: link", asyn
   delete process.env.SUPABASE_SERVICE_ROLE_KEY;
 });
 
-test("alerts go to the whole team only once a real sender is set up", async () => {
+test("alerts go to NOTIFY_EMAIL_TO plus the whole team, deduplicated", async () => {
   const { recipients } = require("../api/notify")._test;
   const team = async () => ["mod@noor.org", "Me@Gmail.com", "vol@noor.org"];
   assert.deepStrictEqual(
-    await recipients({ NOTIFY_EMAIL_TO: "me@gmail.com", NOTIFY_EMAIL_FROM: "NICC Business <onboarding@resend.dev>" }, team),
-    ["me@gmail.com"], "Resend's test sender must not get extra recipients");
-  assert.deepStrictEqual(
-    await recipients({ NOTIFY_EMAIL_TO: "me@gmail.com", NOTIFY_EMAIL_FROM: "NICC Business <alerts@updates.noorohio.org>" }, team),
+    await recipients({ NOTIFY_EMAIL_TO: "me@gmail.com", NOTIFY_EMAIL_FROM: "NICC Business <alerts@noorbusiness.org>" }, team),
     ["me@gmail.com", "mod@noor.org", "vol@noor.org"]);
   assert.deepStrictEqual(
-    await recipients({ NOTIFY_EMAIL_TO: "me@gmail.com", NOTIFY_EMAIL_FROM: "alerts@updates.noorohio.org" }, async () => { throw new Error("db down"); }),
+    await recipients({ NOTIFY_EMAIL_TO: "me@gmail.com", NOTIFY_EMAIL_FROM: "alerts@noorbusiness.org" }, async () => { throw new Error("db down"); }),
     ["me@gmail.com"], "a team lookup failure falls back to NOTIFY_EMAIL_TO");
 });
 
@@ -165,16 +162,67 @@ test("submit: reports need a real listing id, a known reason, and details for 'o
   delete process.env.SUPABASE_SERVICE_ROLE_KEY;
 });
 
-test("notify: decisions are never sent from Resend's test sender", async () => {
-  process.env.NOTIFY_SECRET = "s3cret";
-  process.env.RESEND_API_KEY = "k"; process.env.NOTIFY_EMAIL_TO = "a@b.co"; process.env.NOTIFY_EMAIL_FROM = "NICC <onboarding@resend.dev>";
+test("notify: reports not_configured (503) when SES keys are missing", async () => {
+  process.env.NOTIFY_SECRET = "s3cret"; process.env.NOTIFY_EMAIL_TO = "a@b.co"; process.env.NOTIFY_EMAIL_FROM = "NICC <alerts@noorbusiness.org>";
   const handler = require("../api/notify");
   const res = mockRes();
-  await handler({ method: "POST", headers: { authorization: "Bearer s3cret" },
-    body: { type: "INSERT", table: "owner_notices", record: { id: "11111111-1111-1111-1111-111111111111", title: "x" } } }, res);
-  assert.strictEqual(res.code, 200);
-  assert.strictEqual(res.body.skipped, true);
-  for (const k of ["NOTIFY_SECRET", "RESEND_API_KEY", "NOTIFY_EMAIL_TO", "NOTIFY_EMAIL_FROM"]) delete process.env[k];
+  await handler({ method: "POST", headers: { authorization: "Bearer s3cret" }, body: {} }, res);
+  assert.strictEqual(res.code, 503);
+  assert.strictEqual(res.body.error, "not_configured");
+  for (const k of ["NOTIFY_SECRET", "NOTIFY_EMAIL_TO", "NOTIFY_EMAIL_FROM"]) delete process.env[k];
+});
+
+test("ses: sendEmail posts a signed SES v2 request", async () => {
+  const ses = require("../api/_lib/ses");
+  process.env.AWS_SES_ACCESS_KEY_ID = "AKIDEXAMPLE"; process.env.AWS_SES_SECRET_ACCESS_KEY = "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY";
+  process.env.AWS_SES_REGION = "us-west-2";
+  const realFetch = global.fetch; let call;
+  global.fetch = async (url, init) => { call = { url, init }; return { ok: true, status: 200, text: async () => '{"MessageId":"abc-123"}' }; };
+  try {
+    const r = await ses.sendEmail({ to: "a@b.co, c@d.co", from: "NICC <alerts@noorbusiness.org>", subject: "Hi", text: "Body", html: "<p>Body</p>", replyTo: "r@b.co" });
+    assert.deepStrictEqual(r, { ok: true, id: "abc-123" });
+    assert.strictEqual(call.url, "https://email.us-west-2.amazonaws.com/v2/email/outbound-emails");
+    assert.strictEqual(call.init.method, "POST");
+    assert.ok(call.init.headers.Authorization.startsWith("AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/"));
+    assert.ok(call.init.headers.Authorization.includes("/us-west-2/ses/aws4_request"));
+    assert.ok(/Signature=[0-9a-f]{64}$/.test(call.init.headers.Authorization));
+    assert.deepStrictEqual(JSON.parse(call.init.body), {
+      FromEmailAddress: "NICC <alerts@noorbusiness.org>",
+      Destination: { ToAddresses: ["a@b.co", "c@d.co"] },
+      ReplyToAddresses: ["r@b.co"],
+      Content: { Simple: { Subject: { Data: "Hi", Charset: "UTF-8" }, Body: { Text: { Data: "Body", Charset: "UTF-8" }, Html: { Data: "<p>Body</p>", Charset: "UTF-8" } } } }
+    });
+    global.fetch = async () => ({ ok: false, status: 400, text: async () => '{"message":"Email address is not verified."}' });
+    const bad = await ses.sendEmail({ to: "a@b.co", from: "x@y.co", subject: "s", text: "t" });
+    assert.strictEqual(bad.ok, false);
+    assert.ok(bad.error.includes("not verified"));
+  } finally {
+    global.fetch = realFetch;
+    for (const k of ["AWS_SES_ACCESS_KEY_ID", "AWS_SES_SECRET_ACCESS_KEY", "AWS_SES_REGION"]) delete process.env[k];
+  }
+});
+
+test("ses: sendEmail without keys is not_configured and never calls fetch", async () => {
+  const ses = require("../api/_lib/ses");
+  const realFetch = global.fetch; global.fetch = async () => { throw new Error("should not be called"); };
+  try {
+    assert.deepStrictEqual(await ses.sendEmail({ to: "a@b.co", from: "x@y.co", subject: "s", text: "t" }), { ok: false, error: "not_configured" });
+  } finally { global.fetch = realFetch; }
+});
+
+test("ses: SigV4 matches AWS's documented examples", () => {
+  const { signRequest, deriveSigningKey } = require("../api/_lib/ses");
+  const secret = "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY";
+  assert.strictEqual(deriveSigningKey(secret, "20150830", "us-east-1", "iam").toString("hex"),
+    "c4afb1cc5771d871763a393e44b703571b55cc28424d1a5e86da6ed3c154a4b9");
+  const r = signRequest({
+    method: "GET", host: "iam.amazonaws.com", path: "/", query: "Action=ListUsers&Version=2010-05-08", body: "",
+    headers: { "Content-Type": "application/x-www-form-urlencoded; charset=utf-8" },
+    region: "us-east-1", service: "iam", accessKeyId: "AKIDEXAMPLE", secretAccessKey: secret, amzDate: "20150830T123600Z"
+  });
+  assert.strictEqual(r.signature, "5d672d79c15b13162d9279b0855cfba6789a8edb4c82c400e06b5924a6f2b5d7");
+  assert.strictEqual(r.authorization,
+    "AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20150830/us-east-1/iam/aws4_request, SignedHeaders=content-type;host;x-amz-date, Signature=5d672d79c15b13162d9279b0855cfba6789a8edb4c82c400e06b5924a6f2b5d7");
 });
 
 test("notify: decision and report emails carry the useful details", () => {

@@ -75,7 +75,7 @@ and isn't something `git clone` gives you.
 - `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` — already set up via `scripts/setup-turnstile.sh`.
 - `SUPABASE_SERVICE_ROLE_KEY` — Supabase > Project Settings > API (the *secret* key). Needed by `/api/submit`. Until it exists the site falls back to inserting from the browser.
 - `SUPABASE_AUTH_CAPTCHA=1` — set only after enabling Turnstile in Supabase > Authentication > Attack Protection (paste the Turnstile secret there). Then Supabase itself rejects bot sign-ups.
-- Email alerts (optional): `NOTIFY_SECRET` (any long random string), `RESEND_API_KEY`, `NOTIFY_EMAIL_TO` (comma-separated), `NOTIFY_EMAIL_FROM` (a sender verified in Resend). Owners and reviewers are only emailed about decisions once `NOTIFY_EMAIL_FROM` is on a verified domain (not `onboarding@resend.dev`); they always see them on their account page.
+- Email alerts (optional): `NOTIFY_SECRET` (any long random string), `AWS_SES_ACCESS_KEY_ID`, `AWS_SES_SECRET_ACCESS_KEY`, `AWS_SES_REGION` (default `us-east-1`), `NOTIFY_EMAIL_TO` (comma-separated), `NOTIFY_EMAIL_FROM` (an address on a verified SES identity). See "Email (Amazon SES)" below. Owners and reviewers also always see decisions on their account page.
 - `SITE_URL` — the public address of the site (defaults to `https://nicc-business.vercel.app`).
 
 **Setting up a fresh Supabase project, in order** (each `.sql` file is run
@@ -130,9 +130,8 @@ My account page for moderators). It shows:
 - The moderation page checks every minute while open: new items show a
   banner and the count in the browser tab, and *Turn on desktop alerts* adds
   a system notification.
-- Emails go to `NOTIFY_EMAIL_TO`. Once `NOTIFY_EMAIL_FROM` is an address on a
-  domain verified in Resend (not `onboarding@resend.dev`), every moderator
-  and volunteer on the team is emailed as well, automatically.
+- Emails go to `NOTIFY_EMAIL_TO` and to every moderator and volunteer on the
+  team, automatically (sent through Amazon SES, see "Email (Amazon SES)").
 
 **Roles** (managed on the Moderation page > **Team**, moderators only):
 
@@ -171,6 +170,40 @@ email. Then: Messages (mark handled), Published reviews (moderators can
 remove one), All listings (search, filter, notes and history per listing,
 Featured end dates), Activity (every decision and note, with who made it),
 and for moderators, Sponsors and Team.
+
+## Email (Amazon SES)
+
+All outgoing email (moderation alerts, decisions to owners, server health
+alerts) goes through Amazon SES. `api/_lib/ses.js` calls the SES v2 HTTP API
+with a hand-rolled AWS SigV4 signature, so there are no npm dependencies.
+`noorbusiness.org` is already a verified SES identity; the region is
+`AWS_SES_REGION` (default `us-east-1`).
+
+1. **IAM user.** Create an IAM user with an access key and a policy that allows
+   only `ses:SendEmail`. Put the keys in `/etc/noorbusiness/api.env` as
+   `AWS_SES_ACCESS_KEY_ID` / `AWS_SES_SECRET_ACCESS_KEY` (and the same, if you
+   want health alerts, in `/etc/noorbusiness/backup.env`). Never commit them.
+2. **DNS in Route 53.** In SES > Identities > noorbusiness.org, enable Easy
+   DKIM and add the three DKIM CNAME records it shows to the hosted zone. Also
+   add a DMARC TXT record at `_dmarc.noorbusiness.org`, for example
+   `v=DMARC1; p=none; rua=mailto:postmaster@noorbusiness.org` (tighten to
+   `quarantine` once reports look clean).
+3. **Production access.** New SES accounts are in the sandbox and can only send
+   to verified addresses. In SES > Account dashboard, request production access
+   (mail type: transactional; describe the moderation and account notices).
+4. **Supabase Auth emails** (sign-up confirmation, password reset) are sent by
+   GoTrue, not the API. Create SES SMTP credentials (SES > SMTP settings) and
+   set these in `/opt/supabase/docker/.env`, then restart the stack
+   (`docker compose up -d`):
+   ```
+   SMTP_HOST=email-smtp.<region>.amazonaws.com
+   SMTP_PORT=587
+   SMTP_USER=<SES SMTP username>
+   SMTP_PASS=<SES SMTP password>
+   SMTP_ADMIN_EMAIL=alerts@noorbusiness.org
+   SMTP_SENDER_NAME=NICC Business
+   ```
+   (`SMTP_ADMIN_EMAIL` must be on the verified domain.)
 
 ## Sponsorship
 

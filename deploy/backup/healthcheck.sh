@@ -6,7 +6,7 @@
 #                                      send one rate-limited alert (used by
 #                                      noorbusiness-alert@.service when a unit fails)
 #
-# Each distinct problem is emailed (Resend) at most once per 6 hours; state is
+# Each distinct problem is emailed (Amazon SES) at most once per 6 hours; state is
 # in /var/lib/noorbusiness/alerts. A single "recovered" email is sent when all
 # problems clear. Output goes to journald: journalctl -u noorbusiness-healthcheck
 set -euo pipefail
@@ -22,7 +22,7 @@ BACKUP_MAX_AGE_HOURS=${BACKUP_MAX_AGE_HOURS:-36}
 COMPOSE_PROJECT=${COMPOSE_PROJECT:-supabase}
 BACKUP_ROOT=${BACKUP_ROOT:-/var/backups/noorbusiness}
 STATE_DIR=${STATE_DIR:-/var/lib/noorbusiness/alerts}
-RESEND_COOLDOWN=${RESEND_COOLDOWN:-21600}   # 6 hours
+ALERT_COOLDOWN=${ALERT_COOLDOWN:-21600}   # 6 hours
 HOST_LABEL=${HOST_LABEL:-$(hostname)}
 
 log() { echo "healthcheck: $*"; }
@@ -31,24 +31,36 @@ mkdir -p "$STATE_DIR"
 # ---- email -----------------------------------------------------------------
 
 # send_email SUBJECT TEXT ; returns nonzero if it could not be sent.
+# Uses Amazon SES: the AWS CLI if installed, else the API's own node helper.
+# Credentials are AWS_SES_ACCESS_KEY_ID / AWS_SES_SECRET_ACCESS_KEY (kept apart
+# from the S3 backup keys); region is AWS_SES_REGION (default us-east-1).
+API_DIR=${API_DIR:-/opt/noorbusiness/api}
 send_email() {
-  if [ -z "${RESEND_API_KEY:-}" ] || [ -z "${ALERT_EMAIL_TO:-}" ] || [ -z "${ALERT_EMAIL_FROM:-}" ]; then
-    log "RESEND_API_KEY / ALERT_EMAIL_TO / ALERT_EMAIL_FROM not set; cannot send email"
+  if [ -z "${AWS_SES_ACCESS_KEY_ID:-}" ] || [ -z "${AWS_SES_SECRET_ACCESS_KEY:-}" ] \
+     || [ -z "${ALERT_EMAIL_TO:-}" ] || [ -z "${ALERT_EMAIL_FROM:-}" ]; then
+    log "AWS_SES_ACCESS_KEY_ID / AWS_SES_SECRET_ACCESS_KEY / ALERT_EMAIL_TO / ALERT_EMAIL_FROM not set; cannot send email"
     return 1
   fi
-  local payload
-  # node is already required by the API; it gives us correct JSON escaping.
-  payload=$(SUBJECT=$1 TEXT=$2 node -e '
-    process.stdout.write(JSON.stringify({
-      from: process.env.ALERT_EMAIL_FROM,
-      to: process.env.ALERT_EMAIL_TO.split(",").map(s => s.trim()),
-      subject: process.env.SUBJECT,
-      text: process.env.TEXT,
-    }));')
-  curl -fsS --max-time 20 https://api.resend.com/emails \
-    -H "Authorization: Bearer $RESEND_API_KEY" \
-    -H "Content-Type: application/json" \
-    -d "$payload" >/dev/null
+  local region=${AWS_SES_REGION:-us-east-1}
+  if command -v aws >/dev/null 2>&1; then
+    local dest content
+    # node is already required by the API; it gives us correct JSON escaping.
+    dest=$(node -e 'process.stdout.write(JSON.stringify({ToAddresses: process.env.ALERT_EMAIL_TO.split(",").map(s => s.trim()).filter(Boolean)}))')
+    content=$(SUBJECT=$1 TEXT=$2 node -e 'process.stdout.write(JSON.stringify({Simple: {Subject: {Data: process.env.SUBJECT, Charset: "UTF-8"}, Body: {Text: {Data: process.env.TEXT, Charset: "UTF-8"}}}}))')
+    AWS_ACCESS_KEY_ID=$AWS_SES_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY=$AWS_SES_SECRET_ACCESS_KEY \
+      AWS_SESSION_TOKEN= AWS_DEFAULT_REGION=$region \
+      aws sesv2 send-email --region "$region" --from-email-address "$ALERT_EMAIL_FROM" \
+        --destination "$dest" --content "$content" --cli-connect-timeout 10 --cli-read-timeout 20 >/dev/null
+  else
+    SUBJECT=$1 TEXT=$2 API_DIR=$API_DIR node -e '
+      require(process.env.API_DIR + "/_lib/ses.js").sendEmail({
+        from: process.env.ALERT_EMAIL_FROM,
+        to: process.env.ALERT_EMAIL_TO,
+        subject: process.env.SUBJECT,
+        text: process.env.TEXT,
+      }).then(r => { if (!r.ok) { console.error("healthcheck: SES: " + r.error); process.exit(1); } },
+              e => { console.error("healthcheck: SES: " + e.message); process.exit(1); });'
+  fi
 }
 
 # alert_key TEXT -> stable file-safe id for a problem
@@ -61,7 +73,7 @@ if [ "${1:-}" = "--notify" ]; then
   f=$STATE_DIR/$(alert_key "$subject")
   now=$(date +%s)
   last=$(cat "$f" 2>/dev/null || echo 0)
-  if [ $((now - last)) -lt "$RESEND_COOLDOWN" ]; then
+  if [ $((now - last)) -lt "$ALERT_COOLDOWN" ]; then
     log "suppressed (sent recently): $subject"
     exit 0
   fi
@@ -165,7 +177,7 @@ fi
 send=0
 for msg in "${FAILURES[@]}"; do
   last=$(cat "$STATE_DIR/$(alert_key "$msg")" 2>/dev/null || echo 0)
-  [ $((now - last)) -ge "$RESEND_COOLDOWN" ] && send=1
+  [ $((now - last)) -ge "$ALERT_COOLDOWN" ] && send=1
 done
 # Forget problems that have cleared so they alert again if they return.
 for f in "$STATE_DIR"/*; do
@@ -184,6 +196,6 @@ if [ "$send" = 1 ]; then
     log "alert email sent"
   fi
 else
-  log "problems persist but were already emailed within the last $((RESEND_COOLDOWN/3600))h"
+  log "problems persist but were already emailed within the last $((ALERT_COOLDOWN/3600))h"
 fi
 exit 1
