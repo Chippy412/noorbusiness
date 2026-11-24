@@ -109,9 +109,11 @@ function render(b, reviews, others) {
   var phoneDigits = b.phone ? String(b.phone).replace(/[^\d+]/g, "") : "";
   var hoursRows = (Array.isArray(b.hours) ? b.hours : []).filter(function (r) { return Array.isArray(r) && r[0] && r[1]; });
   var more = related(b, others);
+  // "Columbus (Northland)" already names the city; suburbs like "Dublin" get ", Columbus".
+  var place = /\bcolumbus\b/i.test(String(b.neighborhood || "")) ? String(b.neighborhood) : b.neighborhood + ", Columbus";
 
   var body = (photo ? '<img src="' + h.esc(photo) + '" alt="' + h.esc(b.name) + '" width="720" height="405">' : "") +
-    "<h1>" + h.esc(b.name) + '</h1><p class="meta">' + h.esc(b.category) + " in " + h.esc(b.neighborhood) + ", Columbus, Ohio" +
+    "<h1>" + h.esc(b.name) + '</h1><p class="meta">' + h.esc(b.category) + " in " + h.esc(place) + ", Ohio" +
     (avg != null ? " &middot; " + avg.toFixed(1) + " &#9733; (" + ratings.length + ")" : "") + "</p>" +
     '<div class="card"><p>' + h.esc(b.long_description) + "</p></div>" +
     '<div class="card"><ul>' +
@@ -131,14 +133,14 @@ function render(b, reviews, others) {
     '<script>document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a[data-ev]");if(!a)return;' +
     'var d=JSON.stringify({id:"' + h.esc(b.id) + '",event:a.getAttribute("data-ev")});' +
     'if(navigator.doNotTrack!=="1"&&navigator.sendBeacon)navigator.sendBeacon("/api/track",new Blob([d],{type:"application/json"}));});</script>';
-  var title = b.name + " \u2014 " + b.category + " in " + b.neighborhood + ", Columbus | NICC Business";
+  var title = b.name + " \u2014 " + b.category + " in " + place + " | NICC Business";
   var desc = String(b.description || "");
   if (desc.length > 155) desc = desc.slice(0, 152).replace(/\s+\S*$/, "") + "\u2026";
   // Share card: the listing's own photo when it has one, else the site card.
   var card = photo
     ? { url: photo, alt: "Photo of " + b.name }
     : { url: DEFAULT_CARD.url, width: DEFAULT_CARD.width, height: DEFAULT_CARD.height, alt: DEFAULT_CARD.alt };
-  card.title = b.name + " \u00b7 " + b.category + " in " + b.neighborhood + ", Columbus";
+  card.title = b.name + " \u00b7 " + b.category + " in " + place;
   return page(title, desc, url, card, [jsonLd, crumbs], body);
 }
 

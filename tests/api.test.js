@@ -331,3 +331,12 @@ test("listing page share card: listing photo when there is one, else the 1200x63
   assert.match(withPhoto, /<meta property="og:image:alt" content="Photo of Cafe &amp; Co">/);
   assert.ok(!/og:image:width/.test(withPhoto), "no made-up size for owner photos");
 });
+
+test("listing page doesn't say Columbus twice when the neighborhood already names it", () => {
+  const { render } = require("../api/listing")._test;
+  const html = render({ id: "33333333-3333-3333-3333-333333333333", name: "Afra Grill", category: "Restaurants",
+    neighborhood: "Columbus (Northland)", description: "Food.", long_description: "Food." }, [], []).html;
+  assert.match(html, /<title>Afra Grill — Restaurants in Columbus \(Northland\) \| NICC Business<\/title>/);
+  assert.match(html, /Restaurants in Columbus \(Northland\), Ohio/);
+  assert.ok(!/Columbus \(Northland\), Columbus/.test(html));
+});

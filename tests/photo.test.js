@@ -31,6 +31,7 @@ test("checkInput", function () {
   assert.ok(P.checkInput({ type: "application/pdf", size: 10, name: "a.pdf" }));
   assert.ok(P.checkInput({ type: "image/gif", size: 10, name: "a.gif" }));
   assert.match(P.checkInput({ type: "image/heic", size: 10, name: "a.heic" }), /JPG/);
+  assert.match(P.checkInput({ type: "", size: 10, name: "IMG_0042.HEIC" }), /HEIC/);
   assert.ok(P.checkInput({ type: "image/jpeg", size: P.MAX_INPUT_BYTES + 1, name: "big.jpg" }));
   assert.ok(P.checkInput(null));
 });
