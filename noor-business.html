@@ -3157,10 +3157,13 @@
   }
 
   // Privacy-friendly counts (daily totals per listing, nothing about the
-  // visitor is stored; see api/track.js). Skipped when Do Not Track is on.
+  // visitor is stored; see api/track.js). Skipped when Do Not Track is on, in
+  // automated browsers, and for the site's own team (flag set by the
+  // moderation page) so our own checking doesn't inflate the numbers.
   function trackEvent(id, event) {
     try {
-      if (!id || navigator.doNotTrack === "1" || !navigator.sendBeacon) return;
+      if (!id || navigator.doNotTrack === "1" || navigator.webdriver || !navigator.sendBeacon) return;
+      try { if (localStorage.getItem("nb_team") === "1") return; } catch (e) { /* private mode */ }
       navigator.sendBeacon("/api/track", new Blob([JSON.stringify({ id: id, event: event })], { type: "application/json" }));
     } catch (e) { /* counting is best-effort */ }
   }

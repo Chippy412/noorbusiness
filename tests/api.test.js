@@ -277,6 +277,8 @@ test("listing page: typed JSON-LD with geo, opening hours and breadcrumbs, plus 
   assert.ok(out.html.includes('href="/b/33333333-3333-3333-3333-333333333333"'));
   assert.ok(!out.html.includes("<b>"), "related names are escaped");
   assert.ok(out.html.includes('data-ev="phone"') && out.html.includes('data-ev="website"') && out.html.includes('data-ev="directions"'));
+  assert.ok(out.html.includes('send("view")'), "views are counted from the browser, not on page load by the server");
+  assert.ok(out.html.includes("navigator.webdriver") && out.html.includes('"nb_team"'), "automated browsers and the team are skipped");
 });
 
 test("track: only POST, ignores bots / bad input / missing service key, answers 204", async () => {
