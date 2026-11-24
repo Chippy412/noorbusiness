@@ -116,6 +116,9 @@
   function mount(root, h) {
     var esc = h.escape;
     var isMod = h.role === "moderator";
+    // Team members' own visits are left out of the anonymous listing counts
+    // on this browser from now on (read by trackEvent and the /b/ pages).
+    try { localStorage.setItem("nb_team", "1"); } catch (e) { /* private mode */ }
     var state = {
       tab: "new", guide: null, guideError: null, stats: null, statsDays: 30, data: null, all: null, team: null, published: null, log: null, sponsors: null,
       allQuery: "", allStatus: "", allFlag: "", allPage: 0, openHistory: {}

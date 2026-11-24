@@ -7,7 +7,6 @@
 var supa = require("./_lib/supa");
 var h = require("./_lib/html");
 var hoursLib = require("../js/hours");
-var track = require("./track");
 
 var SITE = (process.env.SITE_URL || "https://noorbusiness.org").replace(/\/$/, "");
 
@@ -128,11 +127,15 @@ function render(b, reviews, others) {
     (more.length ? '<h2>More Muslim-owned businesses in Columbus</h2><ul>' + more.map(function (o) {
       return '<li><a href="/b/' + h.esc(o.id) + '">' + h.esc(o.name) + "</a> &middot; " + h.esc(o.category) + ", " + h.esc(o.neighborhood) + "</li>";
     }).join("") + "</ul>" : "") +
-    // Counts a click on the links above. Same-origin, no cookies, nothing
+    // Counts a view and clicks on the links above, from the browser only, so
+    // crawlers that load the page without running it aren't counted. Skipped
+    // for Do Not Track, automated browsers and the site's own team (flag set
+    // when they open the moderation page). Same-origin, no cookies, nothing
     // about the visitor is sent (see api/track.js).
-    '<script>document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a[data-ev]");if(!a)return;' +
-    'var d=JSON.stringify({id:"' + h.esc(b.id) + '",event:a.getAttribute("data-ev")});' +
-    'if(navigator.doNotTrack!=="1"&&navigator.sendBeacon)navigator.sendBeacon("/api/track",new Blob([d],{type:"application/json"}));});</script>';
+    '<script>(function(){var id="' + h.esc(b.id) + '";function ok(){try{if(navigator.doNotTrack==="1"||navigator.webdriver||!navigator.sendBeacon)return false;' +
+    'if(localStorage.getItem("nb_team")==="1")return false;}catch(e){}return true;}' +
+    'function send(ev){if(ok())navigator.sendBeacon("/api/track",new Blob([JSON.stringify({id:id,event:ev})],{type:"application/json"}));}' +
+    'send("view");document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a[data-ev]");if(a)send(a.getAttribute("data-ev"));});})();</script>';
   var title = b.name + " \u2014 " + b.category + " in " + place + " | NICC Business";
   var desc = String(b.description || "");
   if (desc.length > 155) desc = desc.slice(0, 152).replace(/\s+\S*$/, "") + "\u2026";
@@ -159,7 +162,6 @@ module.exports = async function handler(req, res) {
       var rv = await supa.rest("reviews?select=rating&status=eq.approved&business_id=eq." + id);
       var ot = await supa.rest("businesses?select=id,name,category,neighborhood&status=eq.approved&order=name.asc&limit=200");
       out = render(b.data[0], rv.ok && Array.isArray(rv.data) ? rv.data : [], ot.ok && Array.isArray(ot.data) ? ot.data : []);
-      if (req.method !== "HEAD") { try { await track.record(req, id, "view"); } catch (e) { /* never blocks the page */ } }
     }
   }
   res.setHeader("Content-Type", "text/html; charset=utf-8");
